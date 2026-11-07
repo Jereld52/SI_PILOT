@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     trust_proxy_headers: bool = False
 
     upload_dir: str = "./data/uploads"
+    public_base_url: str = "http://127.0.0.1:8000"
     max_upload_mb: int = 25
     log_level: str = "INFO"
     serve_frontend: bool = False

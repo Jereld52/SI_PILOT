@@ -3,17 +3,25 @@ import {
   Archive,
   ArrowRightLeft,
   Clock,
+  Download,
+  Eye,
+  FileSpreadsheet,
+  FileText,
   MoreHorizontal,
   Pencil,
   Plus,
+  QrCode,
   Search,
   Upload,
   Wrench,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { AssetDetailDialog } from "@/features/assets/AssetDetailDialog";
 import { AssetFormDialog } from "@/features/assets/AssetFormDialog";
+import { AssetQrDialog } from "@/features/assets/AssetQrDialog";
 import {
   assetConditionLabels,
   assetConditionTones,
@@ -50,11 +58,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
-import { formatDate, formatDateTime, fullName } from "@/lib/utils";
+import { formatDateTime, fullName } from "@/lib/utils";
 import type {
   AgentItem,
   AssetAssignmentItem,
   AssetCategoryItem,
+  AssetDetailItem,
   AssetItem,
   LocationItem,
   Page,
@@ -72,6 +81,7 @@ export function AssetsPage() {
   const [serviceFilter, setServiceFilter] = useState("");
   const [page, setPage] = useState(1);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AssetItem | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -80,6 +90,8 @@ export function AssetsPage() {
   const [returnTarget, setReturnTarget] = useState<AssetItem | null>(null);
   const [statusTarget, setStatusTarget] = useState<AssetItem | null>(null);
   const [historyTarget, setHistoryTarget] = useState<AssetItem | null>(null);
+  const [detailTarget, setDetailTarget] = useState<AssetItem | null>(null);
+  const [qrTarget, setQrTarget] = useState<AssetItem | null>(null);
 
   const [assignAgentId, setAssignAgentId] = useState("");
   const [assignReason, setAssignReason] = useState("");
@@ -131,6 +143,30 @@ export function AssetsPage() {
     queryFn: () => apiFetch<AssetAssignmentItem[]>(`/assets/${historyTarget?.id}/history`),
     enabled: Boolean(historyTarget),
   });
+  const detailQuery = useQuery({
+    queryKey: ["assets", "detail", detailTarget?.id],
+    queryFn: () => apiFetch<AssetDetailItem>(`/assets/${detailTarget?.id}`),
+    enabled: Boolean(detailTarget),
+  });
+
+  useEffect(() => {
+    const token = searchParams.get("qr");
+    if (!token) return;
+    let cancelled = false;
+    apiFetch<AssetDetailItem>(`/assets/by-qr/${token}`)
+      .then((asset) => {
+        if (!cancelled) setDetailTarget(asset);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("QR code inconnu ou expiré.");
+      })
+      .finally(() => {
+        if (!cancelled) setSearchParams({}, { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, setSearchParams]);
 
   const invalidate = () => void assetsQuery.refetch();
 
@@ -213,6 +249,30 @@ export function AssetsPage() {
         description="Équipements, affectations, garanties, états et historique des mouvements."
         actions={
           <>
+            {hasPermission("exports.run") ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm">
+                    <Download className="h-3.5 w-3.5" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/api/v1/exports/assets?format=xlsx", "_blank")}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Excel (XLSX)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/api/v1/exports/assets?format=pdf", "_blank")}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
             {canImport ? (
               <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
                 <Upload className="h-3.5 w-3.5" />
@@ -322,10 +382,11 @@ export function AssetsPage() {
                 <TableRow>
                   <TableHead>Équipement</TableHead>
                   <TableHead>Catégorie</TableHead>
+                  <TableHead className="hidden lg:table-cell">Système</TableHead>
                   <TableHead>État</TableHead>
                   <TableHead className="hidden lg:table-cell">Affectation</TableHead>
+                  <TableHead className="hidden 2xl:table-cell">WAPT</TableHead>
                   <TableHead className="hidden xl:table-cell">Service / site</TableHead>
-                  <TableHead className="hidden xl:table-cell">Garantie</TableHead>
                   <TableHead className="w-10 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -335,8 +396,17 @@ export function AssetsPage() {
                     <TableCell>
                       <p className="text-xs font-medium text-foreground">{asset.name}</p>
                       <p className="font-mono text-[10px] text-muted-2">{asset.asset_tag}</p>
+                      {asset.brand || asset.model ? (
+                        <p className="mt-0.5 text-[10px] text-muted">
+                          {[asset.brand, asset.model].filter(Boolean).join(" ")}
+                        </p>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-xs text-muted">{asset.category.name}</TableCell>
+                    <TableCell className="hidden text-xs text-muted lg:table-cell">
+                      <p>{asset.os_name ?? "—"}</p>
+                      <p className="text-[10px] text-muted-2">{asset.ip_address ?? "—"}</p>
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <Badge tone={assetStatusTones[asset.status] ?? "neutral"}>
@@ -352,12 +422,27 @@ export function AssetsPage() {
                         ? fullName(asset.assigned_agent.first_name, asset.assigned_agent.last_name)
                         : "Non affecté"}
                     </TableCell>
+                    <TableCell className="hidden text-xs text-muted 2xl:table-cell">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={
+                            asset.wapt_reachable === "OK"
+                              ? "h-1.5 w-1.5 rounded-full bg-success"
+                              : "h-1.5 w-1.5 rounded-full bg-warning"
+                          }
+                        />
+                        <span>{asset.wapt_status ?? "—"}</span>
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-muted-2">
+                        {asset.wapt_last_user ?? "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-2">
+                        {asset.wapt_last_seen ? formatDateTime(asset.wapt_last_seen) : "—"}
+                      </p>
+                    </TableCell>
                     <TableCell className="hidden text-xs text-muted xl:table-cell">
                       {asset.service?.name ?? "—"}
                       {asset.location?.name ? ` · ${asset.location.name}` : ""}
-                    </TableCell>
-                    <TableCell className="hidden text-xs text-muted xl:table-cell">
-                      {formatDate(asset.warranty_end)}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -367,6 +452,17 @@ export function AssetsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem onSelect={() => setDetailTarget(asset)}>
+                            <Eye className="h-3.5 w-3.5" />
+                            Voir la fiche complète
+                          </DropdownMenuItem>
+                          {hasPermission("assets.qr") ? (
+                            <DropdownMenuItem onSelect={() => setQrTarget(asset)}>
+                              <QrCode className="h-3.5 w-3.5" />
+                              QR code
+                            </DropdownMenuItem>
+                          ) : null}
+                          <DropdownMenuSeparator />
                           {canEdit ? (
                             <DropdownMenuItem
                               onSelect={() => {
@@ -471,6 +567,19 @@ export function AssetsPage() {
         entityType="assets"
         entityLabel="équipements"
         onImported={invalidate}
+      />
+
+      <AssetDetailDialog
+        open={Boolean(detailTarget)}
+        onOpenChange={(open) => !open && setDetailTarget(null)}
+        asset={detailQuery.data ?? null}
+      />
+
+      <AssetQrDialog
+        open={Boolean(qrTarget)}
+        onOpenChange={(open) => !open && setQrTarget(null)}
+        asset={qrTarget}
+        onRegenerated={invalidate}
       />
 
       <ConfirmDialog

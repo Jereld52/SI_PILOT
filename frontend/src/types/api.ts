@@ -285,9 +285,19 @@ export interface AssetItem {
   location: LocationItem | null;
   comments: string | null;
   is_critical: boolean;
+  wapt_status: string | null;
+  wapt_reachable: string | null;
+  wapt_last_seen: string | null;
+  wapt_last_user: string | null;
+  wapt_groups: string | null;
+  wapt_domain: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AssetDetailItem extends AssetItem {
+  external_data: Record<string, unknown> | null;
 }
 
 export interface AssetAssignmentItem {

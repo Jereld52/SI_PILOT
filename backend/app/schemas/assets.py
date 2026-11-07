@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -100,9 +100,19 @@ class AssetRead(ORMModel):
     location: LocationRef | None = None
     comments: str | None = None
     is_critical: bool
+    wapt_status: str | None = None
+    wapt_reachable: str | None = None
+    wapt_last_seen: str | None = None
+    wapt_last_user: str | None = None
+    wapt_groups: str | None = None
+    wapt_domain: str | None = None
     archived_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class AssetDetailRead(AssetRead):
+    external_data: dict[str, Any] | None = None
 
 
 class AssetTagPreview(BaseModel):

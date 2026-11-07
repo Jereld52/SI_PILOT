@@ -211,3 +211,8 @@ def test_wapt_csv_import(admin_client, csrf_headers):
     assert asset["external_id"]
     assert asset["asset_tag"].startswith("PNFOR-PC-")
     assert asset["hostname"] == f"pc-test-{suffix}.ecb.pn.local"
+
+    detail = client.get(f"/api/v1/assets/{asset['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["wapt_status"] == "OK"
+    assert detail.json()["external_data"]["machine"] == f"pc-test-{suffix}.ecb.pn.local"

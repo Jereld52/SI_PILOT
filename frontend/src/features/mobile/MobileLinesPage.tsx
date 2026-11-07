@@ -1,5 +1,13 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Eye, Phone, Search, Upload } from "lucide-react";
+import {
+  Download,
+  Eye,
+  FileSpreadsheet,
+  FileText,
+  Phone,
+  Search,
+  Upload,
+} from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
 
 import { ImportDialog } from "@/features/imports/ImportDialog";
@@ -7,6 +15,12 @@ import { MobileLineDetailDialog } from "@/features/mobile/MobileLineDetailDialog
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
@@ -72,12 +86,38 @@ export function MobileLinesPage() {
         title="Lignes mobiles"
         description="Inventaire des lignes, titulaires, forfaits, terminaux et engagements."
         actions={
-          canImport ? (
-            <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
-              <Upload className="h-3.5 w-3.5" />
-              Importer
-            </Button>
-          ) : null
+          <>
+            {hasPermission("exports.run") ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm">
+                    <Download className="h-3.5 w-3.5" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/api/v1/exports/mobile-lines?format=xlsx", "_blank")}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Excel (XLSX)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/api/v1/exports/mobile-lines?format=pdf", "_blank")}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {canImport ? (
+              <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
+                <Upload className="h-3.5 w-3.5" />
+                Importer
+              </Button>
+            ) : null}
+          </>
         }
       />
 

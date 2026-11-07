@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import secrets
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
@@ -136,6 +138,46 @@ class Asset(Base, UUIDMixin, TimestampMixin):
     assigned_agent: Mapped[Agent | None] = relationship(lazy="joined")
     service: Mapped[Service | None] = relationship(lazy="joined")
     location: Mapped[Location | None] = relationship(lazy="joined")
+
+    @property
+    def external_data(self) -> dict[str, Any] | None:
+        if not self.external_data_json:
+            return None
+        try:
+            value = json.loads(self.external_data_json)
+            return value if isinstance(value, dict) else None
+        except (json.JSONDecodeError, TypeError):
+            return None
+
+    @property
+    def wapt_status(self) -> str | None:
+        data = self.external_data or {}
+        return data.get("statut")
+
+    @property
+    def wapt_reachable(self) -> str | None:
+        data = self.external_data or {}
+        return data.get("joignable")
+
+    @property
+    def wapt_last_seen(self) -> str | None:
+        data = self.external_data or {}
+        return data.get("derniere_connexion")
+
+    @property
+    def wapt_last_user(self) -> str | None:
+        data = self.external_data or {}
+        return data.get("dernier_utilisateur_logue")
+
+    @property
+    def wapt_groups(self) -> str | None:
+        data = self.external_data or {}
+        return data.get("groupes")
+
+    @property
+    def wapt_domain(self) -> str | None:
+        data = self.external_data or {}
+        return data.get("domaine")
 
     __table_args__ = (
         CheckConstraint(

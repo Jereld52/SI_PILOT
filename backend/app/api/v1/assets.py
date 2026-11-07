@@ -1,9 +1,12 @@
+import io
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+import qrcode
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
+from app.core.config import settings
 from app.core.pagination import PageParams, page_params, paginate_items
 from app.db.session import get_db
 from app.models.auth import User
@@ -11,6 +14,7 @@ from app.schemas.assets import (
     AssetAssignmentRead,
     AssetAssignRequest,
     AssetCreate,
+    AssetDetailRead,
     AssetRead,
     AssetReturnRequest,
     AssetStatusRequest,
@@ -67,13 +71,54 @@ def next_tag(
     return assets_service.peek_asset_tag(db, category)
 
 
-@router.get("/{asset_id}", response_model=AssetRead)
+@router.get("/by-qr/{token}", response_model=AssetDetailRead)
+def get_asset_by_qr(
+    token: str,
+    _: User = Depends(require_permission("assets.read")),
+    db: Session = Depends(get_db),
+):
+    return assets_service.get_asset_by_qr(db, token)
+
+
+@router.get("/{asset_id}", response_model=AssetDetailRead)
 def get_asset(
     asset_id: UUID,
     _: User = Depends(require_permission("assets.read")),
     db: Session = Depends(get_db),
 ):
     return assets_service.get_asset(db, asset_id)
+
+
+@router.get("/{asset_id}/qr")
+def get_asset_qr(
+    asset_id: UUID,
+    _: User = Depends(require_permission("assets.qr")),
+    db: Session = Depends(get_db),
+):
+    asset = assets_service.get_asset(db, asset_id)
+    url = f"{settings.public_base_url.rstrip('/')}/parc?qr={asset.qr_token}"
+    image = qrcode.make(url)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return Response(
+        content=buffer.getvalue(),
+        media_type="image/png",
+        headers={
+            "Content-Disposition": f'inline; filename="qr-{asset.asset_tag}.png"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.post("/{asset_id}/qr/regenerate", response_model=AssetDetailRead)
+def regenerate_asset_qr(
+    asset_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("assets.qr")),
+    db: Session = Depends(get_db),
+):
+    asset = assets_service.get_asset(db, asset_id)
+    return assets_service.regenerate_qr_token(db, asset, actor=actor, request=request)
 
 
 @router.get("/{asset_id}/history", response_model=list[AssetAssignmentRead])

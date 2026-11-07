@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import secrets
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
@@ -221,6 +222,32 @@ def get_asset(db: Session, asset_id: UUID) -> Asset:
     asset = db.get(Asset, asset_id)
     if asset is None:
         raise NotFoundError("Équipement introuvable.")
+    return asset
+
+
+def get_asset_by_qr(db: Session, token: str) -> Asset:
+    asset = db.scalar(select(Asset).where(Asset.qr_token == token))
+    if asset is None:
+        raise NotFoundError("QR code inconnu ou expiré.")
+    return asset
+
+
+def regenerate_qr_token(
+    db: Session, asset: Asset, *, actor: User, request: Request | None = None
+) -> Asset:
+    asset.qr_token = secrets.token_urlsafe(24)
+    write_audit(
+        db,
+        module="assets",
+        action="asset_qr_regenerated",
+        actor=actor,
+        entity_type="asset",
+        entity_id=str(asset.id),
+        entity_label=f"{asset.name} ({asset.asset_tag})",
+        request=request,
+    )
+    db.commit()
+    db.refresh(asset)
     return asset
 
 

@@ -119,6 +119,7 @@ def global_search(
                     Asset.asset_tag.ilike(pattern, escape="\\"),
                     Asset.serial_number.ilike(pattern, escape="\\"),
                     Asset.hostname.ilike(pattern, escape="\\"),
+                    Asset.external_data_json.ilike(pattern, escape="\\"),
                 )
             )
             .order_by(Asset.name)
