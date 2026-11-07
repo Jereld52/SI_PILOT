@@ -10,7 +10,8 @@
 - États fixes en `VARCHAR` + `CHECK`; référentiels en tables dédiées.
 - Clés étrangères `RESTRICT` par défaut, `SET NULL` pour les liens facultatifs.
 - Suppression logique ou anonymisation pour les données sensibles.
-- `document_sequences` pour les références métier (`TCK-2026-000001`, etc.).
+- `document_sequences` pour les références métier (`TCK-2026-000001`, etc.) et les numéros
+  d'inventaire (`asset:{categorie}`, remise à zéro annuelle ou séquence globale).
 
 ## Domaines
 
@@ -27,8 +28,9 @@
 
 ### Parc informatique
 
-`asset_categories`, `suppliers`, `supplier_contacts`, `assets`, `asset_assignments`,
-`stock_movements`, `licenses`, `renewal_plans`.
+`asset_categories` (dont `tag_prefix`, `tag_template`, `tag_sequence_mode`), `suppliers`,
+`supplier_contacts`, `assets`, `asset_assignments`, `stock_movements`, `licenses`,
+`renewal_plans`.
 
 ### Demandes et interventions
 

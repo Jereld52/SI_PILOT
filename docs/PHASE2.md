@@ -13,7 +13,7 @@
 ### Backend
 
 - FastAPI, `/api/v1`, OpenAPI (`/api/docs`).
-- 92 permissions, 5 rôles, portées de données.
+- 95 permissions, 5 rôles, portées de données.
 - Authentification Argon2id, sessions serveur, CSRF, verrouillage, révocation.
 - Audit append-only avec chaînage de hash.
 - Notifications.
@@ -34,7 +34,7 @@
 ## Vérifications effectuées
 
 ```text
-pytest -q                         21 passed
+pytest -q                         25 passed
 ruff check app tests              All checks passed
 mypy app                          Success: no issues found in 60 source files
 npm run build                     tsc + vite build OK (chunks séparés)

@@ -4,7 +4,7 @@
 |---|---|---|---|
 | V0.1 | Socle, Docker, config, logs, erreurs, PostgreSQL, Alembic, auth, rôles, permissions, layout, design system, CI | Connexion, sessions révocables, permissions testées, migrations, CI verte | **Livré** |
 | V0.2 | Administration, référentiels, utilisateurs, rôles, paramètres, audit, notifications | CRUD complets, audit, matrice testée | **Livré** |
-| V0.3 | Parc, agents, affectations, stock, QR, renouvellement, imports/exports | Fiche équipement, historique, QR, import avec prévisualisation | À démarrer |
+| V0.3 | Parc, agents, affectations, stock, QR, renouvellement, imports/exports | Fiche équipement, historique, QR, import avec prévisualisation | **En cours — référentiels, agents, parc et imports CSV livrés** |
 | V0.4 | Tickets, Kanban, commentaires, temps, SLA, interventions | Cycle de vie respecté, Kanban persistant, historique | Planifié |
 | V0.5 | Contrats, budget, calendrier, actions | Alertes exactes, calculs budgétaires, calendrier agrégé | Planifié |
 | V0.6 | Infrastructure, cybersécurité | Cartographie, incidents liés aux actifs | Planifié |

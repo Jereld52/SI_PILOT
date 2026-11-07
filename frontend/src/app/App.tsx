@@ -6,6 +6,8 @@ import { AuditPage } from "@/features/admin/AuditPage";
 import { RolesPage } from "@/features/admin/RolesPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
 import { UsersPage } from "@/features/admin/UsersPage";
+import { AgentsPage } from "@/features/agents/AgentsPage";
+import { AssetsPage } from "@/features/assets/AssetsPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { RequirePermission } from "@/features/auth/RequirePermission";
@@ -13,6 +15,10 @@ import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
+import { ReferentialsPage } from "@/features/referentials/ReferentialsPage";
+
+const implementedModules = new Set(["agents", "parc"]);
+const pendingModules = modules.filter((module) => !implementedModules.has(module.path));
 
 export function App() {
   return (
@@ -57,6 +63,14 @@ export function App() {
               }
             />
             <Route
+              path="referentials"
+              element={
+                <RequirePermission permission="referentials.read">
+                  <ReferentialsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
               path="settings"
               element={
                 <RequirePermission permission="admin.settings.read">
@@ -66,7 +80,25 @@ export function App() {
             />
           </Route>
 
-          {modules.map((module) => (
+          <Route
+            path="agents"
+            element={
+              <RequirePermission permission="agents.read">
+                <AgentsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="parc"
+            element={
+              <RequirePermission permission="assets.read">
+                <AssetsPage />
+              </RequirePermission>
+            }
+          />
+
+          {pendingModules.map((module) => (
             <Route
               key={module.path}
               path={module.path}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
@@ -31,8 +32,25 @@ class AssetCategory(Base, UUIDMixin, TimestampMixin):
     is_workstation: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     requires_network_fields: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     default_life_months: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    tag_prefix: Mapped[str | None] = mapped_column(String(20))
+    tag_template: Mapped[str] = mapped_column(
+        String(120),
+        default="PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
+        server_default="PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
+        nullable=False,
+    )
+    tag_sequence_mode: Mapped[str] = mapped_column(
+        String(10), default="year", server_default="year", nullable=False
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "tag_sequence_mode IN ('year','global')",
+            name="asset_category_tag_sequence_mode",
+        ),
+    )
 
 
 class Supplier(Base, UUIDMixin, TimestampMixin):
@@ -100,7 +118,13 @@ class Asset(Base, UUIDMixin, TimestampMixin):
         ForeignKey("locations.id", ondelete="SET NULL"), index=True
     )
     comments: Mapped[str | None] = mapped_column(Text)
-    qr_token: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    qr_token: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        index=True,
+        nullable=False,
+        default=lambda: secrets.token_urlsafe(24),
+    )
     is_critical: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)

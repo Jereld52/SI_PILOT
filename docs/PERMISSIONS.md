@@ -3,7 +3,7 @@
 ## Modèle
 
 - **Rôle** : jeu de permissions par défaut.
-- **Permission** : code `module.action` (92 permissions).
+- **Permission** : code `module.action` (95 permissions).
 - **Portée de données** : `all`, `service`, `own`.
 - **Surcharge utilisateur** : `allow` ou `deny`, auditée.
 
@@ -27,6 +27,7 @@ Deny by default. Les permissions sont contrôlées côté serveur et dans les se
 | Demandes IT | G | G | C | V | P |
 | Parc | G | G | C | V | P |
 | Agents | G | G | V | V | P |
+| Référentiels | G | G | V | V | — |
 | Infrastructure | G | G | C | V | — |
 | Cybersécurité | G | G | C | R | — |
 | Contrats | G | G | V | V | — |

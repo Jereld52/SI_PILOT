@@ -34,7 +34,8 @@ $env:APP_ENV = "production"
 $env:SECURE_COOKIES = "false"
 
 if ($OpenBrowser) {
-    Start-Process "http://127.0.0.1:8000"
+    $browserCommand = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$r = Invoke-WebRequest 'http://127.0.0.1:8000/health' -UseBasicParsing -TimeoutSec 2; if (`$r.StatusCode -eq 200) { Start-Process 'http://127.0.0.1:8000'; break } } catch {}; Start-Sleep -Milliseconds 500 }"
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-NoProfile", "-Command", $browserCommand | Out-Null
 }
 
 Set-Location (Join-Path $Root "backend")

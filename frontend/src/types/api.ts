@@ -184,3 +184,163 @@ export interface SearchResponse {
   total: number;
   took_ms: number;
 }
+
+export interface ServiceItem {
+  id: string;
+  code: string;
+  name: string;
+  parent_id: string | null;
+  manager_user_id: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface LocationItem {
+  id: string;
+  code: string | null;
+  name: string;
+  address: string | null;
+  postal_code: string | null;
+  city: string | null;
+  building: string | null;
+  floor: string | null;
+  room: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AssetCategoryItem {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  is_infrastructure: boolean;
+  is_workstation: boolean;
+  requires_network_fields: boolean;
+  default_life_months: number;
+  tag_prefix: string | null;
+  tag_template: string;
+  tag_sequence_mode: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface AgentRef {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email_pro: string;
+}
+
+export interface AgentItem {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email_pro: string;
+  phone_pro: string | null;
+  service_id: string | null;
+  service: ServiceItem | null;
+  function_label: string | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  manager_agent_id: string | null;
+  login: string | null;
+  arrival_date: string | null;
+  departure_date: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetItem {
+  id: string;
+  asset_tag: string;
+  name: string;
+  category_id: string;
+  category: AssetCategoryItem;
+  brand: string | null;
+  model: string | null;
+  serial_number: string | null;
+  mac_address: string | null;
+  ip_address: string | null;
+  hostname: string | null;
+  os_name: string | null;
+  os_version: string | null;
+  purchase_date: string | null;
+  commissioning_date: string | null;
+  warranty_end: string | null;
+  supplier_id: string | null;
+  supplier: { id: string; name: string } | null;
+  purchase_price: number | null;
+  status: string;
+  condition: string;
+  assigned_agent_id: string | null;
+  assigned_agent: AgentRef | null;
+  service_id: string | null;
+  service: ServiceItem | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  comments: string | null;
+  is_critical: boolean;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetAssignmentItem {
+  id: string;
+  agent_id: string | null;
+  agent_name: string | null;
+  service_name: string | null;
+  location_name: string | null;
+  started_at: string;
+  ended_at: string | null;
+  reason: string | null;
+}
+
+export interface AssetTagPreview {
+  tag: string;
+  prefix: string | null;
+  template: string;
+  next_sequence: number;
+  year: number;
+}
+
+export interface ImportJob {
+  id: string;
+  entity_type: string;
+  original_filename: string;
+  status: string;
+  total_rows: number;
+  valid_rows: number;
+  warning_rows: number;
+  error_rows: number;
+  duplicate_rows: number;
+  created_at: string;
+  applied_at: string | null;
+}
+
+export interface ImportRowPreview {
+  row_number: number;
+  status: string;
+  label: string;
+  errors: string[];
+}
+
+export interface ImportPreviewResponse {
+  job: ImportJob;
+  rows: ImportRowPreview[];
+  can_apply: boolean;
+  message: string;
+}
+
+export interface ImportApplyResponse {
+  job: ImportJob;
+  created: number;
+  skipped: number;
+  errors: number;
+  message: string;
+}

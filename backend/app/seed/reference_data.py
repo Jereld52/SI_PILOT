@@ -52,21 +52,21 @@ TICKET_PRIORITIES = (
 )
 
 ASSET_CATEGORIES = (
-    ("desktop", "PC fixe", True, False, False, 60),
-    ("laptop", "PC portable", True, False, True, 48),
-    ("monitor", "Écran", False, False, False, 84),
-    ("smartphone", "Smartphone", False, False, True, 36),
-    ("tablet", "Tablette", False, False, True, 48),
-    ("printer", "Imprimante", False, False, True, 72),
-    ("server", "Serveur", False, True, True, 60),
-    ("switch", "Switch", False, True, True, 84),
-    ("router", "Routeur", False, True, True, 84),
-    ("nas", "NAS", False, True, True, 60),
-    ("peripheral", "Périphérique", False, False, False, 60),
-    ("ups", "Onduleur", False, True, False, 84),
-    ("access_point", "Point d'accès Wi-Fi", False, True, True, 72),
-    ("firewall", "Pare-feu", False, True, True, 60),
-    ("vm", "Machine virtuelle", False, True, True, 60),
+    ("desktop", "PC fixe", True, False, False, 60, "PC"),
+    ("laptop", "PC portable", True, False, True, 48, "PORT"),
+    ("monitor", "Écran", False, False, False, 84, "ECR"),
+    ("smartphone", "Smartphone", False, False, True, 36, "TEL"),
+    ("tablet", "Tablette", False, False, True, 48, "TAB"),
+    ("printer", "Imprimante", False, False, True, 72, "IMP"),
+    ("server", "Serveur", False, True, True, 60, "SRV"),
+    ("switch", "Switch", False, True, True, 84, "SW"),
+    ("router", "Routeur", False, True, True, 84, "RTR"),
+    ("nas", "NAS", False, True, True, 60, "NAS"),
+    ("peripheral", "Périphérique", False, False, False, 60, "PER"),
+    ("ups", "Onduleur", False, True, False, 84, "UPS"),
+    ("access_point", "Point d'accès Wi-Fi", False, True, True, 72, "WAP"),
+    ("firewall", "Pare-feu", False, True, True, 60, "FW"),
+    ("vm", "Machine virtuelle", False, True, True, 60, "VM"),
 )
 
 CONTRACT_CATEGORIES = (
@@ -240,7 +240,7 @@ def seed_reference_data(db: Session) -> dict[str, int]:
         )
         stats["categories"] += 1
 
-    for code, name, workstation, infrastructure, network, life_months in ASSET_CATEGORIES:
+    for code, name, workstation, infrastructure, network, life_months, prefix in ASSET_CATEGORIES:
         _upsert_code(
             db,
             AssetCategory,
@@ -251,6 +251,9 @@ def seed_reference_data(db: Session) -> dict[str, int]:
                 "is_infrastructure": infrastructure,
                 "requires_network_fields": network,
                 "default_life_months": life_months,
+                "tag_prefix": prefix,
+                "tag_template": "PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
+                "tag_sequence_mode": "year",
             },
         )
         stats["categories"] += 1

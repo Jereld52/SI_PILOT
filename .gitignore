@@ -39,5 +39,6 @@ desktop.ini
 *.tmp
 *.bak
 test_si_pnfor.db
+backend/test_uploads/
 *.dump
 *.zip.sha256

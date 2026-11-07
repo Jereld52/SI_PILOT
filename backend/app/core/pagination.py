@@ -27,6 +27,18 @@ def page_params(
     return PageParams(page=page, page_size=page_size, sort=sort, order=order)
 
 
+def paginate_items(items: list[Any], params: PageParams) -> dict[str, Any]:
+    total = len(items)
+    pages = (total + params.page_size - 1) // params.page_size if total else 0
+    return {
+        "items": items[params.offset : params.offset + params.page_size],
+        "total": total,
+        "page": params.page,
+        "page_size": params.page_size,
+        "pages": pages,
+    }
+
+
 def paginate(db: Session, statement: Select, params: PageParams) -> dict[str, Any]:
     count_statement = select(func.count()).select_from(statement.order_by(None).subquery())
     total = db.scalar(count_statement) or 0

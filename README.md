@@ -18,14 +18,14 @@ le RGPD, la documentation et les échéances.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
-- Rôles et permissions : 5 rôles, 92 permissions, portées de données, surcharges utilisateur.
+- Rôles et permissions : 5 rôles, 95 permissions, portées de données, surcharges utilisateur.
 - Journal d'audit append-only avec chaînage de hash.
 - Notifications in-app.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 21 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 25 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)
@@ -45,6 +45,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows\start-app.ps1 -OpenBr
 - Application locale : <http://127.0.0.1:8000>
 - Documentation API : <http://127.0.0.1:8000/api/docs>
 - Santé : <http://127.0.0.1:8000/api/v1/health/ready>
+
+### Raccourci bureau
+
+Un raccourci **SI PNFor PILOTE** est présent sur le bureau. Il exécute
+`scripts\windows\launch.ps1`, démarre PostgreSQL si nécessaire, lance l'application et ouvre
+le navigateur. Si l'application est déjà active, il ouvre simplement la page.
 
 ### Compte initial
 
@@ -133,7 +139,7 @@ npm run build
 |---|---|---|
 | Phase 1 | Audit et conception | Terminée |
 | Phase 2 | Socle technique, auth, rôles, dashboard, administration | **Terminée** |
-| Phase 3 | Agents, parc, tickets, interventions, contrats, budget, calendrier | À démarrer |
+| Phase 3 | Référentiels, agents, parc, imports CSV, nommage des équipements | **En cours — première tranche livrée** |
 | Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | Planifiée |
 | Phase 5 | Intégration SylvIA (Ollama / Open WebUI) | Planifiée |
 | Phase 6 | Automatisations, notifications, exports, sauvegardes, industrialisation | Planifiée |

@@ -6,6 +6,7 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_si_pnfor.db"
 os.environ["SECRET_KEY"] = "test-secret-key-with-more-than-thirty-two-characters"
 os.environ["SECURE_COOKIES"] = "false"
 os.environ["LOG_LEVEL"] = "WARNING"
+os.environ["UPLOAD_DIR"] = "./test_uploads"
 
 import app.models  # noqa: F401
 import pytest
@@ -34,6 +35,11 @@ def database():
     engine.dispose()
     if TEST_DB.exists():
         TEST_DB.unlink(missing_ok=True)
+    uploads = Path("test_uploads")
+    if uploads.exists():
+        import shutil
+
+        shutil.rmtree(uploads, ignore_errors=True)
 
 
 @pytest.fixture(scope="session")
