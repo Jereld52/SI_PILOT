@@ -61,4 +61,4 @@ def test_roles_and_permissions(admin_client):
     assert len(roles.json()) == 5
     permissions = client.get("/api/v1/admin/permissions")
     assert permissions.status_code == 200
-    assert len(permissions.json()) == 98
+    assert len(permissions.json()) == 100

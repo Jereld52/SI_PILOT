@@ -364,6 +364,10 @@ export interface MobileLineItem {
   commitment_end_date: string | null;
   billing_date: string | null;
   portability_date: string | null;
+  rio: string | null;
+  qr_code: string | null;
+  eid: string | null;
+  csim_number: string | null;
   list_name: string | null;
   plan_name: string | null;
   terminal_communicating: string | null;
@@ -382,6 +386,14 @@ export interface MobileLineItem {
   offer_type: string | null;
   company_id: string | null;
   notes: string | null;
+  has_secrets: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface MobileSecrets {
+  pin_1: string | null;
+  pin_2: string | null;
+  puk_1: string | null;
+  puk_2: string | null;
 }

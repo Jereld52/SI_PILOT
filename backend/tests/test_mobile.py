@@ -114,8 +114,68 @@ def test_mobile_xlsx_import(admin_client, csrf_headers):
     assert found.json()["total"] == 1
     payload = found.json()["items"][0]
     assert payload["plan_name"] == "Forfait import"
+    assert payload["has_secrets"] is True
     assert "pin" not in payload
     assert "puk" not in payload
+
+    secrets = client.get(f"/api/v1/mobile-lines/{payload['id']}/secrets")
+    assert secrets.status_code == 200
+    assert secrets.json()["pin_1"] == "1234"
+    assert secrets.json()["puk_1"] == "99999999"
+    assert secrets.headers.get("cache-control") == "no-store"
+
+    audit = client.get("/api/v1/audit-logs", params={"action": "mobile_line_secrets_viewed"})
+    assert audit.status_code == 200
+    assert audit.json()["total"] >= 1
+
+    updated = client.put(
+        f"/api/v1/mobile-lines/{payload['id']}/secrets",
+        headers=csrf_headers(csrf),
+        json={"pin_1": "5678", "pin_2": "8765", "puk_1": "11112222", "puk_2": "33334444"},
+    )
+    assert updated.status_code == 200, updated.text
+    secrets_after = client.get(f"/api/v1/mobile-lines/{payload['id']}/secrets")
+    assert secrets_after.json()["pin_1"] == "5678"
+    assert secrets_after.json()["puk_2"] == "33334444"
+
+
+def test_technician_cannot_read_mobile_secrets(admin_client, csrf_headers):
+    client, csrf = admin_client
+    suffix = uuid.uuid4().hex[:6]
+    created = client.post(
+        "/api/v1/mobile-lines",
+        headers=csrf_headers(csrf),
+        json={
+            "line_number": f"07 11 22 33 {suffix[:2]}" if suffix[:2].isdigit() else "07 11 22 33 55",
+            "holder_name": "Secret Test",
+            "pin_1": "1234",
+        },
+    )
+    assert created.status_code == 201, created.text
+    line_id = created.json()["id"]
+
+    email = f"tech.mobile.{suffix}@pnfor.fr"
+    roles = client.get("/api/v1/admin/roles").json()
+    technician_role = next(role for role in roles if role["code"] == "technician")
+    user = client.post(
+        "/api/v1/admin/users",
+        headers=csrf_headers(csrf),
+        json={
+            "email": email,
+            "password": "TechMobile2026!",
+            "first_name": "Tech",
+            "last_name": "Mobile",
+            "role_id": technician_role["id"],
+            "data_scope": "service",
+            "is_active": True,
+        },
+    )
+    assert user.status_code == 201
+    login = client.post("/api/v1/auth/login", json={"email": email, "password": "TechMobile2026!"})
+    assert login.status_code == 200
+    assert client.get("/api/v1/mobile-lines").status_code == 200
+    denied = client.get(f"/api/v1/mobile-lines/{line_id}/secrets")
+    assert denied.status_code == 403
 
 
 def test_wapt_csv_import(admin_client, csrf_headers):

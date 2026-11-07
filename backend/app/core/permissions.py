@@ -53,6 +53,8 @@ PERMISSION_DEFINITIONS: tuple[PermissionDefinition, ...] = (
     _p("mobile_lines.read", "mobile_lines", "read", "Consulter les lignes mobiles"),
     _p("mobile_lines.create", "mobile_lines", "create", "Créer une ligne mobile"),
     _p("mobile_lines.update", "mobile_lines", "update", "Modifier une ligne mobile"),
+    _p("mobile_lines.secrets.read", "mobile_lines", "secrets.read", "Afficher les PIN/PUK des lignes mobiles"),
+    _p("mobile_lines.secrets.manage", "mobile_lines", "secrets.manage", "Modifier les PIN/PUK des lignes mobiles"),
     # Infrastructure
     _p("infrastructure.read", "infrastructure", "read", "Consulter l'infrastructure"),
     _p("infrastructure.create", "infrastructure", "create", "Créer un équipement d'infrastructure"),

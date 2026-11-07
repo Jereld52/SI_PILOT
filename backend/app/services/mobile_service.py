@@ -4,10 +4,16 @@ import re
 from decimal import Decimal
 from uuid import UUID
 
+from app.core.crypto import decrypt_secret, encrypt_secret
 from app.core.errors import ConflictError, NotFoundError
 from app.models.auth import User
 from app.models.mobile import MobileLine
-from app.schemas.mobile import MobileLineCreate, MobileLineUpdate
+from app.schemas.mobile import (
+    MobileLineCreate,
+    MobileLineUpdate,
+    MobileSecretsRead,
+    MobileSecretsUpdate,
+)
 from app.services.audit_service import write_audit
 from fastapi import Request
 from sqlalchemy import or_, select
@@ -75,17 +81,34 @@ def create_mobile_line(
     request: Request | None = None,
     commit: bool = True,
     source: str = "api",
+    secrets_encrypted: dict[str, str | None] | None = None,
 ) -> MobileLine:
     line_number = normalize_phone(payload.line_number)
     if not line_number:
         raise ConflictError("Numéro de ligne invalide.")
     if db.scalar(select(MobileLine).where(MobileLine.line_number == line_number)):
         raise ConflictError("Cette ligne mobile existe déjà.")
-    data = payload.model_dump(exclude={"line_number", "out_of_bundle"})
+    data = payload.model_dump(
+        exclude={"line_number", "out_of_bundle", "pin_1", "pin_2", "puk_1", "puk_2"}
+    )
+    if secrets_encrypted is not None:
+        pin_1 = secrets_encrypted.get("pin_1")
+        pin_2 = secrets_encrypted.get("pin_2")
+        puk_1 = secrets_encrypted.get("puk_1")
+        puk_2 = secrets_encrypted.get("puk_2")
+    else:
+        pin_1 = encrypt_secret(payload.pin_1)
+        pin_2 = encrypt_secret(payload.pin_2)
+        puk_1 = encrypt_secret(payload.puk_1)
+        puk_2 = encrypt_secret(payload.puk_2)
     line = MobileLine(
         **data,
         line_number=line_number,
         out_of_bundle=_decimal(payload.out_of_bundle),
+        pin_1_encrypted=pin_1,
+        pin_2_encrypted=pin_2,
+        puk_1_encrypted=puk_1,
+        puk_2_encrypted=puk_2,
     )
     db.add(line)
     db.flush()
@@ -149,6 +172,56 @@ def update_mobile_line(
             "plan_name": line.plan_name,
             "terminal_communicating": line.terminal_communicating,
         },
+        request=request,
+    )
+    db.commit()
+    db.refresh(line)
+    return line
+
+
+def get_mobile_secrets(
+    db: Session, line: MobileLine, *, actor: User, request: Request | None = None
+) -> MobileSecretsRead:
+    result = MobileSecretsRead(
+        pin_1=decrypt_secret(line.pin_1_encrypted),
+        pin_2=decrypt_secret(line.pin_2_encrypted),
+        puk_1=decrypt_secret(line.puk_1_encrypted),
+        puk_2=decrypt_secret(line.puk_2_encrypted),
+    )
+    write_audit(
+        db,
+        module="mobile_lines",
+        action="mobile_line_secrets_viewed",
+        actor=actor,
+        entity_type="mobile_line",
+        entity_id=str(line.id),
+        entity_label=line.line_number,
+        request=request,
+    )
+    db.commit()
+    return result
+
+
+def update_mobile_secrets(
+    db: Session,
+    line: MobileLine,
+    payload: MobileSecretsUpdate,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> MobileLine:
+    line.pin_1_encrypted = encrypt_secret(payload.pin_1)
+    line.pin_2_encrypted = encrypt_secret(payload.pin_2)
+    line.puk_1_encrypted = encrypt_secret(payload.puk_1)
+    line.puk_2_encrypted = encrypt_secret(payload.puk_2)
+    write_audit(
+        db,
+        module="mobile_lines",
+        action="mobile_line_secrets_updated",
+        actor=actor,
+        entity_type="mobile_line",
+        entity_id=str(line.id),
+        entity_label=line.line_number,
         request=request,
     )
     db.commit()

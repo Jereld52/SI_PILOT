@@ -4,6 +4,7 @@ from pathlib import Path
 os.environ["APP_ENV"] = "test"
 os.environ["DATABASE_URL"] = "sqlite:///./test_si_pnfor.db"
 os.environ["SECRET_KEY"] = "test-secret-key-with-more-than-thirty-two-characters"
+os.environ["FIELD_ENCRYPTION_KEY"] = "WTpsMaeXXGDfAxCvpgN1gNeMFZa9pzvtq6GRyOzWlNs="
 os.environ["SECURE_COOKIES"] = "false"
 os.environ["LOG_LEVEL"] = "WARNING"
 os.environ["UPLOAD_DIR"] = "./test_uploads"

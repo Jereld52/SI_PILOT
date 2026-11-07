@@ -87,8 +87,10 @@ $envFile = Join-Path $Backend ".env"
 if (-not (Test-Path $envFile)) {
     Write-Host "Génération de backend\.env ..."
     $secret = & python -c "import secrets; print(secrets.token_urlsafe(64))"
+    $fernetKey = & python -c "import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())"
     $content = Get-Content (Join-Path $Backend ".env.example") -Raw
     $content = $content -replace "(?m)^SECRET_KEY=.*$", "SECRET_KEY=$secret"
+    $content = $content -replace "(?m)^FIELD_ENCRYPTION_KEY=.*$", "FIELD_ENCRYPTION_KEY=$fernetKey"
     $content = $content -replace "(?m)^DATABASE_URL=.*$", "DATABASE_URL=postgresql+psycopg://pnfor:$pgPassword@127.0.0.1:5433/si_pnfor"
     [System.IO.File]::WriteAllText($envFile, $content, [System.Text.UTF8Encoding]::new($false))
 }

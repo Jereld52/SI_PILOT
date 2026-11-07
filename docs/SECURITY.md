@@ -12,6 +12,10 @@
 ## 2. Authentification
 
 - Mots de passe hachés avec **Argon2id** (mémoire 64 Mo, 3 passes, parallélisme 4).
+- Secrets de lignes mobiles (PIN/PUK) chiffrés avec **Fernet** et une clé dédiée
+  `FIELD_ENCRYPTION_KEY`. La clé est hors base, à sauvegarder séparément ; sans elle, les
+  secrets ne sont plus déchiffrables. Chaque consultation est auditée et la réponse est
+  `no-store`.
 - Longueur minimale 12 caractères, majuscule, minuscule, chiffre.
 - Verrouillage temporaire après 5 échecs (15 minutes) et limitation de débit.
 - Sessions **opaques** stockées hachées en base, cookie `HttpOnly`, `Secure` en production,
@@ -24,7 +28,7 @@
 
 ## 3. Autorisation
 
-- RBAC : 5 rôles, 98 permissions `module.action`.
+- RBAC : 5 rôles, 100 permissions `module.action`.
 - Portées de données : `all`, `service`, `own`.
 - Surcharges utilisateur `allow`/`deny` auditée.
 - Vérification côté serveur dans la dépendance FastAPI **et** dans le service métier.

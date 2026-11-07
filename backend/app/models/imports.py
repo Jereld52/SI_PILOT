@@ -37,5 +37,6 @@ class ImportRow(Base, UUIDMixin):
     normalized_json: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="valid", nullable=False, index=True)
     errors_json: Mapped[str | None] = mapped_column(Text)
+    secrets_encrypted_json: Mapped[str | None] = mapped_column(Text)
     matched_entity_id: Mapped[UUID | None] = mapped_column()
     action: Mapped[str | None] = mapped_column(String(20))

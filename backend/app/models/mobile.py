@@ -32,6 +32,14 @@ class MobileLine(Base, UUIDMixin, TimestampMixin):
     commitment_end_date: Mapped[date | None] = mapped_column(Date, index=True)
     billing_date: Mapped[date | None] = mapped_column(Date)
     portability_date: Mapped[date | None] = mapped_column(Date)
+    rio: Mapped[str | None] = mapped_column(String(80))
+    qr_code: Mapped[str | None] = mapped_column(Text)
+    eid: Mapped[str | None] = mapped_column(String(80))
+    csim_number: Mapped[str | None] = mapped_column(String(80))
+    pin_1_encrypted: Mapped[str | None] = mapped_column(Text)
+    pin_2_encrypted: Mapped[str | None] = mapped_column(Text)
+    puk_1_encrypted: Mapped[str | None] = mapped_column(Text)
+    puk_2_encrypted: Mapped[str | None] = mapped_column(Text)
     list_name: Mapped[str | None] = mapped_column(String(120))
     plan_name: Mapped[str | None] = mapped_column(String(180), index=True)
     terminal_communicating: Mapped[str | None] = mapped_column(String(180))
@@ -50,3 +58,12 @@ class MobileLine(Base, UUIDMixin, TimestampMixin):
     offer_type: Mapped[str | None] = mapped_column(String(30))
     company_id: Mapped[str | None] = mapped_column(String(60))
     notes: Mapped[str | None] = mapped_column(Text)
+
+    @property
+    def has_secrets(self) -> bool:
+        return bool(
+            self.pin_1_encrypted
+            or self.pin_2_encrypted
+            or self.puk_1_encrypted
+            or self.puk_2_encrypted
+        )

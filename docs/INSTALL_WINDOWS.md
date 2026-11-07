@@ -32,11 +32,14 @@ Le script :
    `.runtime\pg_password.txt` ;
 4. démarre PostgreSQL sur `127.0.0.1:5433` ;
 5. crée la base `si_pnfor` ;
-6. génère `backend\.env` avec un `SECRET_KEY` aléatoire ;
+6. génère `backend\.env` avec un `SECRET_KEY` aléatoire et une clé
+   `FIELD_ENCRYPTION_KEY` pour le chiffrement des PIN/PUK ;
 7. crée le venv, installe les dépendances, applique Alembic et charge les référentiels ;
 8. installe les dépendances frontend et compile `frontend\dist`.
 
 Il ne crée pas de compte administrateur : utilisez la commande affichée à la fin.
+La clé `FIELD_ENCRYPTION_KEY` doit être sauvegardée séparément et conservée : sans elle, les
+codes PIN/PUK des lignes mobiles ne peuvent plus être déchiffrés.
 
 ## 3. Démarrage
 

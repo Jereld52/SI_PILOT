@@ -119,6 +119,7 @@ class Asset(Base, UUIDMixin, TimestampMixin):
         ForeignKey("locations.id", ondelete="SET NULL"), index=True
     )
     comments: Mapped[str | None] = mapped_column(Text)
+    external_data_json: Mapped[str | None] = mapped_column(Text)
     qr_token: Mapped[str] = mapped_column(
         String(64),
         unique=True,

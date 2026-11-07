@@ -16,7 +16,8 @@
 1. Base PostgreSQL `si_pnfor` : `pg_dump -Fc`.
 2. Fichiers utilisateurs : `backend/data/uploads` (pièces jointes, documents).
 3. Configuration : `backend/.env`, `infra/.env` (à stocker dans un coffre de secrets, pas dans
-   la sauvegarde standard).
+   la sauvegarde standard). **La clé `FIELD_ENCRYPTION_KEY` doit être sauvegardée séparément** :
+   sans elle, les PIN/PUK des lignes mobiles sont irrécupérables.
 4. Journal d'audit : inclus dans la base ; export séparé recommandé.
 
 ## 3. Sauvegarde Windows

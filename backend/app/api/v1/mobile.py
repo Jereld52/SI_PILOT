@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,13 @@ from app.db.session import get_db
 from app.models.auth import User
 from app.models.mobile import MobileLine
 from app.schemas.common import Page
-from app.schemas.mobile import MobileLineCreate, MobileLineRead, MobileLineUpdate
+from app.schemas.mobile import (
+    MobileLineCreate,
+    MobileLineRead,
+    MobileLineUpdate,
+    MobileSecretsRead,
+    MobileSecretsUpdate,
+)
 from app.services import mobile_service
 
 router = APIRouter(prefix="/mobile-lines", tags=["Téléphonie mobile"])
@@ -75,3 +81,28 @@ def update_mobile_line(
 ):
     line = mobile_service.get_mobile_line(db, line_id)
     return mobile_service.update_mobile_line(db, line, payload, actor=actor, request=request)
+
+
+@router.get("/{line_id}/secrets", response_model=MobileSecretsRead)
+def get_mobile_secrets(
+    line_id: UUID,
+    request: Request,
+    response: Response,
+    actor: User = Depends(require_permission("mobile_lines.secrets.read")),
+    db: Session = Depends(get_db),
+):
+    line = mobile_service.get_mobile_line(db, line_id)
+    response.headers["Cache-Control"] = "no-store"
+    return mobile_service.get_mobile_secrets(db, line, actor=actor, request=request)
+
+
+@router.put("/{line_id}/secrets", response_model=MobileLineRead)
+def update_mobile_secrets(
+    line_id: UUID,
+    payload: MobileSecretsUpdate,
+    request: Request,
+    actor: User = Depends(require_permission("mobile_lines.secrets.manage")),
+    db: Session = Depends(get_db),
+):
+    line = mobile_service.get_mobile_line(db, line_id)
+    return mobile_service.update_mobile_secrets(db, line, payload, actor=actor, request=request)

@@ -23,6 +23,10 @@ class MobileLineCreate(BaseModel):
     commitment_end_date: date | None = None
     billing_date: date | None = None
     portability_date: date | None = None
+    rio: str | None = Field(default=None, max_length=80)
+    qr_code: str | None = None
+    eid: str | None = Field(default=None, max_length=80)
+    csim_number: str | None = Field(default=None, max_length=80)
     list_name: str | None = Field(default=None, max_length=120)
     plan_name: str | None = Field(default=None, max_length=180)
     terminal_communicating: str | None = Field(default=None, max_length=180)
@@ -41,6 +45,10 @@ class MobileLineCreate(BaseModel):
     offer_type: str | None = Field(default=None, max_length=30)
     company_id: str | None = Field(default=None, max_length=60)
     notes: str | None = None
+    pin_1: str | None = Field(default=None, max_length=20)
+    pin_2: str | None = Field(default=None, max_length=20)
+    puk_1: str | None = Field(default=None, max_length=30)
+    puk_2: str | None = Field(default=None, max_length=30)
 
 
 class MobileLineUpdate(BaseModel):
@@ -59,6 +67,10 @@ class MobileLineUpdate(BaseModel):
     commitment_end_date: date | None = None
     billing_date: date | None = None
     portability_date: date | None = None
+    rio: str | None = Field(default=None, max_length=80)
+    qr_code: str | None = None
+    eid: str | None = Field(default=None, max_length=80)
+    csim_number: str | None = Field(default=None, max_length=80)
     list_name: str | None = Field(default=None, max_length=120)
     plan_name: str | None = Field(default=None, max_length=180)
     terminal_communicating: str | None = Field(default=None, max_length=180)
@@ -97,6 +109,10 @@ class MobileLineRead(ORMModel):
     commitment_end_date: date | None = None
     billing_date: date | None = None
     portability_date: date | None = None
+    rio: str | None = None
+    qr_code: str | None = None
+    eid: str | None = None
+    csim_number: str | None = None
     list_name: str | None = None
     plan_name: str | None = None
     terminal_communicating: str | None = None
@@ -115,5 +131,20 @@ class MobileLineRead(ORMModel):
     offer_type: str | None = None
     company_id: str | None = None
     notes: str | None = None
+    has_secrets: bool = False
     created_at: datetime
     updated_at: datetime
+
+
+class MobileSecretsRead(BaseModel):
+    pin_1: str | None = None
+    pin_2: str | None = None
+    puk_1: str | None = None
+    puk_2: str | None = None
+
+
+class MobileSecretsUpdate(BaseModel):
+    pin_1: str | None = Field(default=None, max_length=20)
+    pin_2: str | None = Field(default=None, max_length=20)
+    puk_1: str | None = Field(default=None, max_length=30)
+    puk_2: str | None = Field(default=None, max_length=30)

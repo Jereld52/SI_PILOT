@@ -29,14 +29,15 @@
 ### Parc informatique
 
 `asset_categories` (dont `tag_prefix`, `tag_template`, `tag_sequence_mode`), `suppliers`,
-`supplier_contacts`, `assets` (dont `external_id` pour les imports WAPT), `asset_assignments`,
+`supplier_contacts`, `assets` (dont `external_id` et `external_data_json` pour les imports WAPT), `asset_assignments`,
 `stock_movements`, `licenses`, `renewal_plans`.
 
 ### Téléphonie mobile
 
 `mobile_lines` : ligne, titulaire, fonction, statut, forfait, terminal, IMEI, dates,
-engagements, contrat, CF, format SIM et identifiants métier. Les PIN, PUK, EID, CSIM et QR
-de carte SIM ne sont pas stockés.
+engagements, contrat, CF, format SIM, RIO, EID, CSIM, QR et identifiants métier. Les PIN/PUK
+sont stockés **chiffrés** (`pin_*_encrypted`, `puk_*_encrypted`) et ne sont jamais exposés
+dans les réponses standard.
 
 ### Demandes et interventions
 

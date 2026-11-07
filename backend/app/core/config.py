@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
 
     secret_key: str = Field(min_length=32)
+    field_encryption_key: str = ""
     database_url: str = "sqlite:///./si_pnfor.db"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

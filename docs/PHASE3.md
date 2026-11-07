@@ -59,8 +59,14 @@ Exemples par défaut :
 - Fiche détaillée : contrat, CF, dates, IMEI, format SIM, hors-forfait, ligne principale.
 - Filtres statut, forfait, ligne principale/secondaire, recherche.
 - Import XLSX/CSV.
-- **Ne sont jamais stockés** : PIN 1/2, PUK 1/2, EID, N° CSIM, QR de carte SIM.
-- Le fichier source reste dans `modeles/`, l'application ne conserve que les données utiles.
+- Tous les éléments du fichier sont repris : RIO, EID, N° CSIM, QR de carte SIM et codes
+  PIN/PUK.
+- Les **PIN et PUK sont chiffrés au repos** avec Fernet (`FIELD_ENCRYPTION_KEY`) et ne figurent
+  jamais dans les réponses standard ni dans les journaux.
+- Consultation et modification des codes via des endpoints dédiés, permissions
+  `mobile_lines.secrets.read` / `mobile_lines.secrets.manage`, réponses `Cache-Control: no-store`
+  et audit de chaque accès.
+- Le fichier XLSX source n'est pas conservé dans les uploads de l'application après import.
 
 ### Import WAPT des postes
 
@@ -71,8 +77,9 @@ Le fichier `modeles/PC-PNfor.csv` (export WAPT) est reconnu automatiquement :
 - nom court de la machine, hostname FQDN, marque, modèle, série, MAC, IP ;
 - statut WAPT `OK` → en service, `ERROR` → en panne ;
 - UUID WAPT conservé comme identifiant externe pour éviter les doublons ;
-- prévisualisation testée sur le fichier réel : **69 lignes valides, 0 erreur, 0 doublon**.
-- L'import n'a pas été appliqué automatiquement : l'utilisateur garde la validation finale.
+- donnée source WAPT complète conservée dans `assets.external_data_json` ;
+- **import appliqué : 69 postes créés**, 0 erreur, 0 doublon ;
+- répartition obtenue : 2 PC fixes, 67 portables ; 58 en service, 10 en stock, 1 en panne.
 
 ### Imports CSV
 
@@ -118,23 +125,24 @@ date_achat;date_mise_en_service;fin_garantie;prix;agent_email;service_code;site_
 - `GET/POST/PATCH/DELETE /assets`, `GET /assets/next-tag`, `GET /assets/{id}/history`
 - `POST /assets/{id}/assign`, `/return`, `/status`
 - `GET /mobile-lines`, `GET /mobile-lines/meta`, `GET/PATCH /mobile-lines/{id}`
+- `GET/PUT /mobile-lines/{id}/secrets` (PIN/PUK chiffrés, accès audité)
 - `GET /imports/templates/{entity_type}`, `POST /imports/preview`,
   `POST /imports/{job_id}/apply`, `GET /imports`
 
 ## Vérifications
 
 ```text
-pytest -q       28 passed
+pytest -q       29 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 76 source files
+mypy app        Success: no issues found in 77 source files
 npm run build   TypeScript + Vite OK
 ```
 
 Tests fonctionnels manuels : création service/site, modification du modèle PC,
 création agent, création équipement avec numéro généré, historique d'affectation,
 import agent, import équipement, détection de doublon, écrans Agents/Parc/Référentiels,
-prévisualisation WAPT sur `PC-PNfor.csv`, import XLSX des 82 lignes mobiles,
-écran Téléphonie mobile.
+import WAPT des 69 postes, import XLSX des 82 lignes mobiles, révélation chiffrée
+des PIN/PUK, écran Téléphonie mobile.
 
 ## Limites de cette tranche
 

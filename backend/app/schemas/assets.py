@@ -38,6 +38,7 @@ class AssetCreate(BaseModel):
     service_id: UUID | None = None
     location_id: UUID | None = None
     comments: str | None = None
+    external_data_json: str | None = None
     is_critical: bool = False
 
 

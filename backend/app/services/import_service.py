@@ -13,6 +13,7 @@ from pathlib import Path
 from uuid import UUID
 
 from app.core.config import settings
+from app.core.crypto import encrypt_secret
 from app.core.errors import ConflictError, NotFoundError, ValidationAppError
 from app.db.base import utcnow
 from app.models.assets import Asset, AssetCategory
@@ -330,6 +331,15 @@ def _parse_decimal(value: str | None, field: str, errors: list[str]) -> Decimal 
         return None
 
 
+def _raw_row(row: dict[str, str], entity_type: str) -> dict[str, str]:
+    excluded = {"pin_1", "pin_2", "puk_1", "puk_2"} if entity_type == "mobile_lines" else set()
+    return {
+        key: value
+        for key, value in row.items()
+        if not key.startswith("__") and key not in excluded
+    }
+
+
 def _is_example(row: dict[str, str]) -> bool:
     name = row.get("nom", "").strip().upper()
     email = row.get("email_pro", "").strip().lower()
@@ -423,6 +433,14 @@ def _normalize_mobile_line(
         "commitment_end_date": commitment.isoformat() if commitment else None,
         "billing_date": billing.isoformat() if billing else None,
         "portability_date": portability.isoformat() if portability else None,
+        "rio": _clean_wapt(_pick(row, "rio")),
+        "qr_code": _clean_wapt(_pick(row, "qr_code")),
+        "eid": _clean_wapt(_pick(row, "eid")),
+        "csim_number": _clean_wapt(_pick(row, "n_de_csim", "csim_number")),
+        "pin_1": _clean_wapt(_pick(row, "pin_1")),
+        "pin_2": _clean_wapt(_pick(row, "pin_2")),
+        "puk_1": _clean_wapt(_pick(row, "puk_1")),
+        "puk_2": _clean_wapt(_pick(row, "puk_2")),
         "list_name": _clean_wapt(_pick(row, "liste")),
         "plan_name": _clean_wapt(_pick(row, "forfait")),
         "terminal_communicating": _clean_wapt(_pick(row, "terminal_communiquant")),
@@ -748,6 +766,9 @@ def _normalize_wapt_asset(
         "status": status,
         "condition": "good",
         "comments": " · ".join(comments_parts)[:2000],
+        "external_data_json": json.dumps(
+            _raw_row(row, "assets"), ensure_ascii=False, default=str
+        ),
         "is_critical": False,
         "_label": f"{name} ({hostname or serial or 'WAPT'})",
     }
@@ -801,11 +822,12 @@ def preview_import(
     )
     db.add(job)
     db.flush()
-    import_dir = Path(settings.upload_dir) / "imports"
-    import_dir.mkdir(parents=True, exist_ok=True)
-    storage_key = f"imports/{job.id}.csv"
-    (Path(settings.upload_dir) / storage_key).write_bytes(content)
-    job.storage_key = storage_key
+    if entity_type != "mobile_lines":
+        import_dir = Path(settings.upload_dir) / "imports"
+        import_dir.mkdir(parents=True, exist_ok=True)
+        storage_key = f"imports/{job.id}.csv"
+        (Path(settings.upload_dir) / storage_key).write_bytes(content)
+        job.storage_key = storage_key
 
     previews: list[ImportRowPreview] = []
     counts = {"valid": 0, "error": 0, "duplicate": 0, "skipped": 0}
@@ -833,10 +855,7 @@ def preview_import(
                 ImportRow(
                     job_id=job.id,
                     row_number=line_number,
-                    raw_json=json.dumps(
-                        {key: value for key, value in row.items() if not key.startswith("__")},
-                        ensure_ascii=False,
-                    ),
+                    raw_json=json.dumps(_raw_row(row, entity_type), ensure_ascii=False),
                     normalized_json=json.dumps(normalized, ensure_ascii=False),
                     status=status,
                     errors_json="[]",
@@ -852,6 +871,21 @@ def preview_import(
                 normalized, errors, duplicates = _normalize_wapt_asset(row, maps, seen)
             else:
                 normalized, errors, duplicates = _normalize_asset(row, maps, seen)
+
+        secrets_encrypted_json = None
+        if entity_type == "mobile_lines":
+            secrets = {
+                key: normalized.pop(key, None)
+                for key in ("pin_1", "pin_2", "puk_1", "puk_2")
+            }
+            try:
+                encrypted = {
+                    key: encrypt_secret(value) for key, value in secrets.items() if value
+                }
+                if encrypted:
+                    secrets_encrypted_json = json.dumps(encrypted, ensure_ascii=False)
+            except ValidationAppError as exc:
+                errors.append(str(exc))
 
         if errors:
             status = "error"
@@ -876,13 +910,11 @@ def preview_import(
             ImportRow(
                 job_id=job.id,
                 row_number=line_number,
-                raw_json=json.dumps(
-                    {key: value for key, value in row.items() if not key.startswith("__")},
-                    ensure_ascii=False,
-                ),
+                raw_json=json.dumps(_raw_row(row, entity_type), ensure_ascii=False),
                 normalized_json=json.dumps(normalized, ensure_ascii=False, default=str),
                 status=status,
                 errors_json=json.dumps(all_errors, ensure_ascii=False),
+                secrets_encrypted_json=secrets_encrypted_json,
             )
         )
 
@@ -979,6 +1011,7 @@ def apply_import(
                     )
                     created_id = asset.id
                 elif job.entity_type == "mobile_lines":
+                    secrets = json.loads(row.secrets_encrypted_json or "{}")
                     mobile = mobile_service.create_mobile_line(
                         db,
                         MobileLineCreate.model_validate(data),
@@ -986,6 +1019,7 @@ def apply_import(
                         request=request,
                         source="import",
                         commit=False,
+                        secrets_encrypted=secrets,
                     )
                     created_id = mobile.id
                 else:

@@ -18,16 +18,17 @@ le RGPD, la documentation et les échéances.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
-- Rôles et permissions : 5 rôles, 98 permissions, portées de données, surcharges utilisateur.
+- Rôles et permissions : 5 rôles, 100 permissions, portées de données, surcharges utilisateur.
 - Journal d'audit append-only avec chaînage de hash.
 - Notifications in-app.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
-- Téléphonie mobile : inventaire des lignes, titulaires, forfaits et terminaux.
+- Téléphonie mobile : inventaire des 82 lignes, titulaires, forfaits et terminaux ; PIN/PUK
+  chiffrés avec accès contrôlé et audité.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 28 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 29 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

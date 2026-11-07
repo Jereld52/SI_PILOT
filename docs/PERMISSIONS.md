@@ -3,7 +3,7 @@
 ## Modèle
 
 - **Rôle** : jeu de permissions par défaut.
-- **Permission** : code `module.action` (98 permissions).
+- **Permission** : code `module.action` (100 permissions).
 - **Portée de données** : `all`, `service`, `own`.
 - **Surcharge utilisateur** : `allow` ou `deny`, auditée.
 
@@ -46,7 +46,8 @@ Légende : G gestion, C création/modification, V lecture, R restreint, P person
 ## Permissions sensibles
 
 `admin.roles.manage`, `admin.settings.manage`, `admin.backup.manage`, `audit.read`,
-`budget.validate`, `security.manage`, `rgpd.manage`, `sylvia.configure`, `imports.apply`.
+`budget.validate`, `security.manage`, `rgpd.manage`, `sylvia.configure`, `imports.apply`,
+`mobile_lines.secrets.read`, `mobile_lines.secrets.manage`.
 
 ## Points de contrôle
 
