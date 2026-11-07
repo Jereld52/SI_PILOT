@@ -407,3 +407,320 @@ export interface MobileSecrets {
   puk_1: string | null;
   puk_2: string | null;
 }
+
+export interface SupplierContactItem {
+  id: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  is_primary: boolean;
+}
+
+export interface SupplierItem {
+  id: string;
+  name: string;
+  type: string | null;
+  siret: string | null;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  website: string | null;
+  notes: string | null;
+  is_active: boolean;
+  contacts: SupplierContactItem[];
+  asset_count: number;
+  license_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LicenseItem {
+  id: string;
+  name: string;
+  vendor: string | null;
+  license_type: string | null;
+  seats: number | null;
+  seats_used: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  contract_id: string | null;
+  annual_cost: number | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockMovementItem {
+  id: string;
+  asset_id: string | null;
+  asset: { id: string; asset_tag: string; name: string } | null;
+  category_id: string | null;
+  category: AssetCategoryItem | null;
+  direction: string;
+  quantity: number;
+  reason: string | null;
+  reference: string | null;
+  moved_at: string;
+  created_by_id: string | null;
+  created_by_label: string | null;
+}
+
+export interface StockSummaryItem {
+  category_id: string;
+  category_name: string;
+  in_stock: number;
+  in_service: number;
+  maintenance: number;
+  broken: number;
+  total: number;
+}
+
+export interface TicketCategoryItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  sla_hours: number | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface TicketStatusItem {
+  id: string;
+  code: string;
+  name: string;
+  is_closed: boolean;
+  color: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface TicketPriorityItem {
+  id: string;
+  code: string;
+  name: string;
+  level: number;
+  color: string | null;
+  response_hours: number | null;
+  resolution_hours: number | null;
+  is_active: boolean;
+}
+
+export interface TicketUserRef {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface TicketItem {
+  id: string;
+  reference: string;
+  subject: string;
+  description: string | null;
+  requester_agent_id: string | null;
+  requester_agent: AgentRef | null;
+  service_id: string | null;
+  service: ServiceItem | null;
+  category_id: string;
+  category: TicketCategoryItem;
+  priority_id: string;
+  priority: TicketPriorityItem;
+  status_id: string;
+  status: TicketStatusItem;
+  assignee_user_id: string | null;
+  assignee: TicketUserRef | null;
+  source: string;
+  opened_at: string;
+  first_response_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+  due_at: string | null;
+  resolution: string | null;
+  time_spent_minutes: number;
+  satisfaction_score: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TicketCommentItem {
+  id: string;
+  body: string;
+  is_internal: boolean;
+  author: TicketUserRef | null;
+  created_at: string;
+  edited_at: string | null;
+}
+
+export interface TicketHistoryItem {
+  id: string;
+  occurred_at: string;
+  actor_user_id: string | null;
+  field: string;
+  old_value: string | null;
+  new_value: string | null;
+  note: string | null;
+}
+
+export interface TicketTimeEntryItem {
+  id: string;
+  user_id: string | null;
+  minutes: number;
+  performed_on: string;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface TicketDetailItem extends TicketItem {
+  assets: { id: string; asset_tag: string; name: string }[];
+  comments: TicketCommentItem[];
+  history: TicketHistoryItem[];
+  time_entries: TicketTimeEntryItem[];
+}
+
+export interface TicketMeta {
+  categories: TicketCategoryItem[];
+  statuses: TicketStatusItem[];
+  priorities: TicketPriorityItem[];
+  status_counts: { code: string; name: string; count: number }[];
+  open_count: number;
+  unassigned_count: number;
+}
+
+export interface InterventionItem {
+  id: string;
+  reference: string;
+  title: string;
+  description: string | null;
+  ticket_id: string | null;
+  ticket_reference: string | null;
+  asset_id: string | null;
+  asset_label: string | null;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  type: string;
+  scheduled_at: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  technician_user_id: string | null;
+  technician: TicketUserRef | null;
+  status: string;
+  report: string | null;
+  duration_minutes: number | null;
+  cost: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RgpdDeadline {
+  id: string;
+  kind: string;
+  label: string;
+  due_date: string | null;
+  status: string;
+  link: string;
+}
+
+export interface RgpdOverview {
+  processing_total: number;
+  processing_active: number;
+  collections_total: number;
+  open_requests: number;
+  open_rights: number;
+  open_breaches: number;
+  reviews_due: number;
+  deadlines: RgpdDeadline[];
+}
+
+export interface ProcessingActivityItem {
+  id: string;
+  reference: string;
+  name: string;
+  purpose: string | null;
+  legal_basis: string | null;
+  data_categories: string | null;
+  data_subjects: string | null;
+  recipients: string | null;
+  retention_period: string | null;
+  security_measures: string | null;
+  suppliers: string | null;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  dpo_notes: string | null;
+  status: string;
+  last_review_at: string | null;
+  next_review_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DataCollectionItem {
+  id: string;
+  name: string;
+  collection_type: string;
+  purpose: string | null;
+  processing_activity_id: string | null;
+  processing_activity: ProcessingActivityItem | null;
+  data_categories: string | null;
+  subjects_count: number | null;
+  collected_at: string | null;
+  retention_end: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DpoRequestItem {
+  id: string;
+  reference: string;
+  subject: string;
+  requester_name: string | null;
+  requester_type: string | null;
+  description: string | null;
+  response: string | null;
+  recommendations: string | null;
+  due_date: string | null;
+  status: string;
+  closed_at: string | null;
+  created_by_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RightsRequestItem {
+  id: string;
+  reference: string;
+  request_type: string;
+  requester_name: string | null;
+  processing_activity_id: string | null;
+  processing_activity: ProcessingActivityItem | null;
+  received_at: string | null;
+  due_date: string | null;
+  status: string;
+  response: string | null;
+  resolution: string | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DataBreachItem {
+  id: string;
+  reference: string;
+  occurred_at: string | null;
+  discovered_at: string | null;
+  description: string | null;
+  severity: string;
+  affected_count: number | null;
+  containment: string | null;
+  cnil_notified_at: string | null;
+  subjects_notified_at: string | null;
+  status: string;
+  lessons_learned: string | null;
+  created_at: string;
+  updated_at: string;
+}

@@ -17,8 +17,11 @@ import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
 import { ReferentialsPage } from "@/features/referentials/ReferentialsPage";
+import { RgpdPage } from "@/features/rgpd/RgpdPage";
+import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
+import { TicketsPage } from "@/features/tickets/TicketsPage";
 
-const implementedModules = new Set(["agents", "parc"]);
+const implementedModules = new Set(["agents", "parc", "demandes", "rgpd"]);
 const pendingModules = modules.filter((module) => !implementedModules.has(module.path));
 
 export function App() {
@@ -104,6 +107,33 @@ export function App() {
             element={
               <RequirePermission permission="mobile_lines.read">
                 <MobileLinesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="demandes"
+            element={
+              <RequirePermission permission="tickets.read">
+                <TicketsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="fournisseurs"
+            element={
+              <RequirePermission permission="suppliers.read">
+                <SuppliersPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="rgpd"
+            element={
+              <RequirePermission permission="rgpd.read">
+                <RgpdPage />
               </RequirePermission>
             }
           />

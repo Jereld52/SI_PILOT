@@ -6,9 +6,11 @@ Application métier autonome pour centraliser le parc informatique, les agents, 
 les interventions, l'infrastructure, la cybersécurité, les contrats, le budget, les projets,
 le RGPD, la documentation et les échéances.
 
-> **État actuel : Phase 2 — socle technique livré et testé.**
-> Les modules métier (parc, tickets, contrats, budget, etc.) sont annoncés dans la navigation
-> avec leur phase de développement. Aucune donnée fictive n'alimente les indicateurs.
+> **État actuel : Phase 3 — parc enrichi, téléphonie, fournisseurs, licences, stock,
+> demandes IT, interventions et RGPD livrés.**
+> Les modules restants (infrastructure, cybersécurité, contrats, budget, projets, documentation,
+> calendrier, SylvIA) sont annoncés dans la navigation avec leur phase de développement.
+> Aucune donnée fictive n'alimente les indicateurs.
 
 ---
 
@@ -18,17 +20,24 @@ le RGPD, la documentation et les échéances.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
-- Rôles et permissions : 5 rôles, 100 permissions, portées de données, surcharges utilisateur.
+- Rôles et permissions : 6 rôles (dont DPO), 107 permissions, portées de données, surcharges utilisateur.
 - Journal d'audit append-only avec chaînage de hash.
 - Notifications in-app.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
+- Parc enrichi par l'export WAPT : système, IP, dernier utilisateur, dernière connexion, groupes
+  et données source complètes ; fiche détaillée et QR code par équipement.
 - Téléphonie mobile : inventaire des 82 lignes, titulaires, forfaits et terminaux ; PIN/PUK
   chiffrés avec accès contrôlé et audité.
+- Fournisseurs, licences, sièges, coûts annuels et mouvements de stock.
+- Demandes IT : références automatiques, priorités, SLA, assignation, commentaires, temps passé,
+  historique et interventions liées.
+- RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
+- Exports XLSX et PDF du parc et des lignes mobiles.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 29 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 34 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)
@@ -151,8 +160,8 @@ npm run build
 |---|---|---|
 | Phase 1 | Audit et conception | Terminée |
 | Phase 2 | Socle technique, auth, rôles, dashboard, administration | **Terminée** |
-| Phase 3 | Référentiels, agents, parc, téléphonie mobile, imports CSV/XLSX, nommage | **En cours — première tranche livrée** |
-| Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | Planifiée |
+| Phase 3 | Référentiels, agents, parc enrichi WAPT, téléphonie, imports, QR codes, exports, fournisseurs, licences, stock, demandes IT, interventions | **Livrée** |
+| Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | **RGPD livré** ; reste infrastructure, cybersécurité, projets, documentation |
 | Phase 5 | Intégration SylvIA (Ollama / Open WebUI) | Planifiée |
 | Phase 6 | Automatisations, notifications, exports, sauvegardes, industrialisation | Planifiée |
 

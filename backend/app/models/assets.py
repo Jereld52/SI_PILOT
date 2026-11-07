@@ -21,6 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.auth import User
 from app.models.organization import Agent, Location, Service
 
 
@@ -68,6 +69,10 @@ class Supplier(Base, UUIDMixin, TimestampMixin):
     website: Mapped[str | None] = mapped_column(String(255))
     notes: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    contacts: Mapped[list[SupplierContact]] = relationship(
+        lazy="selectin", cascade="all, delete-orphan"
+    )
 
 
 class SupplierContact(Base, UUIDMixin, TimestampMixin):
@@ -227,6 +232,16 @@ class StockMovement(Base, UUIDMixin):
     reference: Mapped[str | None] = mapped_column(String(120))
     moved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    asset: Mapped[Asset | None] = relationship(lazy="joined")
+    category: Mapped[AssetCategory | None] = relationship(lazy="joined")
+    created_by: Mapped[User | None] = relationship(lazy="joined")
+
+    @property
+    def created_by_label(self) -> str | None:
+        if self.created_by is None:
+            return None
+        return f"{self.created_by.first_name} {self.created_by.last_name}".strip()
 
 
 class License(Base, UUIDMixin, TimestampMixin):

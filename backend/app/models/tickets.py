@@ -17,6 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin, utcnow
+from app.models.assets import Asset, Supplier
 from app.models.auth import User
 from app.models.organization import Agent, Service
 
@@ -197,6 +198,27 @@ class Intervention(Base, UUIDMixin, TimestampMixin):
     duration_minutes: Mapped[int | None] = mapped_column(Integer)
     cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    ticket: Mapped[Ticket | None] = relationship(lazy="joined")
+    asset: Mapped[Asset | None] = relationship(lazy="joined")
+    supplier: Mapped[Supplier | None] = relationship(lazy="joined")
+    technician: Mapped[User | None] = relationship(
+        foreign_keys=[technician_user_id], lazy="joined"
+    )
+
+    @property
+    def ticket_reference(self) -> str | None:
+        return self.ticket.reference if self.ticket else None
+
+    @property
+    def asset_label(self) -> str | None:
+        if self.asset is None:
+            return None
+        return f"{self.asset.name} ({self.asset.asset_tag})"
+
+    @property
+    def supplier_name(self) -> str | None:
+        return self.supplier.name if self.supplier else None
 
     __table_args__ = (
         CheckConstraint(

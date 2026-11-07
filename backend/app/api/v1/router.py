@@ -10,10 +10,16 @@ from app.api.v1 import (
     exports,
     health,
     imports,
+    interventions,
+    licenses,
     mobile,
     notifications,
     referentials,
+    rgpd,
     search,
+    stock,
+    suppliers,
+    tickets,
 )
 
 api_router = APIRouter()
@@ -30,3 +36,9 @@ api_router.include_router(assets.router)
 api_router.include_router(mobile.router)
 api_router.include_router(imports.router)
 api_router.include_router(exports.router)
+api_router.include_router(suppliers.router)
+api_router.include_router(licenses.router)
+api_router.include_router(stock.router)
+api_router.include_router(tickets.router)
+api_router.include_router(interventions.router)
+api_router.include_router(rgpd.router)

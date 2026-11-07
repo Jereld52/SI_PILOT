@@ -2,9 +2,10 @@ from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.auth import User
 
 
 class ProcessingActivity(Base, UUIDMixin, TimestampMixin):
@@ -28,6 +29,8 @@ class ProcessingActivity(Base, UUIDMixin, TimestampMixin):
     last_review_at: Mapped[date | None] = mapped_column(Date)
     next_review_at: Mapped[date | None] = mapped_column(Date, index=True)
 
+    owner: Mapped[User | None] = relationship(lazy="joined")
+
     __table_args__ = (
         CheckConstraint("status IN ('draft','active','archived')", name="processing_status"),
     )
@@ -48,6 +51,8 @@ class DataCollection(Base, UUIDMixin, TimestampMixin):
     retention_end: Mapped[date | None] = mapped_column(Date, index=True)
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
+
+    processing_activity: Mapped[ProcessingActivity | None] = relationship(lazy="joined")
 
     __table_args__ = (
         CheckConstraint(
@@ -95,6 +100,8 @@ class RightsRequest(Base, UUIDMixin, TimestampMixin):
     response: Mapped[str | None] = mapped_column(Text)
     resolution: Mapped[str | None] = mapped_column(Text)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    processing_activity: Mapped[ProcessingActivity | None] = relationship(lazy="joined")
 
     __table_args__ = (
         CheckConstraint(
