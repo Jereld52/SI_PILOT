@@ -18,14 +18,16 @@ le RGPD, la documentation et les échéances.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
-- Rôles et permissions : 5 rôles, 95 permissions, portées de données, surcharges utilisateur.
+- Rôles et permissions : 5 rôles, 98 permissions, portées de données, surcharges utilisateur.
 - Journal d'audit append-only avec chaînage de hash.
 - Notifications in-app.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
+- Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
+- Téléphonie mobile : inventaire des lignes, titulaires, forfaits et terminaux.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 25 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 28 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)
@@ -97,9 +99,10 @@ et compile le frontend. Il ne crée pas de compte administrateur automatiquement
 
 ## 5. Charte graphique
 
-Logo officiel : `assets/logo.png`, servi dans l'application avec une version compacte pour la
-sidebar. Couleurs : bordeaux `#772B2F`, sauge `#cdc97e`, vert forêt `#4a8a33`, jaune `#f6db43`,
-sur un fond sombre crème. Détail : [`docs/BRANDING.md`](docs/BRANDING.md).
+Logos officiels : `assets/logoweb.png` pour l'écran de connexion, `assets/favicon.png` et
+`assets/pnf-logo.jpg` pour l'emblème. Couleurs : bordeaux `#772B2F`, sauge `#cdc97e`, vert
+forêt `#4a8a33`, jaune `#f6db43`, sur un fond sombre crème. Détail :
+[`docs/BRANDING.md`](docs/BRANDING.md).
 
 ## 6. Structure
 
@@ -108,6 +111,8 @@ backend/     API, modèles, services, migrations, tests
 frontend/    application React/TypeScript
 infra/       Dockerfiles, Compose, configuration Nginx
 scripts/     scripts Windows (démarrage, sauvegarde, restauration)
+modeles/     fichiers d'import fournis (PC-PNfor.csv, lignes_mobiles.xlsx), non versionnés
+assets/      logos et icônes officiels
 docs/        architecture, installation, sécurité, exploitation
 .runtime/    PostgreSQL portable, logs, sauvegardes locales (ignoré par Git)
 ```
@@ -145,7 +150,7 @@ npm run build
 |---|---|---|
 | Phase 1 | Audit et conception | Terminée |
 | Phase 2 | Socle technique, auth, rôles, dashboard, administration | **Terminée** |
-| Phase 3 | Référentiels, agents, parc, imports CSV, nommage des équipements | **En cours — première tranche livrée** |
+| Phase 3 | Référentiels, agents, parc, téléphonie mobile, imports CSV/XLSX, nommage | **En cours — première tranche livrée** |
 | Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | Planifiée |
 | Phase 5 | Intégration SylvIA (Ollama / Open WebUI) | Planifiée |
 | Phase 6 | Automatisations, notifications, exports, sauvegardes, industrialisation | Planifiée |

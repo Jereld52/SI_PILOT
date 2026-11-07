@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 export function BrandMark({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-cream/20 bg-brand-cream p-1 shadow-lg shadow-black/20">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-accent/30 bg-primary shadow-lg shadow-black/30">
         <img
-          src="/logo-emblem.png"
+          src="/favicon.png"
           alt="Parc national de forêts"
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover"
         />
       </div>
       {!compact ? (

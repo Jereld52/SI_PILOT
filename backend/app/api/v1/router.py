@@ -9,6 +9,7 @@ from app.api.v1 import (
     dashboard,
     health,
     imports,
+    mobile,
     notifications,
     referentials,
     search,
@@ -25,4 +26,5 @@ api_router.include_router(audit.router)
 api_router.include_router(referentials.router)
 api_router.include_router(agents.router)
 api_router.include_router(assets.router)
+api_router.include_router(mobile.router)
 api_router.include_router(imports.router)

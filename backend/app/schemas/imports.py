@@ -32,6 +32,7 @@ class ImportPreviewResponse(BaseModel):
     rows: list[ImportRowPreview]
     can_apply: bool
     message: str
+    detected_format: str = "standard"
 
 
 class ImportApplyResponse(BaseModel):

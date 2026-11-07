@@ -335,6 +335,7 @@ export interface ImportPreviewResponse {
   rows: ImportRowPreview[];
   can_apply: boolean;
   message: string;
+  detected_format: string;
 }
 
 export interface ImportApplyResponse {
@@ -343,4 +344,44 @@ export interface ImportApplyResponse {
   skipped: number;
   errors: number;
   message: string;
+}
+
+export interface MobileLineItem {
+  id: string;
+  line_number: string;
+  civility: string | null;
+  holder_name: string | null;
+  role_label: string | null;
+  email: string | null;
+  siren: string | null;
+  company_name: string | null;
+  contract_number: string | null;
+  titulaire_number: string | null;
+  cf_number: string | null;
+  cf_name: string | null;
+  status: string;
+  activation_date: string | null;
+  commitment_end_date: string | null;
+  billing_date: string | null;
+  portability_date: string | null;
+  list_name: string | null;
+  plan_name: string | null;
+  terminal_communicating: string | null;
+  terminal_purchased: string | null;
+  imei_communicating: string | null;
+  imei_purchased: string | null;
+  out_of_bundle: number | null;
+  sim_format: string | null;
+  vpn_identifier: string | null;
+  private_number: string | null;
+  terminal_change_date: string | null;
+  plan_change_date: string | null;
+  is_secondary_line: boolean;
+  main_line_number: string | null;
+  master_access_id: string | null;
+  offer_type: string | null;
+  company_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }

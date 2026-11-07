@@ -85,6 +85,7 @@ class Asset(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "assets"
 
     asset_tag: Mapped[str] = mapped_column(String(60), unique=True, index=True, nullable=False)
+    external_id: Mapped[str | None] = mapped_column(String(120), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(180), nullable=False, index=True)
     category_id: Mapped[UUID] = mapped_column(
         ForeignKey("asset_categories.id", ondelete="RESTRICT"), nullable=False, index=True

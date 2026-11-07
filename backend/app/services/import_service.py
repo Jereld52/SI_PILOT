@@ -3,10 +3,11 @@ from __future__ import annotations
 import contextlib
 import csv
 import io
+import ipaddress
 import json
 import re
 import unicodedata
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from uuid import UUID
@@ -17,6 +18,7 @@ from app.db.base import utcnow
 from app.models.assets import Asset, AssetCategory
 from app.models.auth import User
 from app.models.imports import ImportJob, ImportRow
+from app.models.mobile import MobileLine
 from app.models.organization import Agent, Location, Service
 from app.schemas.agents import AgentCreate
 from app.schemas.assets import AssetCreate
@@ -26,9 +28,11 @@ from app.schemas.imports import (
     ImportPreviewResponse,
     ImportRowPreview,
 )
-from app.services import agents_service, assets_service
+from app.schemas.mobile import MobileLineCreate
+from app.services import agents_service, assets_service, mobile_service
 from app.services.audit_service import write_audit
 from fastapi import Request
+from openpyxl import load_workbook
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -108,6 +112,42 @@ ASSET_EXAMPLE = [
     "Ligne d'exemple à supprimer",
 ]
 
+MOBILE_TEMPLATE_HEADERS = [
+    "Référence",
+    "Civilité",
+    "Nom",
+    "Prénom",
+    "E-mail",
+    "SIREN",
+    "Raison Sociale",
+    "N° Contrat",
+    "N° Titulaire",
+    "N° CF",
+    "Nom CF",
+    "Statut Ligne",
+    "Date de mise en service",
+    "Date de fin d'engagement",
+    "Date de facturation",
+    "Date de portage IN",
+    "Liste",
+    "Forfait",
+    "Terminal communiquant",
+    "Terminal acheté",
+    "IMEI communiquant",
+    "IMEI acheté",
+    "Hors-forfait",
+    "Format SIM",
+    "Identifiant VPN",
+    "Numéro privé",
+    "Date de changement du terminal",
+    "Date de modification du forfait",
+    "Ligne secondaire",
+    "N° Ligne Principale",
+    "Master ID Accès",
+    "Type d'offre",
+    "Id société",
+]
+
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 AGENT_STATUS = {
@@ -141,26 +181,72 @@ ASSET_STATUS = {
 }
 
 def template_csv(entity_type: str) -> str:
-    if entity_type == "agents":
-        headers, example = AGENT_HEADERS, AGENT_EXAMPLE
-    elif entity_type == "assets":
-        headers, example = ASSET_HEADERS, ASSET_EXAMPLE
-    else:
-        raise ValidationAppError("Type d'import inconnu.")
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
-    writer.writerow(headers)
-    writer.writerow(example)
+    if entity_type == "agents":
+        writer.writerow(AGENT_HEADERS)
+        writer.writerow(AGENT_EXAMPLE)
+    elif entity_type == "assets":
+        writer.writerow(ASSET_HEADERS)
+        writer.writerow(ASSET_EXAMPLE)
+    elif entity_type == "mobile_lines":
+        writer.writerow(MOBILE_TEMPLATE_HEADERS)
+    else:
+        raise ValidationAppError("Type d'import inconnu.")
     return "\ufeff" + buffer.getvalue()
 
 
 def _normalize_header(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode()
-    return normalized.strip().lower().replace(" ", "_").replace("-", "_")
+    normalized = normalized.strip().lower()
+    return re.sub(r"[^a-z0-9]+", "_", normalized).strip("_")
 
 
 def _value_key(value: str | None) -> str:
     return _normalize_header(value or "")
+
+
+def _pick(row: dict[str, str], *keys: str) -> str:
+    for key in keys:
+        value = row.get(key)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _cell_text(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value).strip()
+
+
+def _read_xlsx(content: bytes) -> tuple[list[str], list[dict[str, str]]]:
+    workbook = load_workbook(io.BytesIO(content), data_only=True, read_only=True)
+    worksheet = workbook.active
+    values = list(worksheet.iter_rows(values_only=True))
+    if not values:
+        raise ValidationAppError("Le classeur est vide.")
+    headers = [_normalize_header(str(header or "")) for header in values[0]]
+    if len(headers) != len(set(headers)):
+        raise ValidationAppError("Le classeur contient des en-têtes en double.")
+    rows: list[dict[str, str]] = []
+    for index, raw_row in enumerate(values[1:], start=2):
+        if not any(value not in (None, "") for value in raw_row):
+            continue
+        row = {"__line__": str(index)}
+        for position, header in enumerate(headers):
+            row[header] = _cell_text(raw_row[position]) if position < len(raw_row) else ""
+        rows.append(row)
+    if not rows:
+        raise ValidationAppError("Le classeur ne contient aucune ligne de données.")
+    if len(rows) > 2000:
+        raise ValidationAppError("Le fichier dépasse la limite de 2 000 lignes par import.")
+    workbook.close()
+    return headers, rows
 
 
 def _decode(content: bytes) -> str:
@@ -202,8 +288,15 @@ def _read_csv(content: bytes) -> tuple[list[str], list[dict[str, str]]]:
     return headers, rows
 
 
-def _require_headers(headers: list[str], entity_type: str) -> None:
-    required = ["nom", "prenom", "email_pro"] if entity_type == "agents" else ["nom", "categorie_code"]
+def _require_headers(headers: list[str], entity_type: str, *, wapt: bool = False) -> None:
+    if entity_type == "agents":
+        required = ["nom", "prenom", "email_pro"]
+    elif entity_type == "mobile_lines":
+        required = ["reference"]
+    elif wapt:
+        required = ["machine"]
+    else:
+        required = ["nom", "categorie_code"]
     missing = [header for header in required if header not in headers]
     if missing:
         raise ValidationAppError(
@@ -241,10 +334,12 @@ def _is_example(row: dict[str, str]) -> bool:
     name = row.get("nom", "").strip().upper()
     email = row.get("email_pro", "").strip().lower()
     serial = row.get("numero_serie", "").strip().upper()
+    reference = row.get("reference", "").replace(" ", "")
     return (
         name.startswith("EXEMPLE")
         or email == "exemple.agent@pnfor.fr"
         or serial == "SN-EXEMPLE"
+        or reference == "0600000000"
     )
 
 
@@ -270,7 +365,88 @@ def _preload(db: Session) -> dict:
         "macs": {asset.mac_address for asset in assets if asset.mac_address},
         "ips": {asset.ip_address for asset in assets if asset.ip_address},
         "hostnames": {asset.hostname for asset in assets if asset.hostname},
+        "external_ids": {asset.external_id for asset in assets if asset.external_id},
+        "mobile_lines": {
+            line.line_number for line in db.scalars(select(MobileLine)).all()
+        },
     }
+
+
+def _normalize_mobile_line(
+    row: dict[str, str], maps: dict, seen: dict
+) -> tuple[dict, list[str], list[str]]:
+    errors: list[str] = []
+    duplicates: list[str] = []
+    reference = mobile_service.normalize_phone(_pick(row, "reference"))
+    if not reference:
+        errors.append("La référence de ligne est obligatoire.")
+    if reference and (
+        reference in maps["mobile_lines"] or reference in seen["mobile_lines"]
+    ):
+        duplicates.append(f"Ligne déjà présente : {reference}")
+
+    activation = _parse_date(_pick(row, "date_de_mise_en_service"), "date de mise en service", errors)
+    commitment = _parse_date(
+        _pick(row, "date_de_fin_de_periode_d_engagement", "date_de_fin_d_engagement"),
+        "date de fin d'engagement",
+        errors,
+    )
+    billing = _parse_date(_pick(row, "date_de_facturation"), "date de facturation", errors)
+    portability = _parse_date(_pick(row, "date_de_portage_in"), "date de portage", errors)
+    terminal_change = _parse_date(
+        _pick(row, "date_de_chgt_du_terminal", "date_de_changement_du_terminal"),
+        "date de changement du terminal",
+        errors,
+    )
+    plan_change = _parse_date(
+        _pick(row, "date_de_modification_du_forfait"),
+        "date de modification du forfait",
+        errors,
+    )
+    out_of_bundle = _parse_decimal(_pick(row, "hors_forfait"), "hors-forfait", errors)
+    secondary = _value_key(_pick(row, "ligne_secondaire")) in {"oui", "yes", "true", "1"}
+
+    normalized = {
+        "line_number": reference,
+        "civility": _clean_wapt(_pick(row, "civilite")),
+        "holder_name": _clean_wapt(_pick(row, "nom")),
+        "role_label": _clean_wapt(_pick(row, "prenom")),
+        "email": _clean_wapt(_pick(row, "e_mail", "email")),
+        "siren": _clean_wapt(_pick(row, "siren")),
+        "company_name": _clean_wapt(_pick(row, "raison_sociale")),
+        "contract_number": _clean_wapt(_pick(row, "n_contrat", "numero_contrat")),
+        "titulaire_number": _clean_wapt(_pick(row, "n_titulaire", "numero_titulaire")),
+        "cf_number": _clean_wapt(_pick(row, "n_cf", "numero_cf")),
+        "cf_name": _clean_wapt(_pick(row, "nom_cf")),
+        "status": _clean_wapt(_pick(row, "statut_ligne")) or "Actif",
+        "activation_date": activation.isoformat() if activation else None,
+        "commitment_end_date": commitment.isoformat() if commitment else None,
+        "billing_date": billing.isoformat() if billing else None,
+        "portability_date": portability.isoformat() if portability else None,
+        "list_name": _clean_wapt(_pick(row, "liste")),
+        "plan_name": _clean_wapt(_pick(row, "forfait")),
+        "terminal_communicating": _clean_wapt(_pick(row, "terminal_communiquant")),
+        "terminal_purchased": _clean_wapt(_pick(row, "terminal_achete")),
+        "imei_communicating": _clean_wapt(_pick(row, "imei_communiquant")),
+        "imei_purchased": _clean_wapt(_pick(row, "imei_achete")),
+        "out_of_bundle": float(out_of_bundle) if out_of_bundle is not None else None,
+        "sim_format": _clean_wapt(_pick(row, "format_sim")),
+        "vpn_identifier": _clean_wapt(_pick(row, "identifiant_vpn")),
+        "private_number": _clean_wapt(_pick(row, "numero_prive")),
+        "terminal_change_date": terminal_change.isoformat() if terminal_change else None,
+        "plan_change_date": plan_change.isoformat() if plan_change else None,
+        "is_secondary_line": secondary,
+        "main_line_number": mobile_service.normalize_phone(_pick(row, "n_ligne_principale"))
+        or None,
+        "master_access_id": _clean_wapt(_pick(row, "master_id_acces")),
+        "offer_type": _clean_wapt(_pick(row, "type_d_offre")),
+        "company_id": _clean_wapt(_pick(row, "id_societe")),
+        "notes": None,
+        "_label": f"{reference} — {_clean_wapt(_pick(row, 'nom')) or 'Sans titulaire'}",
+    }
+    if not errors and not duplicates and reference:
+        seen["mobile_lines"].add(reference)
+    return normalized, errors, duplicates
 
 
 def _normalize_agent(
@@ -452,7 +628,141 @@ def _new_seen() -> dict:
         "macs": set(),
         "ips": set(),
         "hostnames": set(),
+        "external_ids": set(),
+        "mobile_lines": set(),
     }
+
+
+def _is_wapt(headers: list[str]) -> bool:
+    return "machine" in headers and (
+        "numero_de_serie" in headers or "systeme_d_exploitation" in headers
+    )
+
+
+def _clean_wapt(value: str | None) -> str | None:
+    text = (value or "").strip()
+    if not text or text.lower() in {"default string", "none", "n/a", "-", "sans terminal -"}:
+        return None
+    return text
+
+
+def _parse_ip(value: str | None) -> str | None:
+    text = (value or "").strip()
+    if not text:
+        return None
+    candidates = [text]
+    if ":" in text:
+        candidates.append(text.rsplit(":", 1)[-1])
+    for candidate in candidates:
+        try:
+            ipaddress.ip_address(candidate)
+            return candidate
+        except ValueError:
+            continue
+    return None
+
+
+def _wapt_category(hostname: str, dn: str, categories: dict) -> AssetCategory | None:
+    host = hostname.lower()
+    dn_lower = dn.lower()
+    if "ou=laptops" in dn_lower or host.startswith(("port-", "laptop-", "lt-")):
+        return categories.get("laptop")
+    if "ou=desktops" in dn_lower or host.startswith(("pc-", "desktop-", "ops-pc")):
+        return categories.get("desktop")
+    if "ou=servers" in dn_lower or host.startswith(("srv-", "server-")):
+        return categories.get("server")
+    if "ou=virtual" in dn_lower or host.startswith(("vm-", "v-")):
+        return categories.get("vm")
+    return categories.get("desktop")
+
+
+def _normalize_wapt_asset(
+    row: dict[str, str], maps: dict, seen: dict
+) -> tuple[dict, list[str], list[str]]:
+    errors: list[str] = []
+    duplicates: list[str] = []
+    machine = _clean_wapt(row.get("machine")) or ""
+    serial = _clean_wapt(row.get("numero_de_serie"))
+    if not machine and not serial:
+        errors.append("Machine et numéro de série absents.")
+    hostname = machine or None
+    name = machine.split(".")[0] if machine else (serial or "Poste WAPT")
+    category = _wapt_category(hostname or "", row.get("dn_dans_l_ad", ""), maps["categories"])
+    if category is None:
+        errors.append("Catégorie d'équipement introuvable.")
+
+    external_id = _clean_wapt(row.get("uuid"))
+    if external_id and (external_id in maps["external_ids"] or external_id in seen["external_ids"]):
+        duplicates.append(f"UUID WAPT déjà présent : {external_id}")
+
+    mac = _clean_wapt(row.get("adresse_mac"))
+    ip = _parse_ip(row.get("adresse_ip")) or _parse_ip(row.get("adresse_d_ecoute"))
+    for label, value, db_set, seen_set in (
+        ("numéro de série", serial, maps["serial_numbers"], seen["serials"]),
+        ("adresse MAC", mac, maps["macs"], seen["macs"]),
+        ("adresse IP", ip, maps["ips"], seen["ips"]),
+        ("nom machine", hostname, maps["hostnames"], seen["hostnames"]),
+    ):
+        if value and (value in db_set or value in seen_set):
+            duplicates.append(f"{label.capitalize()} déjà présent : {value}")
+
+    raw_status = _value_key(row.get("statut"))
+    status = {"ok": "in_service", "error": "broken", "warning": "maintenance"}.get(
+        raw_status, "in_stock"
+    )
+
+    purchase = _parse_date(row.get("date_d_achat"), "date_d_achat", errors)
+    comments_parts = ["Import WAPT"]
+    for label, key in (
+        ("Statut", "statut"),
+        ("Joignable", "joignable"),
+        ("Dernière connexion", "derniere_connexion"),
+        ("Dernier utilisateur", "dernier_utilisateur_logue"),
+        ("Description", "description"),
+    ):
+        value = _clean_wapt(row.get(key))
+        if value:
+            comments_parts.append(f"{label}: {value}")
+
+    normalized = {
+        "name": name,
+        "asset_tag": None,
+        "external_id": external_id,
+        "category_id": str(category.id) if category else None,
+        "brand": _clean_wapt(row.get("manufacteur")),
+        "model": _clean_wapt(row.get("modele")),
+        "serial_number": serial,
+        "mac_address": mac,
+        "ip_address": ip,
+        "hostname": hostname,
+        "os_name": _clean_wapt(row.get("systeme_d_exploitation"))
+        or _clean_wapt(row.get("plateforme")),
+        "os_version": None,
+        "purchase_date": purchase.isoformat() if purchase else None,
+        "commissioning_date": None,
+        "warranty_end": None,
+        "purchase_price": None,
+        "assigned_agent_id": None,
+        "service_id": None,
+        "location_id": None,
+        "status": status,
+        "condition": "good",
+        "comments": " · ".join(comments_parts)[:2000],
+        "is_critical": False,
+        "_label": f"{name} ({hostname or serial or 'WAPT'})",
+    }
+    if not errors and not duplicates:
+        if external_id:
+            seen["external_ids"].add(external_id)
+        for value, seen_set in (
+            (serial, seen["serials"]),
+            (mac, seen["macs"]),
+            (ip, seen["ips"]),
+            (hostname, seen["hostnames"]),
+        ):
+            if value:
+                seen_set.add(value)
+    return normalized, errors, duplicates
 
 
 def preview_import(
@@ -464,15 +774,20 @@ def preview_import(
     actor: User,
     request: Request | None = None,
 ) -> ImportPreviewResponse:
-    if entity_type not in {"agents", "assets"}:
+    if entity_type not in {"agents", "assets", "mobile_lines"}:
         raise ValidationAppError("Type d'import inconnu.")
-    if not filename.lower().endswith(".csv"):
+    lower_name = filename.lower()
+    is_xlsx = lower_name.endswith((".xlsx", ".xlsm"))
+    if entity_type != "mobile_lines" and not lower_name.endswith(".csv"):
         raise ValidationAppError("Seuls les fichiers CSV sont acceptés pour cet import.")
+    if entity_type == "mobile_lines" and not lower_name.endswith((".csv", ".xlsx", ".xlsm")):
+        raise ValidationAppError("Formats acceptés pour les lignes mobiles : CSV, XLSX ou XLSM.")
     if len(content) > 5 * 1024 * 1024:
         raise ValidationAppError("Le fichier dépasse la limite de 5 Mo.")
 
-    headers, rows = _read_csv(content)
-    _require_headers(headers, entity_type)
+    headers, rows = _read_xlsx(content) if is_xlsx else _read_csv(content)
+    wapt = entity_type == "assets" and _is_wapt(headers)
+    _require_headers(headers, entity_type, wapt=wapt)
 
     maps = _preload(db)
     seen = _new_seen()
@@ -531,6 +846,10 @@ def preview_import(
         else:
             if entity_type == "agents":
                 normalized, errors, duplicates = _normalize_agent(row, maps, seen)
+            elif entity_type == "mobile_lines":
+                normalized, errors, duplicates = _normalize_mobile_line(row, maps, seen)
+            elif wapt:
+                normalized, errors, duplicates = _normalize_wapt_asset(row, maps, seen)
             else:
                 normalized, errors, duplicates = _normalize_asset(row, maps, seen)
 
@@ -596,11 +915,15 @@ def preview_import(
         f"{job.valid_rows} ligne(s) prête(s), {job.error_rows} erreur(s), "
         f"{job.duplicate_rows} doublon(s), {counts['skipped']} ligne(s) ignorée(s)."
     )
+    if wapt:
+        message = "Format WAPT détecté. " + message
+    detected_format = "wapt" if wapt else ("xlsx" if is_xlsx else "standard")
     return ImportPreviewResponse(
         job=ImportJobRead.model_validate(job),
         rows=previews[:200],
         can_apply=job.valid_rows > 0,
         message=message,
+        detected_format=detected_format,
     )
 
 
@@ -655,6 +978,16 @@ def apply_import(
                         commit=False,
                     )
                     created_id = asset.id
+                elif job.entity_type == "mobile_lines":
+                    mobile = mobile_service.create_mobile_line(
+                        db,
+                        MobileLineCreate.model_validate(data),
+                        actor=actor,
+                        request=request,
+                        source="import",
+                        commit=False,
+                    )
+                    created_id = mobile.id
                 else:
                     raise ValidationAppError("Type d'import inconnu.")
             row.status = "created"

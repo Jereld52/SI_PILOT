@@ -59,7 +59,7 @@ powershell -ExecutionPolicy Bypass -File C:\SI_PILOT\scripts\windows\start-app.p
 Un raccourci **SI PNFor PILOTE** est créé sur le bureau. Il lance
 `scripts\windows\launch.ps1`, qui démarre PostgreSQL si nécessaire puis l'application. Si le
 port 8000 est déjà actif, il ouvre directement le navigateur. L'icône est
-`assets\si-pnfor-charte.ico`.
+`assets\si-pnfor-officiel.ico`.
 
 Compile le frontend si nécessaire, active `SERVE_FRONTEND=true`, puis sert l'application
 complète sur <http://127.0.0.1:8000>. C'est le mode recommandé pour l'usage quotidien.

@@ -12,6 +12,7 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { RequirePermission } from "@/features/auth/RequirePermission";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
@@ -94,6 +95,15 @@ export function App() {
             element={
               <RequirePermission permission="assets.read">
                 <AssetsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="telephonie"
+            element={
+              <RequirePermission permission="mobile_lines.read">
+                <MobileLinesPage />
               </RequirePermission>
             }
           />

@@ -45,6 +45,7 @@ from app.models.infrastructure import (
     MonitoringCheck,
     MonitoringResult,
 )
+from app.models.mobile import MobileLine
 from app.models.notification import Notification
 from app.models.organization import (
     Agent,
@@ -144,6 +145,7 @@ __all__ = [
     "Location",
     "MonitoringCheck",
     "MonitoringResult",
+    "MobileLine",
     "Notification",
     "PasswordResetToken",
     "Permission",

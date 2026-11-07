@@ -48,7 +48,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-border-soft bg-background/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-primary/25 bg-background/85 backdrop-blur-xl">
         <div className="flex h-16 items-center gap-2 px-3 sm:px-4">
           <Button
             variant="ghost"

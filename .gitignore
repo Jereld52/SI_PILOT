@@ -12,6 +12,10 @@ data/
 logs/
 *.log
 
+# Fichiers métier fournis localement : données personnelles et secrets SIM.
+# Ils restent dans le dossier de travail mais ne doivent jamais être versionnés.
+modeles/
+
 # Python
 __pycache__/
 *.py[cod]

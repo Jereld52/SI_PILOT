@@ -11,6 +11,7 @@ import {
   Server,
   Settings,
   ShieldCheck,
+  Smartphone,
   Users,
   Wallet,
 } from "lucide-react";
@@ -27,6 +28,7 @@ export const navigation: NavItem[] = [
   { label: "Vue générale", to: "/", icon: LayoutDashboard, permission: "dashboard.read" },
   { label: "Demandes IT", to: "/demandes", icon: LifeBuoy, permission: "tickets.read" },
   { label: "Parc informatique", to: "/parc", icon: MonitorSmartphone, permission: "assets.read" },
+  { label: "Téléphonie mobile", to: "/telephonie", icon: Smartphone, permission: "mobile_lines.read" },
   { label: "Agents", to: "/agents", icon: Users, permission: "agents.read" },
   { label: "Infrastructure", to: "/infrastructure", icon: Server, permission: "infrastructure.read" },
   { label: "Cybersécurité", to: "/cybersecurite", icon: ShieldCheck, permission: "security.read" },

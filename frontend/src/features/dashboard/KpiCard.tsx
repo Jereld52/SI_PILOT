@@ -52,8 +52,8 @@ const tones: Record<string, { icon: string; border: string; value: string }> = {
     value: "text-success",
   },
   neutral: {
-    icon: "border-accent/20 bg-accent/10 text-accent",
-    border: "before:bg-accent/60",
+    icon: "border-primary/30 bg-primary/15 text-primary-strong",
+    border: "before:bg-primary/70",
     value: "text-foreground",
   },
 };

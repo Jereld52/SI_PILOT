@@ -142,6 +142,7 @@ def _check_unique(
     db: Session,
     *,
     asset_tag: str | None = None,
+    external_id: str | None = None,
     serial_number: str | None = None,
     mac_address: str | None = None,
     ip_address: str | None = None,
@@ -150,6 +151,7 @@ def _check_unique(
 ) -> None:
     checks = (
         (Asset.asset_tag, asset_tag, "numéro d'inventaire"),
+        (Asset.external_id, external_id, "identifiant externe"),
         (Asset.serial_number, serial_number, "numéro de série"),
         (Asset.mac_address, mac_address, "adresse MAC"),
         (Asset.ip_address, ip_address, "adresse IP"),
@@ -254,6 +256,7 @@ def create_asset(
     _check_unique(
         db,
         asset_tag=tag,
+        external_id=payload.external_id,
         serial_number=payload.serial_number,
         mac_address=payload.mac_address,
         ip_address=payload.ip_address,
@@ -335,6 +338,7 @@ def update_asset(
 
     _check_unique(
         db,
+        external_id=data.get("external_id"),
         serial_number=data.get("serial_number"),
         mac_address=data.get("mac_address"),
         ip_address=data.get("ip_address"),

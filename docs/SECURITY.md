@@ -24,7 +24,7 @@
 
 ## 3. Autorisation
 
-- RBAC : 5 rôles, 95 permissions `module.action`.
+- RBAC : 5 rôles, 98 permissions `module.action`.
 - Portées de données : `all`, `service`, `own`.
 - Surcharges utilisateur `allow`/`deny` auditée.
 - Vérification côté serveur dans la dépendance FastAPI **et** dans le service métier.

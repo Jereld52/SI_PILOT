@@ -16,6 +16,7 @@ class SupplierRef(ORMModel):
 
 class AssetCreate(BaseModel):
     asset_tag: str | None = Field(default=None, max_length=60)
+    external_id: str | None = Field(default=None, max_length=120)
     name: str = Field(min_length=1, max_length=180)
     category_id: UUID
     brand: str | None = Field(default=None, max_length=100)
@@ -42,6 +43,7 @@ class AssetCreate(BaseModel):
 
 class AssetUpdate(BaseModel):
     asset_tag: str | None = Field(default=None, max_length=60)
+    external_id: str | None = Field(default=None, max_length=120)
     name: str | None = Field(default=None, min_length=1, max_length=180)
     category_id: UUID | None = None
     brand: str | None = Field(default=None, max_length=100)
@@ -69,6 +71,7 @@ class AssetUpdate(BaseModel):
 class AssetRead(ORMModel):
     id: UUID
     asset_tag: str
+    external_id: str | None = None
     name: str
     category_id: UUID
     category: AssetCategoryRead

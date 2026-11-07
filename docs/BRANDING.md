@@ -2,14 +2,17 @@
 
 ## Logo
 
-- Source officielle : `assets/logo.png` (transparent, 2000×928).
-- Version servie par l'application : `frontend/public/logo.png`.
-- Emblème compact pour la sidebar : `frontend/public/logo-emblem.png`.
-- Icône du raccourci Windows : `assets/si-pnfor-charte.ico` (version aux couleurs de la charte).
-- Favicon : `frontend/public/favicon.svg`.
+- Lockup officiel : `assets/logoweb.png` (République française + Parc national de forêts),
+  utilisé sur l'écran de connexion.
+- Emblème officiel : `assets/pnf-logo.jpg` et `assets/favicon.png`.
+- Emblème de la sidebar : `frontend/public/favicon.png`.
+- Favicon : `frontend/public/favicon.png`.
+- Icône du raccourci Windows : `assets/si-pnfor-officiel.ico`.
+- Version large complémentaire : `assets/logo.png`.
 
-Le logo contient des éléments noirs et bordeaux. Il est toujours présenté sur un fond crème
-(`#f3efe2`) afin de rester lisible sur le thème sombre. Le logo officiel n'est pas recoloré.
+Le lockup officiel est présenté sur fond blanc/crème pour rester lisible sur le thème sombre.
+L'emblème bordeaux est utilisé tel quel dans la sidebar. Les logos officiels ne sont ni
+recolorés ni déformés.
 
 ## Couleurs
 

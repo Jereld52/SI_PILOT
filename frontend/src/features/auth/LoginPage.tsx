@@ -59,17 +59,17 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
-      <section className="relative hidden overflow-hidden border-r border-border-soft bg-background-soft p-10 lg:flex lg:flex-col lg:justify-between">
+      <section className="relative hidden overflow-hidden border-r border-primary/20 bg-gradient-to-br from-[#2a1416] via-[#121917] to-[#0c1110] p-10 lg:flex lg:flex-col lg:justify-between">
         <div className="grid-noise absolute inset-0 opacity-40" aria-hidden="true" />
         <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
         <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-brand-green/10 blur-3xl" aria-hidden="true" />
 
         <div className="relative">
-          <div className="inline-flex rounded-2xl border border-brand-cream/20 bg-brand-cream p-4 shadow-2xl shadow-black/30">
+          <div className="inline-flex overflow-hidden rounded-2xl border border-brand-cream/30 bg-white p-3 shadow-2xl shadow-black/30">
             <img
-              src="/logo.png"
-              alt="Parc national de forêts"
-              className="h-auto w-[280px] max-w-[60vw] object-contain"
+              src="/logoweb.png"
+              alt="République française — Parc national de forêts"
+              className="h-auto w-[320px] max-w-[68vw] object-contain"
             />
           </div>
           <div className="mt-6 flex h-1 w-28 overflow-hidden rounded-full" aria-hidden="true">

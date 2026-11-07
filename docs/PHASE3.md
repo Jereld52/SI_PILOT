@@ -51,6 +51,29 @@ Exemples par défaut :
 | Imprimante | IMP | `PNFOR-IMP-2026-0001` |
 | Serveur | SRV | `PNFOR-SRV-2026-0001` |
 
+### Téléphonie mobile
+
+- Nouvel écran **Téléphonie mobile** : 82 lignes importées depuis
+  `modeles/lignes_mobiles.xlsx`.
+- Tableau : numéro, titulaire, fonction, statut, forfait, terminal, fin d'engagement.
+- Fiche détaillée : contrat, CF, dates, IMEI, format SIM, hors-forfait, ligne principale.
+- Filtres statut, forfait, ligne principale/secondaire, recherche.
+- Import XLSX/CSV.
+- **Ne sont jamais stockés** : PIN 1/2, PUK 1/2, EID, N° CSIM, QR de carte SIM.
+- Le fichier source reste dans `modeles/`, l'application ne conserve que les données utiles.
+
+### Import WAPT des postes
+
+Le fichier `modeles/PC-PNfor.csv` (export WAPT) est reconnu automatiquement :
+
+- détection des colonnes `Machine`, `Numéro de série`, `Système d'exploitation`, `DN dans l'AD` ;
+- catégorie déduite des OU Active Directory (`Desktops`, `Laptops`, `Servers`) ;
+- nom court de la machine, hostname FQDN, marque, modèle, série, MAC, IP ;
+- statut WAPT `OK` → en service, `ERROR` → en panne ;
+- UUID WAPT conservé comme identifiant externe pour éviter les doublons ;
+- prévisualisation testée sur le fichier réel : **69 lignes valides, 0 erreur, 0 doublon**.
+- L'import n'a pas été appliqué automatiquement : l'utilisateur garde la validation finale.
+
 ### Imports CSV
 
 - Modèles téléchargeables depuis l'interface.
@@ -94,25 +117,28 @@ date_achat;date_mise_en_service;fin_garantie;prix;agent_email;service_code;site_
 - `GET/POST/PATCH/DELETE /agents`, `GET /agents/{id}/assets`
 - `GET/POST/PATCH/DELETE /assets`, `GET /assets/next-tag`, `GET /assets/{id}/history`
 - `POST /assets/{id}/assign`, `/return`, `/status`
+- `GET /mobile-lines`, `GET /mobile-lines/meta`, `GET/PATCH /mobile-lines/{id}`
 - `GET /imports/templates/{entity_type}`, `POST /imports/preview`,
   `POST /imports/{job_id}/apply`, `GET /imports`
 
 ## Vérifications
 
 ```text
-pytest -q       25 passed
+pytest -q       28 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 72 source files
+mypy app        Success: no issues found in 76 source files
 npm run build   TypeScript + Vite OK
 ```
 
 Tests fonctionnels manuels : création service/site, modification du modèle PC,
 création agent, création équipement avec numéro généré, historique d'affectation,
-import agent, import équipement, détection de doublon, écrans Agents/Parc/Référentiels.
+import agent, import équipement, détection de doublon, écrans Agents/Parc/Référentiels,
+prévisualisation WAPT sur `PC-PNfor.csv`, import XLSX des 82 lignes mobiles,
+écran Téléphonie mobile.
 
 ## Limites de cette tranche
 
-- Import XLSX non encore activé (CSV uniquement).
+- Import XLSX activé pour les lignes mobiles uniquement ; agents et équipements restent en CSV.
 - QR code non encore généré.
 - Fournisseurs, licences, stock et score de renouvellement non encore exposés dans l'interface.
 - Pas encore de mise à jour de masse ni de fusion de doublons.

@@ -32,7 +32,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border-soft bg-background-soft/95 backdrop-blur-xl transition-all duration-200",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-primary/20 bg-gradient-to-b from-[#251316] via-[#121917] to-[#0c1110] backdrop-blur-xl transition-all duration-200",
           collapsed ? "w-[76px]" : "w-[264px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
@@ -79,7 +79,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                   "group flex items-center gap-3 rounded-lg border px-2.5 py-2 text-sm transition-colors",
                   collapsed && "justify-center px-0",
                   active
-                    ? "border-accent/25 bg-primary/25 text-foreground"
+                    ? "border-primary/50 bg-primary text-brand-cream shadow-sm shadow-black/20"
                     : "border-transparent text-muted hover:bg-surface-2 hover:text-foreground",
                 )}
               >

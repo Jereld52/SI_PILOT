@@ -58,6 +58,15 @@ export function fullName(firstName?: string, lastName?: string): string {
   return [firstName, lastName].filter(Boolean).join(" ").trim() || "—";
 }
 
+export function formatPhone(value: string | null | undefined): string {
+  if (!value) return "—";
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+  }
+  return value;
+}
+
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   return "Une erreur inattendue est survenue.";

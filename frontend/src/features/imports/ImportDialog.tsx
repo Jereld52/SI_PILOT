@@ -20,7 +20,7 @@ import type { ImportApplyResponse, ImportPreviewResponse, ImportRowPreview } fro
 interface ImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entityType: "agents" | "assets";
+  entityType: "agents" | "assets" | "mobile_lines";
   entityLabel: string;
   onImported: () => void;
 }
@@ -119,9 +119,15 @@ export function ImportDialog({
         <div className="space-y-4">
           <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-background-soft/60 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-medium text-foreground">Modèle CSV</p>
+              <p className="text-xs font-medium text-foreground">
+                {entityType === "mobile_lines" ? "Modèle lignes mobiles" : "Modèle CSV"}
+              </p>
               <p className="mt-0.5 text-[11px] text-muted">
-                Séparateur point-virgule, encodage UTF-8, 2 000 lignes maximum.
+                {entityType === "assets"
+                  ? "CSV standard ou export WAPT PC-PNfor.csv reconnu automatiquement. 2 000 lignes maximum."
+                  : entityType === "mobile_lines"
+                    ? "CSV, XLSX ou XLSM. Les colonnes PIN, PUK, CSIM et EID ne sont pas importées."
+                    : "Séparateur point-virgule, encodage UTF-8, 2 000 lignes maximum."}
               </p>
             </div>
             <a
@@ -139,7 +145,7 @@ export function ImportDialog({
               <p className="text-xs text-muted">Sélectionnez un fichier CSV</p>
               <input
                 type="file"
-                accept=".csv,text/csv"
+                accept={entityType === "mobile_lines" ? ".csv,.xlsx,.xlsm,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : ".csv,text/csv"}
                 onChange={(event) => {
                   setFile(event.target.files?.[0] ?? null);
                   setPreview(null);
@@ -183,7 +189,14 @@ export function ImportDialog({
                   </div>
                 ))}
               </div>
-              <p className="text-[11px] text-muted">{preview.message}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {preview.detected_format === "wapt" ? (
+                  <Badge tone="accent">Format WAPT</Badge>
+                ) : preview.detected_format === "xlsx" ? (
+                  <Badge tone="info">Classeur XLSX</Badge>
+                ) : null}
+                <p className="text-[11px] text-muted">{preview.message}</p>
+              </div>
 
               <div className="max-h-64 overflow-y-auto rounded-lg border border-border-soft">
                 <Table>
