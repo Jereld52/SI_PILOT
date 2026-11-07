@@ -23,5 +23,30 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-charts": ["recharts"],
+          vendor: [
+            "react",
+            "react-dom",
+            "react-router-dom",
+            "@tanstack/react-query",
+            "lucide-react",
+            "sonner",
+            "date-fns",
+            "zod",
+            "react-hook-form",
+            "@hookform/resolvers",
+            "clsx",
+            "tailwind-merge",
+            "class-variance-authority",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-tooltip",
+          ],
+        },
+      },
+    },
   },
 });

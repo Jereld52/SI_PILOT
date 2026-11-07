@@ -25,7 +25,7 @@ le RGPD, la documentation et les échéances.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 19 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 21 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

@@ -1,6 +1,7 @@
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -86,14 +87,16 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     )
 
             origin = request.headers.get("origin")
-            if origin and origin not in settings.cors_origin_list:
-                return problem_response(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    code="ORIGIN_NOT_ALLOWED",
-                    title="Origine non autorisée",
-                    detail="Cette origine n'est pas autorisée à appeler l'API.",
-                    request=request,
-                )
+            if origin:
+                same_origin = urlparse(origin).netloc == request.headers.get("host", "")
+                if not same_origin and origin not in settings.cors_origin_list:
+                    return problem_response(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        code="ORIGIN_NOT_ALLOWED",
+                        title="Origine non autorisée",
+                        detail="Cette origine n'est pas autorisée à appeler l'API.",
+                        request=request,
+                    )
         return await call_next(request)
 
 
@@ -140,6 +143,16 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix=settings.api_prefix)
 
+    @app.get("/health", include_in_schema=False)
+    @app.get("/healthz", include_in_schema=False)
+    def health_alias() -> dict:
+        return {
+            "status": "ok",
+            "service": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.app_env,
+        }
+
     if not settings.serve_frontend:
         @app.get("/", include_in_schema=False)
         def root() -> JSONResponse:
@@ -160,8 +173,12 @@ def create_app() -> FastAPI:
 
         @app.get("/{full_path:path}", include_in_schema=False)
         def spa(full_path: str):
-            if full_path.startswith(("api/", "docs")):
+            if full_path.startswith(("api/", "v1/", "docs")):
                 return JSONResponse({"detail": "Not Found"}, status_code=404)
+            if full_path == "favicon.ico":
+                icon = dist / "favicon.svg"
+                if icon.is_file():
+                    return FileResponse(icon, media_type="image/svg+xml")
             candidate = (dist / full_path).resolve()
             if full_path and candidate.is_file() and (candidate == dist or dist in candidate.parents):
                 return FileResponse(candidate)

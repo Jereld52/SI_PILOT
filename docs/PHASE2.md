@@ -34,10 +34,10 @@
 ## Vérifications effectuées
 
 ```text
-pytest -q                         19 passed
+pytest -q                         21 passed
 ruff check app tests              All checks passed
 mypy app                          Success: no issues found in 60 source files
-npm run build                     tsc + vite build OK
+npm run build                     tsc + vite build OK (chunks séparés)
 ```
 
 Tests fonctionnels manuels :
@@ -48,7 +48,9 @@ Tests fonctionnels manuels :
 - refus d'une mutation sans jeton CSRF ;
 - activation/désactivation d'un compte ;
 - journal d'audit, rôles, paramètres ;
-- recherche globale.
+- recherche globale ;
+- mode production natif : frontend compilé servi par FastAPI sur le port 8000,
+  routes SPA, `/health`, API et 404 JSON vérifiés.
 
 ## Limites assumées
 
