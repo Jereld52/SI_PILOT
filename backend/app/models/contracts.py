@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
 from app.models.assets import Supplier
+from app.models.auth import User
 
 
 class ContractCategory(Base, UUIDMixin, TimestampMixin):
@@ -53,6 +54,9 @@ class Contract(Base, UUIDMixin, TimestampMixin):
 
     supplier: Mapped[Supplier] = relationship(lazy="joined")
     category: Mapped[ContractCategory | None] = relationship(lazy="joined")
+    responsible: Mapped[User | None] = relationship(
+        foreign_keys=[responsible_user_id], lazy="joined"
+    )
 
     __table_args__ = (
         CheckConstraint(

@@ -11,6 +11,8 @@ import { AssetsPage } from "@/features/assets/AssetsPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { RequirePermission } from "@/features/auth/RequirePermission";
+import { BudgetPage } from "@/features/budget/BudgetPage";
+import { ContractsPage } from "@/features/contracts/ContractsPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
@@ -21,7 +23,14 @@ import { RgpdPage } from "@/features/rgpd/RgpdPage";
 import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
 import { TicketsPage } from "@/features/tickets/TicketsPage";
 
-const implementedModules = new Set(["agents", "parc", "demandes", "rgpd"]);
+const implementedModules = new Set([
+  "agents",
+  "parc",
+  "demandes",
+  "rgpd",
+  "contrats",
+  "budget",
+]);
 const pendingModules = modules.filter((module) => !implementedModules.has(module.path));
 
 export function App() {
@@ -134,6 +143,32 @@ export function App() {
             element={
               <RequirePermission permission="rgpd.read">
                 <RgpdPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="contrats"
+            element={
+              <RequirePermission permission="contracts.read">
+                <ContractsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="contrats/:contractId"
+            element={
+              <RequirePermission permission="contracts.read">
+                <ContractsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="budget"
+            element={
+              <RequirePermission permission="budget.read">
+                <BudgetPage />
               </RequirePermission>
             }
           />

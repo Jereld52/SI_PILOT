@@ -41,6 +41,27 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Interventions : type, statut, planification, technicien, prestataire, coût, durée,
   compte rendu et rattachement à une demande ou à un équipement.
 
+## Contrats et prestataires
+
+- Contrats rattachés à un fournisseur : référence, objet, catégorie, dates, durée, montants HT/TTC,
+  TVA, coût annuel et mensuel.
+- Préavis en jours, reconduction tacite et responsable interne.
+- Calcul de l'échéance, de la date limite de résiliation et du niveau d'alerte
+  (critique ≤ 30 j, avertissement ≤ 90 j, vigilance ≤ 180 j).
+- Filtre « échéance 90 jours » et lien direct depuis les alertes du tableau de bord.
+- Résiliation sans suppression : le contrat passe au statut « résilié ».
+
+## Budget informatique
+
+- Un exercice budgétaire par année, avec statuts brouillon, voté et clôturé.
+- Lignes budgétaires par catégorie, avec montants prévus et votés.
+- Engagements : devis, commandes, livraisons et facturation, avec fournisseur et date.
+- Factures : numéro, dates, montants, TVA, statut et paiement.
+- Calcul automatique du budget engagé, facturé, payé et du disponible réel.
+- Contrôle de cohérence : une ligne utilisée par des engagements ou factures ne peut pas être
+  supprimée ; un budget clôturé n'est plus modifiable.
+- Validation d'un budget en brouillon, avec traçabilité du valideur et de la date.
+
 ## RGPD et rôle DPO
 
 - Nouveau rôle système `dpo` (Délégué à la protection des données) avec accès au registre,
@@ -71,23 +92,31 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/POST /rgpd/requests`, `PATCH /rgpd/requests/{id}`
 - `GET/POST /rgpd/rights-requests`, `PATCH /rgpd/rights-requests/{id}`
 - `GET/POST /rgpd/breaches`, `PATCH /rgpd/breaches/{id}`
+- `GET /contracts`, `GET /contracts/meta`, `GET/POST/PATCH /contracts/{id}`,
+  `DELETE /contracts/{id}` (résiliation)
+- `GET /budget-categories`, `GET/POST /budgets`, `GET/PATCH /budgets/{id}`,
+  `POST /budgets/{id}/validate`
+- `POST /budgets/{id}/lines`, `PATCH/DELETE /budget-lines/{id}`
+- `POST /budgets/{id}/commitments`, `PATCH/DELETE /budget-commitments/{id}`
+- `POST /budgets/{id}/invoices`, `PATCH/DELETE /budget-invoices/{id}`
 
 ## Vérifications
 
 ```text
-pytest -q       34 passed
+pytest -q       36 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 100 source files
+mypy app        Success: no issues found in 106 source files
 npm run build   TypeScript + Vite OK
 ```
 
-Les tests couvrent les fournisseurs, licences, stock, le cycle de vie complet d'une demande,
-les interventions et les principaux objets RGPD.
+Les tests couvrent les fournisseurs, licences, stock, contrats, budget, le cycle de vie complet
+d'une demande, les interventions et les principaux objets RGPD.
 
 ## Limites connues
 
 - Les exports portent sur le parc et les lignes mobiles ; les exports tickets/RGPD restent à ajouter.
-- Les pièces jointes des tickets ne sont pas encore exposées.
+- Les pièces jointes des tickets et des contrats ne sont pas encore exposées.
 - Le registre RGPD ne gère pas encore les modèles de registre par service.
-- Les contrats, le budget, l'infrastructure, la cybersécurité, les projets, la documentation et le
-  calendrier restent à livrer.
+- Le budget ne gère pas encore les marchés publics ni les subventions.
+- L'infrastructure, la cybersécurité, les projets, la documentation et le calendrier restent à
+  livrer.

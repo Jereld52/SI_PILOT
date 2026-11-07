@@ -13,9 +13,11 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.assets import Supplier
+from app.models.contracts import Contract
 
 
 class Budget(Base, UUIDMixin, TimestampMixin):
@@ -66,6 +68,10 @@ class BudgetLine(Base, UUIDMixin, TimestampMixin):
     )
     notes: Mapped[str | None] = mapped_column(Text)
 
+    budget: Mapped[Budget] = relationship(lazy="joined")
+    category: Mapped[BudgetCategory] = relationship(lazy="joined")
+    contract: Mapped[Contract | None] = relationship(lazy="joined")
+
 
 class BudgetCommitment(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "budget_commitments"
@@ -90,6 +96,18 @@ class BudgetCommitment(Base, UUIDMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False, index=True)
     notes: Mapped[str | None] = mapped_column(Text)
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    budget_line: Mapped[BudgetLine] = relationship(lazy="joined")
+    supplier: Mapped[Supplier | None] = relationship(lazy="joined")
+    contract: Mapped[Contract | None] = relationship(lazy="joined")
+
+    @property
+    def line_label(self) -> str | None:
+        return self.budget_line.label if self.budget_line else None
+
+    @property
+    def supplier_name(self) -> str | None:
+        return self.supplier.name if self.supplier else None
 
     __table_args__ = (
         CheckConstraint(
@@ -121,6 +139,18 @@ class BudgetInvoice(Base, UUIDMixin, TimestampMixin):
     attachment_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("attachments.id", ondelete="SET NULL")
     )
+
+    budget_line: Mapped[BudgetLine] = relationship(lazy="joined")
+    commitment: Mapped[BudgetCommitment | None] = relationship(lazy="joined")
+    supplier: Mapped[Supplier | None] = relationship(lazy="joined")
+
+    @property
+    def line_label(self) -> str | None:
+        return self.budget_line.label if self.budget_line else None
+
+    @property
+    def supplier_name(self) -> str | None:
+        return self.supplier.name if self.supplier else None
 
     __table_args__ = (
         CheckConstraint(

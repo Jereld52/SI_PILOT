@@ -724,3 +724,125 @@ export interface DataBreachItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface ContractCategoryItem {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface ContractItem {
+  id: string;
+  supplier_id: string;
+  supplier: SupplierItem;
+  reference: string;
+  object: string;
+  category_id: string | null;
+  category: ContractCategoryItem | null;
+  start_date: string | null;
+  end_date: string | null;
+  duration_months: number | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  vat_rate: number | null;
+  annual_cost: number | null;
+  monthly_cost: number | null;
+  notice_days: number | null;
+  auto_renew: boolean;
+  responsible_user_id: string | null;
+  responsible: TicketUserRef | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  status: string;
+  comments: string | null;
+  days_to_end: number | null;
+  alert_level: string | null;
+  renewal_deadline: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetCategoryItem {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface BudgetLineItem {
+  id: string;
+  budget_id: string;
+  category_id: string;
+  category: BudgetCategoryItem;
+  label: string;
+  planned_amount: number | null;
+  voted_amount: number | null;
+  contract_id: string | null;
+  notes: string | null;
+  committed_amount: number;
+  invoiced_amount: number;
+  available_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetCommitmentItem {
+  id: string;
+  budget_line_id: string;
+  line_label: string | null;
+  reference: string | null;
+  object: string;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  ordered_at: string | null;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  contract_id: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetInvoiceItem {
+  id: string;
+  budget_line_id: string;
+  line_label: string | null;
+  commitment_id: string | null;
+  invoice_number: string | null;
+  invoice_date: string | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  vat_rate: number | null;
+  paid_at: string | null;
+  status: string;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetItem {
+  id: string;
+  year: number;
+  name: string;
+  status: string;
+  planned_total: number | null;
+  voted_total: number | null;
+  committed_total: number;
+  invoiced_total: number;
+  paid_total: number;
+  available_total: number;
+  notes: string | null;
+  validated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetDetailItem extends BudgetItem {
+  lines: BudgetLineItem[];
+  commitments: BudgetCommitmentItem[];
+  invoices: BudgetInvoiceItem[];
+}

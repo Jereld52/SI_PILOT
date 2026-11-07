@@ -6,6 +6,8 @@ from app.api.v1 import (
     assets,
     audit,
     auth,
+    budget,
+    contracts,
     dashboard,
     exports,
     health,
@@ -42,3 +44,5 @@ api_router.include_router(stock.router)
 api_router.include_router(tickets.router)
 api_router.include_router(interventions.router)
 api_router.include_router(rgpd.router)
+api_router.include_router(contracts.router)
+api_router.include_router(budget.router)
