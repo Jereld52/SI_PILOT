@@ -22,7 +22,7 @@ vers le service `db`.
 
 ```powershell
 Copy-Item infra\.env.prod.example infra\.env
-# Éditer infra\.env : POSTGRES_PASSWORD, SECRET_KEY, CORS_ORIGINS
+# Éditer infra\.env : POSTGRES_PASSWORD, SECRET_KEY, FIELD_ENCRYPTION_KEY, CORS_ORIGINS
 docker compose -f infra/compose.prod.yml up -d --build
 ```
 

@@ -24,6 +24,7 @@ services:
     environment:
       APP_ENV: production
       SECRET_KEY: ${SECRET_KEY:?Definir SECRET_KEY dans infra/.env}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?Definir FIELD_ENCRYPTION_KEY dans infra/.env}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pnfor}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-si_pnfor}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
