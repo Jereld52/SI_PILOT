@@ -147,16 +147,19 @@ des PIN/PUK, écran Téléphonie mobile.
 ## Limites de cette tranche
 
 - Import XLSX activé pour les lignes mobiles uniquement ; agents et équipements restent en CSV.
-- QR code non encore généré.
-- Fournisseurs, licences, stock et score de renouvellement non encore exposés dans l'interface.
+- Score de renouvellement non encore calculé dans l'interface.
 - Pas encore de mise à jour de masse ni de fusion de doublons.
 - Les comptes applicatifs ne sont pas encore reliés aux fiches agents.
-- Les tickets, contrats, budget et calendrier restent en attente.
+- Les contrats, le budget, l'infrastructure, la cybersécurité, les projets, la documentation et le
+  calendrier restent en attente.
 
-## Prochaine tranche Phase 3
+## Tranche suivante
 
-1. QR code et fiche publique authentifiée.
+Les éléments ci-dessous sont désormais livrés et documentés dans
+[`PHASE3_MODULES.md`](PHASE3_MODULES.md) :
+
+1. QR code et fiche équipement authentifiée.
 2. Fournisseurs et licences.
 3. Mouvements de stock.
-4. Score de renouvellement et exports XLSX/PDF.
-5. Tickets et interventions.
+4. Exports XLSX/PDF du parc et des lignes mobiles.
+5. Demandes IT, interventions et RGPD/DPO.
