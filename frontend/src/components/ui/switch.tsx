@@ -18,7 +18,7 @@ export function Switch({ checked, onCheckedChange, disabled, label }: SwitchProp
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-strong/40 disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "border-primary-strong/50 bg-primary-strong/80" : "border-border bg-surface-3",
+        checked ? "border-brand-green/60 bg-brand-green" : "border-border bg-surface-3",
       )}
     >
       <span

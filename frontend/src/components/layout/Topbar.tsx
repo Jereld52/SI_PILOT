@@ -95,7 +95,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
                 <button
                   type="button"
                   onClick={() => setSylviaOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-primary-strong/20 bg-primary/10 px-2.5 text-xs font-medium text-primary-strong transition-colors hover:bg-primary/20"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
                   aria-label="Ouvrir SylvIA"
                 >
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />

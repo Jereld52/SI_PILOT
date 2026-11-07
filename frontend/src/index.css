@@ -3,24 +3,27 @@
 @theme {
   --font-sans: "Inter Variable", "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 
-  --color-background: #07111f;
-  --color-background-soft: #0a1628;
-  --color-surface: #0f1e33;
-  --color-surface-2: #13263f;
-  --color-surface-3: #172e4a;
-  --color-border: #1e3a5f;
-  --color-border-soft: #162c47;
-  --color-foreground: #e6edf5;
-  --color-muted: #94a3b8;
-  --color-muted-2: #64748b;
-  --color-primary: #1e6f8c;
-  --color-primary-strong: #22d3ee;
-  --color-primary-foreground: #ecfeff;
-  --color-accent: #38bdf8;
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
-  --color-info: #38bdf8;
+  --color-background: #0c1110;
+  --color-background-soft: #121917;
+  --color-surface: #17201d;
+  --color-surface-2: #1e2925;
+  --color-surface-3: #26342e;
+  --color-border: #3a4a40;
+  --color-border-soft: #29372f;
+  --color-foreground: #f3efe2;
+  --color-muted: #b9b5a6;
+  --color-muted-2: #8b887c;
+  --color-primary: #772b2f;
+  --color-primary-strong: #d59a9d;
+  --color-primary-foreground: #fff8f6;
+  --color-accent: #cdc97e;
+  --color-success: #8cc46a;
+  --color-warning: #f6db43;
+  --color-danger: #e08585;
+  --color-info: #cdc97e;
+  --color-brand-cream: #f3efe2;
+  --color-brand-green: #4a8a33;
+  --color-brand-burgundy: #772b2f;
 
   --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 12px 30px -18px rgb(0 0 0 / 0.6);
 }
@@ -49,8 +52,8 @@
   body {
     margin: 0;
     background:
-      radial-gradient(1200px 700px at 10% -10%, rgb(34 211 238 / 0.07), transparent 55%),
-      radial-gradient(900px 600px at 100% 0%, rgb(30 111 140 / 0.10), transparent 50%),
+      radial-gradient(1200px 700px at 10% -10%, rgb(119 43 47 / 0.16), transparent 55%),
+      radial-gradient(900px 600px at 100% 0%, rgb(74 138 51 / 0.10), transparent 50%),
       var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -58,7 +61,7 @@
   }
 
   ::selection {
-    background: rgb(34 211 238 / 0.25);
+    background: rgb(205 201 126 / 0.28);
     color: #fff;
   }
 
@@ -75,12 +78,12 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1b3452;
+    background: #3a4a40;
     border-radius: 999px;
     border: 2px solid var(--color-background);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #28506f;
+    background: #52665a;
   }
 }
 

@@ -95,7 +95,13 @@ et compile le frontend. Il ne crée pas de compte administrateur automatiquement
 | Sécurité | Argon2id, sessions serveur, CSRF, RBAC, audit chaîné |
 | Déploiement | Windows natif, Docker Compose, Nginx |
 
-## 5. Structure
+## 5. Charte graphique
+
+Logo officiel : `assets/logo.png`, servi dans l'application avec une version compacte pour la
+sidebar. Couleurs : bordeaux `#772B2F`, sauge `#cdc97e`, vert forêt `#4a8a33`, jaune `#f6db43`,
+sur un fond sombre crème. Détail : [`docs/BRANDING.md`](docs/BRANDING.md).
+
+## 6. Structure
 
 ```text
 backend/     API, modèles, services, migrations, tests
@@ -106,7 +112,7 @@ docs/        architecture, installation, sécurité, exploitation
 .runtime/    PostgreSQL portable, logs, sauvegardes locales (ignoré par Git)
 ```
 
-## 6. Commandes utiles
+## 7. Commandes utiles
 
 ```powershell
 # Backend
@@ -123,7 +129,7 @@ npm run dev
 npm run build
 ```
 
-## 7. Règles du projet
+## 8. Règles du projet
 
 - Aucune donnée fictive en production ; seuls les référentiels sont préchargés.
 - Aucun bouton décoratif : toute action affichée est opérationnelle.
@@ -133,7 +139,7 @@ npm run build
 - SylvIA reste facultative : l'application fonctionne intégralement sans elle.
 - Toute mutation est auditée.
 
-## 8. Feuille de route
+## 9. Feuille de route
 
 | Phase | Contenu | État |
 |---|---|---|
@@ -146,7 +152,7 @@ npm run build
 
 Détail : [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-## 9. Licence et propriété
+## 10. Licence et propriété
 
 Logiciel interne au Parc national de forêts. Aucune dépendance à ASTRA, ENKI ou à des
 environnements personnels. Les composants open source conservent leurs licences respectives.

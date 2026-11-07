@@ -55,6 +55,13 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           </button>
         </div>
 
+        <div className="flex h-0.5 w-full" aria-hidden="true">
+          <span className="flex-1 bg-brand-burgundy" />
+          <span className="flex-1 bg-accent" />
+          <span className="flex-1 bg-brand-green" />
+          <span className="flex-1 bg-warning" />
+        </div>
+
         <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 py-4">
           {items.map((item) => {
             const active = item.admin
@@ -72,14 +79,17 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                   "group flex items-center gap-3 rounded-lg border px-2.5 py-2 text-sm transition-colors",
                   collapsed && "justify-center px-0",
                   active
-                    ? "border-primary-strong/20 bg-primary/15 text-primary-strong"
+                    ? "border-accent/25 bg-primary/25 text-foreground"
                     : "border-transparent text-muted hover:bg-surface-2 hover:text-foreground",
                 )}
               >
-                <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <item.icon
+                  className={cn("h-4 w-4 shrink-0", active ? "text-accent" : "")}
+                  aria-hidden="true"
+                />
                 {!collapsed ? <span className="truncate">{item.label}</span> : null}
                 {!collapsed && active ? (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary-strong" />
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
                 ) : null}
               </NavLink>
             );

@@ -20,7 +20,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import type { ChartSeries } from "@/types/api";
 
-const palette = ["#22d3ee", "#38bdf8", "#34d399", "#fbbf24", "#f87171", "#a78bfa", "#fb923c", "#2dd4bf"];
+const palette = ["#cdc97e", "#8cc46a", "#f6db43", "#d59a9d", "#4a8a33", "#a9a45e", "#e6c94f", "#8f4a4e"];
 
 function ChartTooltip({
   active,
@@ -51,22 +51,22 @@ function EvolutionChart({ series }: { series: ChartSeries }) {
       <AreaChart data={series.points} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id={`fill-${series.key}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#22d3ee" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="#cdc97e" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#cdc97e" stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#1e3a5f" strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+        <CartesianGrid stroke="#29372f" strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="label" tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
         <RechartsTooltip content={<ChartTooltip unit={series.unit} />} />
         <Area
           type="monotone"
           dataKey="value"
-          stroke="#22d3ee"
+          stroke="#cdc97e"
           strokeWidth={2}
           fill={`url(#fill-${series.key})`}
           dot={false}
-          activeDot={{ r: 4, fill: "#22d3ee", stroke: "#07111f", strokeWidth: 2 }}
+          activeDot={{ r: 4, fill: "#cdc97e", stroke: "#0c1110", strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -84,7 +84,7 @@ function StatusPie({ series }: { series: ChartSeries }) {
           innerRadius={55}
           outerRadius={85}
           paddingAngle={2}
-          stroke="#0f1e33"
+          stroke="#17201d"
           strokeWidth={2}
         >
           {series.points.map((point, index) => (
@@ -106,13 +106,13 @@ function HorizontalBars({ series }: { series: ChartSeries }) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, series.points.length * 34 + 30)}>
       <BarChart data={series.points} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-        <CartesianGrid stroke="#1e3a5f" strokeDasharray="3 3" horizontal={false} />
-        <XAxis type="number" tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <CartesianGrid stroke="#29372f" strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} />
         <YAxis
           type="category"
           dataKey="label"
           width={140}
-          tick={{ fill: "#94a3b8", fontSize: 10 }}
+          tick={{ fill: "#b9b5a6", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
         />
