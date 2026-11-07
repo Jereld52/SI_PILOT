@@ -1,0 +1,43 @@
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+!.env*.example
+*.pem
+*.key
+
+# Runtime local (PostgreSQL portable, logs, données)
+.runtime/
+data/
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# Système
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Divers
+*.tmp
+*.bak
+test_si_pnfor.db
+*.dump
+*.zip.sha256

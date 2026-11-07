@@ -1,0 +1,192 @@
+import {
+  BookOpen,
+  CalendarDays,
+  FileText,
+  FolderKanban,
+  LifeBuoy,
+  MonitorSmartphone,
+  Scale,
+  Server,
+  ShieldCheck,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+
+export interface ModuleDefinition {
+  path: string;
+  title: string;
+  description: string;
+  phase: string;
+  icon: LucideIcon;
+  permission: string;
+  features: string[];
+}
+
+export const modules: ModuleDefinition[] = [
+  {
+    path: "demandes",
+    title: "Demandes IT",
+    description: "Tickets, interventions, priorités, SLA et suivi des demandes des agents.",
+    phase: "Phase 3",
+    icon: LifeBuoy,
+    permission: "tickets.read",
+    features: [
+      "Référence automatique et cycle de vie des tickets",
+      "Vues tableau et Kanban avec glisser-déposer",
+      "Commentaires, pièces jointes et temps passé",
+      "Interventions liées aux tickets et aux équipements",
+      "Statistiques, filtres et notifications",
+    ],
+  },
+  {
+    path: "parc",
+    title: "Parc informatique",
+    description: "Inventaire complet, affectations, stock, garanties, QR codes et renouvellement.",
+    phase: "Phase 3",
+    icon: MonitorSmartphone,
+    permission: "assets.read",
+    features: [
+      "Fiche équipement complète et historique d'affectation",
+      "Gestion du stock et des mouvements de matériel",
+      "QR code individuel avec accès authentifié",
+      "Import CSV/Excel avec prévisualisation",
+      "Score de renouvellement explicable et export",
+    ],
+  },
+  {
+    path: "agents",
+    title: "Agents",
+    description: "Annuaire des agents, équipements attribués, comptes référencés et procédures.",
+    phase: "Phase 3",
+    icon: Users,
+    permission: "agents.read",
+    features: [
+      "Fiche agent avec équipements, tickets et historique",
+      "Procédures d'arrivée et de départ personnalisables",
+      "Comptes référencés sans aucun mot de passe stocké",
+      "Lien facultatif avec un compte applicatif",
+      "Recherche et filtres par service et localisation",
+    ],
+  },
+  {
+    path: "infrastructure",
+    title: "Infrastructure et réseau",
+    description: "Serveurs, VM, équipements réseau, dépendances et cartographie interactive.",
+    phase: "Phase 4",
+    icon: Server,
+    permission: "infrastructure.read",
+    features: [
+      "Inventaire technique des serveurs et du réseau",
+      "Cartographie interactive des dépendances",
+      "Documentation et responsables par équipement",
+      "Préparation SNMP, ping et supervision sans scan non autorisé",
+      "Historique et criticité des composants",
+    ],
+  },
+  {
+    path: "cybersecurite",
+    title: "Cybersécurité",
+    description: "Incidents, vulnérabilités, actions de sécurisation, sauvegardes et certificats.",
+    phase: "Phase 4",
+    icon: ShieldCheck,
+    permission: "security.read",
+    features: [
+      "Fiches d'incidents avec gravité et retour d'expérience",
+      "Suivi des actions correctives et des échéances",
+      "Vulnérabilités, certificats et contrôles de sauvegarde",
+      "Aucun indicateur de conformité non justifié",
+      "Journalisation des accès et des exports",
+    ],
+  },
+  {
+    path: "contrats",
+    title: "Contrats et prestataires",
+    description: "Référentiel des contrats, prestataires, échéances et historique.",
+    phase: "Phase 3",
+    icon: FileText,
+    permission: "contracts.read",
+    features: [
+      "Fiches contrats avec montants et préavis",
+      "Alertes calculées à 180, 90, 60 et 30 jours",
+      "Référentiel prestataires et contacts",
+      "Historique des interventions par prestataire",
+      "Exports et documents associés",
+    ],
+  },
+  {
+    path: "budget",
+    title: "Budget informatique",
+    description: "Exercices, lignes, engagements, factures et consommation budgétaire.",
+    phase: "Phase 3",
+    icon: Wallet,
+    permission: "budget.read",
+    features: [
+      "Budget prévisionnel et voté par catégorie",
+      "Devis, commandes, engagements et factures",
+      "Calcul du reste à engager et du disponible",
+      "Comparaison des exercices et graphiques",
+      "Exports Excel et rapports PDF",
+    ],
+  },
+  {
+    path: "projets",
+    title: "Projets informatiques",
+    description: "Jalons, tâches, risques, décisions et suivi budgétaire des projets.",
+    phase: "Phase 4",
+    icon: FolderKanban,
+    permission: "projects.read",
+    features: [
+      "Vue Kanban et vue chronologique",
+      "Jalons, tâches, responsables et échéances",
+      "Registre des risques et des décisions",
+      "Suivi budgétaire et documents associés",
+      "Indicateurs de retard et de progression",
+    ],
+  },
+  {
+    path: "rgpd",
+    title: "RGPD",
+    description: "Registre des traitements, collectes, demandes DPO et droits des personnes.",
+    phase: "Phase 4",
+    icon: Scale,
+    permission: "rgpd.read",
+    features: [
+      "Registre des traitements et finalités",
+      "Registre des collectes et durées de conservation",
+      "Demandes au DPO et suivi des recommandations",
+      "Demandes d'exercice des droits et échéances",
+      "Minimisation et permissions renforcées",
+    ],
+  },
+  {
+    path: "documentation",
+    title: "Documentation",
+    description: "Base documentaire versionnée, tags, permissions et pièces jointes.",
+    phase: "Phase 4",
+    icon: BookOpen,
+    permission: "documents.read",
+    features: [
+      "Procédures, guides, fiches techniques et schémas",
+      "Versionnement et auteur des documents",
+      "Recherche, tags et catégories",
+      "Permissions documentaires par rôle ou utilisateur",
+      "Préparation de l'indexation sémantique SylvIA",
+    ],
+  },
+  {
+    path: "calendrier",
+    title: "Calendrier et actions",
+    description: "Échéances, maintenances, interventions, projets et actions à réaliser.",
+    phase: "Phase 3",
+    icon: CalendarDays,
+    permission: "calendar.read",
+    features: [
+      "Vues jour, semaine et mois",
+      "Agrégation des échéances sans duplication",
+      "Liste des actions, priorités et responsables",
+      "Notifications et rappels",
+      "Filtres par module et par statut",
+    ],
+  },
+];

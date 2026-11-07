@@ -1,0 +1,45 @@
+name: si-pnfor-pilote-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: si_pnfor
+      POSTGRES_USER: pnfor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-password-change-me}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pnfor -d si_pnfor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/docker/api.Dockerfile
+    env_file:
+      - ../backend/.env
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://pnfor:${POSTGRES_PASSWORD:-dev-password-change-me}@db:5432/si_pnfor
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      SECURE_COOKIES: "false"
+      SERVE_FRONTEND: "false"
+      UPLOAD_DIR: /app/data/uploads
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+      - uploads_dev:/app/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata_dev:
+  uploads_dev:

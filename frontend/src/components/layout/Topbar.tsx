@@ -1,0 +1,167 @@
+import {
+  ChevronDown,
+  KeyRound,
+  LogOut,
+  Menu,
+  Settings,
+  Sparkles,
+} from "lucide-react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
+import { NotificationsMenu } from "@/components/layout/NotificationsMenu";
+import { findNavItem } from "@/components/layout/navigation";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { SylviaDialog } from "@/features/sylvia/SylviaDialog";
+import { fullName } from "@/lib/utils";
+
+interface TopbarProps {
+  onOpenMobile: () => void;
+  onChangePassword: () => void;
+}
+
+export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
+  const { user, hasPermission, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [sylviaOpen, setSylviaOpen] = useState(false);
+  const current = findNavItem(location.pathname);
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success("Vous êtes déconnecté.");
+    navigate("/login", { replace: true });
+  };
+
+  return (
+    <>
+      <header className="sticky top-0 z-30 border-b border-border-soft bg-background/85 backdrop-blur-xl">
+        <div className="flex h-16 items-center gap-2 px-3 sm:px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onOpenMobile}
+            aria-label="Ouvrir la navigation"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+
+          <div className="hidden min-w-0 md:block">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-2">SI PNFor PILOTE</p>
+            <p className="truncate text-sm font-medium text-foreground">
+              {current?.label ?? "Vue générale"}
+            </p>
+          </div>
+
+          <div className="hidden flex-1 justify-center px-4 md:flex">
+            <GlobalSearch />
+          </div>
+
+          <div className="ml-auto flex items-center gap-1">
+            {hasPermission("admin.settings.read") ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/admin/settings")}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                    aria-label="Paramètres"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Paramètres</TooltipContent>
+              </Tooltip>
+            ) : null}
+
+            <NotificationsMenu />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setSylviaOpen(true)}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-primary-strong/20 bg-primary/10 px-2.5 text-xs font-medium text-primary-strong transition-colors hover:bg-primary/20"
+                  aria-label="Ouvrir SylvIA"
+                >
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">SylvIA</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Assistant IA institutionnel — non configuré</TooltipContent>
+            </Tooltip>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="ml-1 inline-flex items-center gap-2 rounded-lg border border-transparent p-1 pr-1.5 transition-colors hover:border-border-soft hover:bg-surface-2"
+                  aria-label="Menu du profil"
+                >
+                  <Avatar
+                    firstName={user?.first_name}
+                    lastName={user?.last_name}
+                    className="h-8 w-8"
+                  />
+                  <span className="hidden max-w-32 truncate text-xs font-medium text-foreground lg:block">
+                    {fullName(user?.first_name, user?.last_name)}
+                  </span>
+                  <ChevronDown className="hidden h-3 w-3 text-muted-2 lg:block" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>
+                  <span className="block truncate normal-case tracking-normal text-foreground">
+                    {fullName(user?.first_name, user?.last_name)}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] font-normal normal-case tracking-normal text-muted-2">
+                    {user?.email}
+                  </span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={onChangePassword}>
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Changer le mot de passe
+                </DropdownMenuItem>
+                {hasPermission("admin.users.read") ? (
+                  <DropdownMenuItem onSelect={() => navigate("/admin/users")}>
+                    <Settings className="h-3.5 w-3.5" />
+                    Administration
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => void handleLogout()}
+                  className="text-danger focus:bg-danger/10 focus:text-danger"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Se déconnecter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div className="border-t border-border-soft px-3 py-2 md:hidden">
+          <GlobalSearch />
+        </div>
+      </header>
+
+      <SylviaDialog open={sylviaOpen} onOpenChange={setSylviaOpen} />
+    </>
+  );
+}
