@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AdminImportExportPage } from "@/features/admin/AdminImportExportPage";
 import { AdminLayout } from "@/features/admin/AdminLayout";
 import { AdminSourcesPage } from "@/features/admin/AdminSourcesPage";
 import { AuditPage } from "@/features/admin/AuditPage";
@@ -17,7 +18,6 @@ import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { ContractsPage } from "@/features/contracts/ContractsPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { DocumentsPage } from "@/features/documents/DocumentsPage";
-import { ImportsPage } from "@/features/imports/ImportsPage";
 import { InfrastructurePage } from "@/features/infrastructure/InfrastructurePage";
 import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
@@ -101,6 +101,14 @@ export function App() {
               element={
                 <RequirePermission permission="admin.settings.read">
                   <AdminSourcesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="import-export"
+              element={
+                <RequirePermission permission="imports.preview">
+                  <AdminImportExportPage />
                 </RequirePermission>
               }
             />
@@ -248,14 +256,7 @@ export function App() {
             }
           />
 
-          <Route
-            path="imports"
-            element={
-              <RequirePermission permission="imports.preview">
-                <ImportsPage />
-              </RequirePermission>
-            }
-          />
+          <Route path="imports" element={<Navigate to="/admin/import-export" replace />} />
 
           {pendingModules.map((module) => (
             <Route

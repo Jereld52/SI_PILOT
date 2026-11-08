@@ -20,9 +20,12 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 ## Module d'import, Active Directory et RDM
 
-- Écran **Imports** centré sur les fichiers : agents, équipements, lignes mobiles, fournisseurs,
-  licences et infrastructure, avec prévisualisation, détection des doublons, rapport d'erreurs,
-  application auditée, modèles téléchargeables et historique.
+- **Administration → Import / Export** regroupe les imports et les exports de pilotage.
+- Imports fichiers : agents, équipements, lignes mobiles, fournisseurs, licences et infrastructure,
+  avec prévisualisation, détection des doublons, rapport d'erreurs, application auditée, modèles
+  téléchargeables et historique.
+- Exports disponibles : parc informatique, lignes mobiles, tickets par période (jour/semaine/mois/
+  année) et statistiques consolidées, en XLSX ou PDF.
 - **Administration → Sources de données** regroupe les connexions d'enrichissement.
 - **LDAP/LDAPS** : URL, base de recherche, compte de service, filtre utilisateurs et vérification TLS.
   Le mot de passe du compte de service est chiffré avec `FIELD_ENCRYPTION_KEY` et n'est jamais

@@ -37,8 +37,9 @@ le RGPD, la documentation et les échéances.
 - Projets : jalons, tâches, risques, décisions et avancement calculé.
 - Documentation : métadonnées, tags, versions et téléversement/téléchargement de fichiers.
 - Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser.
-- Module d'import central : CSV/XLSX pour agents, parc, mobiles, fournisseurs, licences et
-  infrastructure, avec prévisualisation, rapport et historique.
+- Administration → **Import / Export** : imports CSV/XLSX pour agents, parc, mobiles, fournisseurs,
+  licences et infrastructure, avec prévisualisation, rapport et historique ; exports XLSX/PDF du
+  parc, des lignes mobiles, des tickets et des statistiques.
 - Administration → **Sources de données** : connexion Active Directory en LDAP/LDAPS (configuration
   chiffrée, test, prévisualisation, synchronisation des agents) et enrichissement depuis Remote
   Desktop Manager par export CSV, sans jamais importer les secrets.
