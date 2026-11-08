@@ -154,7 +154,6 @@ def _prepare_logo(content: bytes) -> Image.Image:
         raise ValidationAppError("Le logo ne doit pas dépasser 4 Mo.")
     try:
         image = Image.open(io.BytesIO(content))
-        image.load()
     except (
         UnidentifiedImageError,
         Image.DecompressionBombError,
@@ -170,7 +169,12 @@ def _prepare_logo(content: bytes) -> Image.Image:
     if image.width * image.height > LOGO_MAX_PIXELS:
         raise ValidationAppError("Les dimensions du logo sont trop importantes.")
     try:
-        return image.convert("RGBA") if image.mode in {"RGBA", "LA"} else image.convert("RGB")
+        image.load()
+    except (OSError, ValueError) as exc:
+        raise ValidationAppError("Le fichier fourni n'est pas une image valide.") from exc
+    try:
+        has_alpha = image.mode in {"RGBA", "LA", "PA"} or "transparency" in image.info
+        return image.convert("RGBA") if has_alpha else image.convert("RGB")
     except (OSError, ValueError) as exc:
         raise ValidationAppError("Le logo ne peut pas être converti.") from exc
 
