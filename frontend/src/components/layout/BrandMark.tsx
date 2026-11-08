@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 export function BrandMark({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-accent/30 bg-primary shadow-lg shadow-black/30">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-accent/50 bg-[linear-gradient(145deg,#9a3d43,#5d2125)] shadow-lg shadow-primary/30 ring-1 ring-white/10">
         <img
           src="/favicon.png"
           alt="Parc national de forêts"

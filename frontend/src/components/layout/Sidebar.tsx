@@ -32,7 +32,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-primary/20 bg-gradient-to-b from-[#251316] via-[#121917] to-[#0c1110] backdrop-blur-xl transition-all duration-200",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-primary/40 bg-[linear-gradient(180deg,#2c1114_0%,#1d1012_26%,#111715_100%)] shadow-[18px_0_50px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(420px_260px_at_0%_0%,rgba(168,67,73,0.22),transparent_70%)]",
           collapsed ? "w-[76px]" : "w-[264px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
@@ -40,7 +40,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       >
         <div
           className={cn(
-            "flex h-16 items-center border-b border-border-soft px-4",
+            "relative z-10 flex h-16 items-center border-b border-primary/20 px-4",
             collapsed ? "justify-center px-2" : "justify-between",
           )}
         >
@@ -55,14 +55,14 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           </button>
         </div>
 
-        <div className="flex h-0.5 w-full" aria-hidden="true">
-          <span className="flex-1 bg-brand-burgundy" />
+        <div className="relative z-10 flex h-1 w-full" aria-hidden="true">
+          <span className="flex-[3] bg-[linear-gradient(90deg,#a84349,#772b2f)]" />
           <span className="flex-1 bg-accent" />
           <span className="flex-1 bg-brand-green" />
           <span className="flex-1 bg-warning" />
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 py-4">
+        <nav className="relative z-10 flex-1 space-y-1 overflow-y-auto px-2.5 py-4">
           {items.map((item) => {
             const active = item.admin
               ? location.pathname.startsWith("/admin")
@@ -79,8 +79,8 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                   "group flex items-center gap-3 rounded-lg border px-2.5 py-2 text-sm transition-colors",
                   collapsed && "justify-center px-0",
                   active
-                    ? "border-primary/50 bg-primary text-brand-cream shadow-sm shadow-black/20"
-                    : "border-transparent text-muted hover:bg-surface-2 hover:text-foreground",
+                    ? "border-primary-bright/50 bg-[linear-gradient(90deg,#8a353b_0%,#6a2529_60%,#571f23_100%)] text-brand-cream shadow-lg shadow-primary/20 ring-1 ring-inset ring-white/5"
+                    : "border-transparent text-muted hover:border-primary/25 hover:bg-primary/10 hover:text-foreground",
                 )}
               >
                 <item.icon
@@ -96,7 +96,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           })}
         </nav>
 
-        <div className="border-t border-border-soft p-3">
+        <div className="relative z-10 border-t border-primary/20 p-3">
           <div className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
             <Avatar firstName={user?.first_name} lastName={user?.last_name} className="h-8 w-8" />
             {!collapsed ? (
@@ -111,7 +111,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
           <div className={cn("mt-3 flex items-center", collapsed ? "justify-center" : "justify-between")}>
             {!collapsed ? (
-              <p className="text-[10px] text-muted-2">v0.1.0 · Socle</p>
+              <p className="text-[10px] text-muted-2">v0.1.0 · Cockpit SI</p>
             ) : null}
             <Button
               variant="ghost"

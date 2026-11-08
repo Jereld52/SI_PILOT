@@ -2,6 +2,16 @@
 
 Cette tranche complète les modules métier livrés après le socle et l'inventaire initial.
 
+## Cockpit d'accueil et identité visuelle
+
+- Refonte du thème avec une présence renforcée du bordeaux officiel `#772B2F` : dégradés,
+  bordures, cartes, boutons, navigation active et barre supérieure.
+- Héro de bienvenue avec date, accès rapides et quatre indicateurs de vigilance.
+- État des 10 modules avec compteurs réels, alertes secondaires et liens directs.
+- Chiffres clés mis en avant, indicateurs complémentaires et graphiques hiérarchisés.
+- Blocs échéances à 90 jours, alertes prioritaires et activité récente.
+- Nouvel endpoint `GET /api/v1/dashboard/cockpit` alimenté par les données réelles.
+
 ## Parc informatique enrichi
 
 - Les données source WAPT sont conservées dans `assets.external_data_json`.
@@ -164,15 +174,16 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   `PATCH/DELETE /projects/milestones|tasks|risks|decisions/{id}`
 - `GET/POST /documents`, `GET/PATCH/DELETE /documents/{id}`, `GET /documents/meta`
 - `GET/POST /documents/{id}/versions`, `GET /documents/versions/{id}/download`
+- `GET /dashboard/cockpit`
 - `GET /calendar/overview`, `GET/POST /calendar/events`, `GET/PATCH/DELETE /calendar/events/{id}`
 - `GET/POST /calendar/actions`, `GET/PATCH/DELETE /calendar/actions/{id}`
 
 ## Vérifications
 
 ```text
-pytest -q       42 passed
+pytest -q       43 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 121 source files
+mypy app        Success: no issues found in 122 source files
 npm run build   TypeScript + Vite OK
 ```
 

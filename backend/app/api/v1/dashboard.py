@@ -8,11 +8,20 @@ from app.schemas.dashboard import (
     DashboardActivity,
     DashboardAlerts,
     DashboardCharts,
+    DashboardCockpit,
     DashboardSummary,
 )
-from app.services import dashboard_service
+from app.services import dashboard_cockpit_service, dashboard_service
 
 router = APIRouter(prefix="/dashboard", tags=["Vue générale"])
+
+
+@router.get("/cockpit", response_model=DashboardCockpit)
+def cockpit(
+    _: User = Depends(require_permission("dashboard.read")),
+    db: Session = Depends(get_db),
+) -> DashboardCockpit:
+    return dashboard_cockpit_service.get_cockpit(db)
 
 
 @router.get("/summary", response_model=DashboardSummary)

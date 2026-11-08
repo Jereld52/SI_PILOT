@@ -1,4 +1,4 @@
-import { BarChart3 } from "lucide-react";
+import { BarChart3, ChartPie, TrendingUp, Wallet } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -20,7 +20,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import type { ChartSeries } from "@/types/api";
 
-const palette = ["#cdc97e", "#8cc46a", "#f6db43", "#d59a9d", "#4a8a33", "#a9a45e", "#e6c94f", "#8f4a4e"];
+const palette = ["#a84349", "#cdc97e", "#8cc46a", "#f6db43", "#d59a9d", "#4a8a33", "#7f2f34", "#a9a45e"];
 
 function ChartTooltip({
   active,
@@ -36,9 +36,9 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const value = Number(payload[0]?.value ?? 0);
   return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-2 text-xs shadow-xl">
+    <div className="rounded-lg border border-primary/40 bg-[#241416] px-3 py-2 text-xs shadow-2xl">
       <p className="font-medium text-foreground">{label}</p>
-      <p className="mt-1 text-muted">
+      <p className="mt-1 text-accent">
         {unit === "EUR" ? formatCurrency(value, 2) : formatNumber(value, 1)}
       </p>
     </div>
@@ -51,8 +51,9 @@ function EvolutionChart({ series }: { series: ChartSeries }) {
       <AreaChart data={series.points} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id={`fill-${series.key}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#cdc97e" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#cdc97e" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="#a84349" stopOpacity={0.55} />
+            <stop offset="55%" stopColor="#772b2f" stopOpacity={0.22} />
+            <stop offset="100%" stopColor="#772b2f" stopOpacity={0.02} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke="#29372f" strokeDasharray="3 3" vertical={false} />
@@ -62,8 +63,8 @@ function EvolutionChart({ series }: { series: ChartSeries }) {
         <Area
           type="monotone"
           dataKey="value"
-          stroke="#cdc97e"
-          strokeWidth={2}
+          stroke="#e0b1b4"
+          strokeWidth={2.4}
           fill={`url(#fill-${series.key})`}
           dot={false}
           activeDot={{ r: 4, fill: "#cdc97e", stroke: "#0c1110", strokeWidth: 2 }}
@@ -146,20 +147,36 @@ function ChartVisual({ series }: { series: ChartSeries }) {
   return <HorizontalBars series={series} />;
 }
 
+function seriesIcon(series: ChartSeries) {
+  if (series.unit === "EUR") return Wallet;
+  if (series.key.endsWith("_evolution")) return TrendingUp;
+  return ChartPie;
+}
+
 export function ChartCard({ series }: { series: ChartSeries }) {
+  const Icon = seriesIcon(series);
+  const total = series.points.reduce((sum, point) => sum + point.value, 0);
   return (
-    <Card>
+    <Card className="panel-sheen overflow-hidden border-primary/20">
       <CardHeader>
-        <div>
-          <CardTitle>{series.label}</CardTitle>
-          <CardDescription>
-            {series.points.length} point(s) de données
-            {series.unit === "EUR" ? " · montants en euros" : ""}
-          </CardDescription>
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary-bright/40 bg-primary/25 text-primary-strong">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div>
+            <CardTitle>{series.label}</CardTitle>
+            <CardDescription>
+              {series.points.length} point(s) · total{" "}
+              {series.unit === "EUR" ? formatCurrency(total, 0) : formatNumber(total, 0)}
+              {series.unit === "EUR" ? " · montants en euros" : ""}
+            </CardDescription>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-2">
-        <ChartVisual series={series} />
+      <CardContent className="pt-3">
+        <div className="rounded-lg border border-border-soft/70 bg-background/35 p-2">
+          <ChartVisual series={series} />
+        </div>
       </CardContent>
     </Card>
   );

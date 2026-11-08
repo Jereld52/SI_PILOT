@@ -117,6 +117,33 @@ export interface DashboardActivity {
   generated_at: string;
 }
 
+export interface CockpitModule {
+  key: string;
+  label: string;
+  href: string;
+  primary: number;
+  primary_label: string;
+  secondary: number;
+  secondary_label: string;
+  hint: string;
+  tone: string;
+}
+
+export interface CockpitDeadline {
+  id: string;
+  kind: string;
+  label: string;
+  due_date: string;
+  severity: string;
+  href: string;
+}
+
+export interface DashboardCockpit {
+  modules: CockpitModule[];
+  deadlines: CockpitDeadline[];
+  generated_at: string;
+}
+
 export interface NotificationItem {
   id: string;
   type: string;

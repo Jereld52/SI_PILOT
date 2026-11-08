@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -63,4 +63,31 @@ class DashboardAlerts(BaseModel):
 
 class DashboardActivity(BaseModel):
     items: list[ActivityItem]
+    generated_at: datetime
+
+
+class CockpitModule(BaseModel):
+    key: str
+    label: str
+    href: str
+    primary: int
+    primary_label: str
+    secondary: int
+    secondary_label: str
+    hint: str
+    tone: str
+
+
+class CockpitDeadline(BaseModel):
+    id: str
+    kind: str
+    label: str
+    due_date: date
+    severity: str
+    href: str
+
+
+class DashboardCockpit(BaseModel):
+    modules: list[CockpitModule]
+    deadlines: list[CockpitDeadline]
     generated_at: datetime

@@ -43,8 +43,9 @@ le RGPD, la documentation et les échéances.
 - Exports XLSX et PDF du parc et des lignes mobiles.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
-- Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 42 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
+- Cockpit d'accueil : état des 10 modules, chiffres clés, échéances, alertes, activité et graphiques.
+- Tests backend : 43 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)
