@@ -92,6 +92,17 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /api/v1/exports/infrastructure?format=xlsx|pdf`
   - XLSX : feuilles **Équipements**, **Dépendances**, **Supervision** et **Synthèse**.
   - PDF : synthèse des équipements d'infrastructure.
+- `GET /api/v1/exports/rgpd?format=xlsx|pdf`
+  - XLSX : feuilles **Registre des traitements**, **Données collectées**, **Demandes DPO**,
+    **Droits des personnes**, **Violations** et **Synthèse**.
+  - PDF : synthèse des traitements et des volumes.
+- `GET /api/v1/exports/rgpd/rights-requests/{id}?format=xlsx|pdf`
+  - Dossier d'une demande de droits : demande, traitement lié, données collectées rattachées
+    et synthèse, pour répondre à une personne qui exerce ses droits.
+- `GET /api/v1/exports/rgpd/agents/{id}?format=xlsx|pdf`
+  - Données personnelles détenues sur un agent : identité, comptes et accès, matériel affecté,
+    historique des affectations, lignes mobiles non secrètes, tickets demandés et mouvements
+    de stock. Les PIN/PUK ne sont jamais inclus.
 - Les exports sont audités (nombre de lignes et format).
 - Les secrets mobiles (PIN/PUK) ne sont jamais inclus dans les exports.
 
@@ -200,6 +211,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Violations de données : gravité, personnes affectées, containment, notification CNIL et
   information des personnes.
 - Vue d'ensemble : indicateurs et échéances à 30 jours.
+- Exports d'un dossier de demande de droits et des données personnelles détenues sur un agent,
+  avec audit systématique. Les secrets mobiles restent exclus.
 
 ## API ajoutée
 
@@ -246,6 +259,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /exports/assets?format=xlsx|pdf`
 - `GET /exports/mobile-lines?format=xlsx|pdf`
 - `GET /exports/infrastructure?format=xlsx|pdf`
+- `GET /exports/rgpd?format=xlsx|pdf`
+- `GET /exports/rgpd/rights-requests/{id}?format=xlsx|pdf`
+- `GET /exports/rgpd/agents/{id}?format=xlsx|pdf`
 - `GET /exports/tickets?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET /exports/statistics?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
@@ -257,9 +273,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       50 passed
+pytest -q       52 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 134 source files
+mypy app        Success: no issues found in 135 source files
 npm run build   TypeScript + Vite OK
 ```
 
@@ -268,8 +284,8 @@ d'une demande, les interventions et les principaux objets RGPD.
 
 ## Limites connues
 
-- Les exports couvrent le parc, les lignes mobiles, l'infrastructure, les tickets et les
-  statistiques ; les exports RGPD restent à ajouter.
+- Les exports couvrent le parc, les lignes mobiles, l'infrastructure, les tickets, les
+  statistiques et le RGPD.
 - Les pièces jointes des tickets et des contrats ne sont pas encore exposées.
 - Le registre RGPD ne gère pas encore les modèles de registre par service.
 - Le budget ne gère pas encore les marchés publics ni les subventions.

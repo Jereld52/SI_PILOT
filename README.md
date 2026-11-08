@@ -52,6 +52,8 @@ le RGPD, la documentation et les échéances.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, sécurité,
   projets, téléphonie et documentation, avec export XLSX/PDF.
 - RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
+- Exports RGPD : registre complet en XLSX/PDF, dossier d'une demande de droits et données
+  personnelles détenues sur un agent, avec audit. Les PIN/PUK restent exclus.
 - Exports détaillés XLSX et PDF du parc, des lignes mobiles et de l'infrastructure : toutes les
   colonnes des fiches, WAPT dynamique, historique des affectations, dépendances et supervision.
   Les PIN/PUK restent exclus des exports.
@@ -60,7 +62,7 @@ le RGPD, la documentation et les échéances.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 50 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 52 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

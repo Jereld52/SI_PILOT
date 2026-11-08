@@ -6,6 +6,7 @@ import {
   FileText,
   KeyRound,
   MonitorSmartphone,
+  Scale,
   Server,
   Smartphone,
   Truck,
@@ -158,6 +159,15 @@ const exportCards = [
     icon: Server,
     base: "/api/v1/exports/infrastructure",
     tone: "border-danger/30 bg-danger/10 text-danger",
+    granular: false,
+  },
+  {
+    key: "rgpd",
+    label: "Registre RGPD",
+    description: "Traitements, données collectées, demandes DPO, droits et violations.",
+    icon: Scale,
+    base: "/api/v1/exports/rgpd",
+    tone: "border-info/30 bg-info/10 text-info",
     granular: false,
   },
   {

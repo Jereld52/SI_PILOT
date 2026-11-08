@@ -4,6 +4,9 @@ import {
   Archive,
   ClipboardList,
   Database,
+  Download,
+  FileSpreadsheet,
+  FileText,
   Pencil,
   Plus,
   Scale,
@@ -18,6 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
@@ -102,6 +111,7 @@ export function RgpdPage() {
   const canUpdate = hasPermission("rgpd.update");
   const canDelete = hasPermission("rgpd.delete");
   const canRequests = hasPermission("rgpd.requests");
+  const canExport = hasPermission("exports.run");
 
   const [tab, setTab] = useState<TabKey>("traitements");
   const [search, setSearch] = useState("");
@@ -253,6 +263,30 @@ export function RgpdPage() {
         description="Registre des traitements, collectes, demandes DPO, droits des personnes et violations."
         actions={
           <>
+            {canExport ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm">
+                    <Download className="h-3.5 w-3.5" />
+                    Exporter le registre
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/api/v1/exports/rgpd?format=xlsx", "_blank")}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Registre complet (XLSX)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/api/v1/exports/rgpd?format=pdf", "_blank")}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Synthèse du registre (PDF)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
             {tab === "traitements" && canCreate ? (
               <Button
                 size="sm"
@@ -664,19 +698,58 @@ export function RgpdPage() {
                           {formatDate(request.due_date)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {canRequests ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Traiter ${request.reference}`}
-                              onClick={() => {
-                                setEditingRights(request);
-                                setRightsOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          ) : null}
+                          <div className="flex justify-end gap-1">
+                            {canExport ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={`Exporter le dossier ${request.reference}`}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                  <DropdownMenuItem
+                                    onSelect={() =>
+                                      window.open(
+                                        `/api/v1/exports/rgpd/rights-requests/${request.id}?format=xlsx`,
+                                        "_blank",
+                                      )
+                                    }
+                                  >
+                                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                                    Dossier Excel (XLSX)
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() =>
+                                      window.open(
+                                        `/api/v1/exports/rgpd/rights-requests/${request.id}?format=pdf`,
+                                        "_blank",
+                                      )
+                                    }
+                                  >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    Dossier PDF
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : null}
+                            {canRequests ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Traiter ${request.reference}`}
+                                onClick={() => {
+                                  setEditingRights(request);
+                                  setRightsOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : null}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

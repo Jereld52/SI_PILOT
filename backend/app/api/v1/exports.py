@@ -1,25 +1,35 @@
 from datetime import UTC, date, datetime
 from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
-from app.core.errors import PermissionDeniedError
+from app.core.errors import NotFoundError, PermissionDeniedError
 from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.exports import assets as assets_export
 from app.exports import infrastructure as infrastructure_export
 from app.exports import mobile as mobile_export
+from app.exports import rgpd as rgpd_export
 from app.exports import statistics as statistics_export
 from app.exports import tickets as tickets_export
-from app.models.assets import Asset, AssetAssignment
+from app.models.assets import Asset, AssetAssignment, StockMovement
 from app.models.auth import User
 from app.models.infrastructure import InfraDependency, InfraEquipment, MonitoringCheck
-from app.models.organization import Agent, Location, Service
+from app.models.mobile import MobileLine
+from app.models.organization import Agent, AgentAccount, Location, Service
+from app.models.rgpd import (
+    DataBreach,
+    DataCollection,
+    DpoRequest,
+    ProcessingActivity,
+    RightsRequest,
+)
 from app.models.tickets import Ticket
-from app.services import assets_service, mobile_service, statistics_service
+from app.services import assets_service, mobile_service, rgpd_service, statistics_service
 from app.services.audit_service import write_audit
 from app.services.periods import Granularity, build_periods, default_range
 
@@ -308,6 +318,262 @@ def export_infrastructure(
         headers={
             "Content-Disposition": (
                 f'attachment; filename="{_filename("infrastructure", format)}"'
+            )
+        },
+    )
+
+
+def _rgpd_lists(db: Session) -> tuple[
+    list[ProcessingActivity],
+    list[DataCollection],
+    list[DpoRequest],
+    list[RightsRequest],
+    list[DataBreach],
+]:
+    activities = list(
+        db.scalars(
+            select(ProcessingActivity).order_by(
+                ProcessingActivity.status, ProcessingActivity.name
+            )
+        ).all()
+    )
+    collections = list(
+        db.scalars(
+            select(DataCollection).order_by(
+                DataCollection.status, DataCollection.name
+            )
+        ).all()
+    )
+    dpo_requests = list(
+        db.scalars(
+            select(DpoRequest).order_by(DpoRequest.status, DpoRequest.due_date)
+        ).all()
+    )
+    rights_requests = list(
+        db.scalars(
+            select(RightsRequest).order_by(
+                RightsRequest.status, RightsRequest.due_date
+            )
+        ).all()
+    )
+    breaches = list(
+        db.scalars(
+            select(DataBreach).order_by(DataBreach.status, DataBreach.discovered_at)
+        ).all()
+    )
+    return activities, collections, dpo_requests, rights_requests, breaches
+
+
+@router.get("/rgpd")
+def export_rgpd(
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "rgpd.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter le registre RGPD.")
+    activities, collections, dpo_requests, rights_requests, breaches = _rgpd_lists(db)
+    content = (
+        rgpd_export.rgpd_xlsx(
+            activities, collections, dpo_requests, rights_requests, breaches
+        )
+        if format == "xlsx"
+        else rgpd_export.rgpd_pdf(
+            activities, collections, dpo_requests, rights_requests, breaches
+        )
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="rgpd_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label=f"rgpd.{format}",
+        after={
+            "activities": len(activities),
+            "collections": len(collections),
+            "dpo_requests": len(dpo_requests),
+            "rights_requests": len(rights_requests),
+            "breaches": len(breaches),
+            "format": format,
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{_filename("registre-rgpd", format)}"'
+        },
+    )
+
+
+@router.get("/rgpd/rights-requests/{rights_id}")
+def export_rights_request_dossier(
+    rights_id: UUID,
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "rgpd.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter une demande RGPD.")
+    rights_request = rgpd_service.get_rights_request(db, rights_id)
+    activity = rights_request.processing_activity
+    collections = (
+        list(
+            db.scalars(
+                select(DataCollection)
+                .where(DataCollection.processing_activity_id == activity.id)
+                .order_by(DataCollection.name)
+            ).all()
+        )
+        if activity
+        else []
+    )
+    content = (
+        rgpd_export.rights_dossier_xlsx(rights_request, activity, collections)
+        if format == "xlsx"
+        else rgpd_export.rights_dossier_pdf(rights_request, activity, collections)
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="rgpd_rights_dossier_exported",
+        actor=actor,
+        entity_type="rights_request",
+        entity_id=str(rights_request.id),
+        entity_label=rights_request.reference,
+        after={"collections": len(collections), "format": format},
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{_filename("rgpd-demande-" + rights_request.reference, format)}"'
+            )
+        },
+    )
+
+
+@router.get("/rgpd/agents/{agent_id}")
+def export_agent_personal_data(
+    agent_id: UUID,
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "rgpd.read") or not has_permission(actor, "agents.read"):
+        raise PermissionDeniedError(
+            "Vous ne pouvez pas exporter les données personnelles d'un agent."
+        )
+    agent = db.get(Agent, agent_id)
+    if agent is None:
+        raise NotFoundError("Agent introuvable.")
+    accounts = list(
+        db.scalars(
+            select(AgentAccount)
+            .where(AgentAccount.agent_id == agent.id)
+            .order_by(AgentAccount.system_label)
+        ).all()
+    )
+    assets = list(
+        db.scalars(
+            select(Asset)
+            .where(Asset.assigned_agent_id == agent.id)
+            .order_by(Asset.asset_tag)
+        ).all()
+    )
+    assignments = list(
+        db.scalars(
+            select(AssetAssignment)
+            .where(AssetAssignment.agent_id == agent.id)
+            .order_by(AssetAssignment.started_at)
+        ).all()
+    )
+    stock_movements = list(
+        db.scalars(
+            select(StockMovement)
+            .where(StockMovement.recipient_agent_id == agent.id)
+            .order_by(StockMovement.moved_at)
+        ).all()
+    )
+    tickets = list(
+        db.scalars(
+            select(Ticket)
+            .where(Ticket.requester_agent_id == agent.id)
+            .order_by(Ticket.opened_at.desc())
+        ).all()
+    )
+    full_name = f"{agent.first_name} {agent.last_name}".strip()
+    mobile_lines = list(
+        db.scalars(
+            select(MobileLine)
+            .where(
+                or_(
+                    func.lower(MobileLine.email) == agent.email_pro.lower(),
+                    MobileLine.holder_name == full_name,
+                )
+            )
+            .order_by(MobileLine.line_number)
+        ).all()
+    )
+    content = (
+        rgpd_export.agent_xlsx(
+            agent, accounts, assets, assignments, stock_movements, tickets, mobile_lines
+        )
+        if format == "xlsx"
+        else rgpd_export.agent_pdf(
+            agent, accounts, assets, assignments, stock_movements, tickets, mobile_lines
+        )
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="rgpd_agent_data_exported",
+        actor=actor,
+        entity_type="agent",
+        entity_id=str(agent.id),
+        entity_label=agent.email_pro,
+        after={
+            "accounts": len(accounts),
+            "assets": len(assets),
+            "assignments": len(assignments),
+            "mobile_lines": len(mobile_lines),
+            "tickets": len(tickets),
+            "stock_movements": len(stock_movements),
+            "format": format,
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{_filename("rgpd-donnees-agent", format)}"'
             )
         },
     )

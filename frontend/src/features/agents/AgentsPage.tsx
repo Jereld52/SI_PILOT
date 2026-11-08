@@ -1,10 +1,13 @@
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import {
   Archive,
+  FileSpreadsheet,
+  FileText,
   MoreHorizontal,
   Pencil,
   Plus,
   Search,
+  ShieldCheck,
   Upload,
   UserRoundPlus,
   Users,
@@ -112,6 +115,7 @@ export function AgentsPage() {
   const canEdit = hasPermission("agents.update");
   const canArchive = hasPermission("agents.delete");
   const canImport = hasPermission("imports.preview");
+  const canExportRgpd = hasPermission("rgpd.read") && hasPermission("exports.run");
 
   return (
     <div className="space-y-5">
@@ -261,7 +265,7 @@ export function AgentsPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuContent align="end" className="w-64">
                           {canEdit ? (
                             <DropdownMenuItem
                               onSelect={() => {
@@ -272,6 +276,41 @@ export function AgentsPage() {
                               <Pencil className="h-3.5 w-3.5" />
                               Modifier
                             </DropdownMenuItem>
+                          ) : null}
+                          {canExportRgpd ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  window.open(
+                                    `/api/v1/exports/rgpd/agents/${agent.id}?format=xlsx`,
+                                    "_blank",
+                                  )
+                                }
+                              >
+                                <FileSpreadsheet className="h-3.5 w-3.5" />
+                                Données personnelles (XLSX)
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  window.open(
+                                    `/api/v1/exports/rgpd/agents/${agent.id}?format=pdf`,
+                                    "_blank",
+                                  )
+                                }
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                Données personnelles (PDF)
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  window.open("/api/v1/exports/rgpd?format=xlsx", "_blank")
+                                }
+                              >
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                                Registre RGPD (XLSX)
+                              </DropdownMenuItem>
+                            </>
                           ) : null}
                           {canArchive ? (
                             <>
