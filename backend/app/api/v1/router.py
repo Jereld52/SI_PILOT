@@ -22,6 +22,7 @@ from app.api.v1 import (
     notifications,
     projects,
     referentials,
+    reservations,
     rgpd,
     search,
     security,
@@ -48,6 +49,7 @@ api_router.include_router(exports.router)
 api_router.include_router(suppliers.router)
 api_router.include_router(licenses.router)
 api_router.include_router(stock.router)
+api_router.include_router(reservations.router)
 api_router.include_router(tickets.router)
 api_router.include_router(interventions.router)
 api_router.include_router(rgpd.router)

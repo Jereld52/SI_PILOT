@@ -11,6 +11,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -67,6 +68,12 @@ export function UsersPage() {
   useEffect(() => {
     setPage(1);
   }, [deferredSearch, roleFilter, statusFilter]);
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const rolesQuery = useQuery({
     queryKey: ["admin-roles"],

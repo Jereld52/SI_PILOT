@@ -137,6 +137,20 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   Une entrée replace l'équipement en stock ; une sortie le passe en service.
 - Synthèse du stock par catégorie : en stock, en service, maintenance, en panne.
 
+## Réservations de matériel
+
+- Inventaire réservable : vidéoprojecteurs, sonorisation, écrans de projection, mallette de
+  micros, enregistreurs, et tout matériel ajouté manuellement.
+- Catégories : vidéoprojection, sonorisation, écrans, accessoires, autre.
+- Planning hebdomadaire par matériel et par jour, avec navigation semaine précédente/suivante.
+- Réservation par créneau avec demandeur (agent ou saisie libre), e-mail, motif et notes.
+- Contrôle automatique des chevauchements : un créneau déjà réservé est refusé.
+- Modification et annulation d'une réservation ; une annulation libère le créneau.
+- Gestion du catalogue réservable : ajout, modification, site de stockage, ordre et retrait.
+- Plans par défaut créés par migration : Vidéoprojecteur 1 et 2, Sonorisation 1 et 2,
+  Écrans de projection 1 à 3, Mallette 8 micros, Enregistreur 1 et 2.
+- Toutes les mutations sont auditées.
+
 ## Demandes IT et interventions
 
 - Références automatiques `DEM-AAAA-NNNN` et `INT-AAAA-NNNN`.
@@ -236,6 +250,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Événements avec lieu, responsable, priorité, statut et description.
 - Actions à réaliser avec module, priorité, échéance, responsable et statut.
 - Vue d'ensemble : événements à venir, actions ouvertes et actions en retard.
+- La semaine en cours est intégrée au tableau de bord dans l'onglet **Semaine**, avec accès
+  direct au calendrier complet. Le calendrier n'occupe plus le menu de conformité.
 
 ## RGPD et rôle DPO
 
@@ -295,6 +311,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /dashboard/cockpit`
 - `GET /stock/overview`, `GET/POST /stock/items`, `GET/PATCH/DELETE /stock/items/{id}`,
   `GET/POST /stock/items/{id}/movements`
+- `GET/POST /reservations/equipments`, `PATCH/DELETE /reservations/equipments/{id}`
+- `GET/POST /reservations`, `GET/PATCH/DELETE /reservations/{id}`
 - `GET /statistics/overview?start=&end=&granularity=day|week|month|year`
 - `GET /exports/assets?format=xlsx|pdf`
 - `GET /exports/mobile-lines?format=xlsx|pdf`
@@ -315,9 +333,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       57 passed
+pytest -q       60 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 136 source files
+mypy app        Success: no issues found in 140 source files
 npm run build   TypeScript + Vite OK
 ```
 

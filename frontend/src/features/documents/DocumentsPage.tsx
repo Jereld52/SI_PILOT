@@ -8,7 +8,8 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,11 @@ export function DocumentsPage() {
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [formOpen, setFormOpen] = useState(false);

@@ -103,6 +103,11 @@ export function AssetsPage() {
     setPage(1);
   }, [deferredSearch, categoryFilter, statusFilter, serviceFilter]);
 
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
+
   const categoriesQuery = useQuery({
     queryKey: ["referentials", "asset-categories"],
     queryFn: () => apiFetch<AssetCategoryItem[]>("/asset-categories"),

@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { AgentFormDialog } from "@/features/agents/AgentFormDialog";
@@ -66,10 +67,16 @@ export function AgentsPage() {
   const [editing, setEditing] = useState<AgentItem | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<AgentItem | null>(null);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     setPage(1);
   }, [deferredSearch, serviceFilter, statusFilter]);
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const servicesQuery = useQuery({
     queryKey: ["referentials", "services"],

@@ -1431,3 +1431,36 @@ export interface CalendarOverview {
   next_events: CalendarEventItem[];
   next_actions: CalendarActionItem[];
 }
+
+export interface ReservableEquipmentItem {
+  id: string;
+  name: string;
+  category: string;
+  description: string | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  is_active: boolean;
+  sort_order: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EquipmentReservationItem {
+  id: string;
+  equipment_id: string;
+  equipment: ReservableEquipmentItem;
+  requester_agent_id: string | null;
+  requester_agent: AgentRef | null;
+  requester_name: string | null;
+  requester_email: string | null;
+  purpose: string;
+  start_at: string;
+  end_at: string;
+  status: string;
+  notes: string | null;
+  created_by_id: string | null;
+  created_by_label: string | null;
+  created_at: string;
+  updated_at: string;
+}

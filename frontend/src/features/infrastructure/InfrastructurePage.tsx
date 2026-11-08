@@ -263,7 +263,7 @@ export function InfrastructurePage() {
       <PageHeader
         eyebrow="Systèmes et réseau"
         title="Infrastructure"
-        description="Serveurs, VM, équipements réseau, dépendances et supervision autorisée."
+        description="Exploitation des serveurs, VM et équipements réseau : IP, OS, supervision et carte. L'inventaire administratif reste dans le parc."
         actions={
           <>
             {canTopology ? (

@@ -32,6 +32,9 @@ le RGPD, la documentation et les échéances.
 - Fournisseurs, licences, sièges et coûts annuels.
 - **Stock IT** dédié : claviers, souris, écrans, casques, stations d'accueil, câbles et
   consommables, avec quantités, seuils d'alerte, valeur, mouvements et historique.
+- **Réservations de matériel** : vidéoprojecteurs, sonorisation, écrans de projection, mallette
+  de micros et enregistreurs, avec planning hebdomadaire, contrôle des chevauchements et ajout
+  libre de matériel réservable.
 - Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
@@ -67,9 +70,11 @@ le RGPD, la documentation et les échéances.
 - Menu latéral regroupé en sections repliables (Pilotage, Support & parc, Infrastructure, Gestion,
   Conformité) pour réduire la hauteur et le nombre d'entrées visibles.
 - Tableau de bord, statistiques et exports organisés en onglets pour limiter le défilement.
+- Semaine en cours intégrée au tableau de bord dans l'onglet **Semaine**, avec accès au
+  calendrier complet.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 57 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 60 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

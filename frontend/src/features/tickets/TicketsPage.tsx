@@ -13,7 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,12 @@ export function TicketsPage() {
   useEffect(() => {
     setInterventionPage(1);
   }, [deferredSearch, interventionStatus]);
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const metaQuery = useQuery({
     queryKey: ["tickets", "meta"],

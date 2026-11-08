@@ -125,6 +125,30 @@ export function InfraEquipmentDialog({
       .catch(() => setAssetOptions([]));
   }, [open, equipment, setError]);
 
+  const infrastructureAssets = assetOptions.filter(
+    (asset) => asset.category?.is_infrastructure || asset.id === equipment?.asset_id,
+  );
+
+  const selectAsset = (id: string) => {
+    setAssetId(id);
+    const asset = assetOptions.find((item) => item.id === id);
+    if (!asset) return;
+    if (!name.trim()) setName(asset.name);
+    if (!ip.trim() && asset.ip_address) setIp(asset.ip_address);
+    if (!mac.trim() && asset.mac_address) setMac(asset.mac_address);
+    if (!osName.trim() && asset.os_name) setOsName(asset.os_name);
+    if (!osVersion.trim() && asset.os_version) setOsVersion(asset.os_version);
+    if (!locationId && asset.location_id) setLocationId(asset.location_id);
+    if (
+      asset.category?.is_infrastructure &&
+      ["server", "vm", "switch", "router", "firewall", "nas", "access_point", "ups"].includes(
+        asset.category.code,
+      )
+    ) {
+      setType(asset.category.code);
+    }
+  };
+
   const doSubmit = () => {
     if (!name.trim()) {
       setError("Le nom de l'équipement est obligatoire.");
@@ -309,15 +333,19 @@ export function InfraEquipmentDialog({
               <Select
                 id="infra-asset"
                 value={assetId}
-                onChange={(event) => setAssetId(event.target.value)}
+                onChange={(event) => selectAsset(event.target.value)}
               >
                 <option value="">Aucun lien</option>
-                {assetOptions.map((asset) => (
+                {infrastructureAssets.map((asset) => (
                   <option key={asset.id} value={asset.id}>
                     {asset.asset_tag} — {asset.name}
                   </option>
                 ))}
               </Select>
+              <p className="mt-1 text-[10px] leading-4 text-muted-2">
+                Le parc porte l'inventaire administratif (achat, garantie, affectation).
+                L'infrastructure porte l'exploitation : IP, OS, supervision et carte.
+              </p>
             </div>
           </div>
           <div>

@@ -65,6 +65,7 @@ from app.models.projects import (
     ProjectRisk,
     ProjectTask,
 )
+from app.models.reservations import EquipmentReservation, ReservableEquipment
 from app.models.rgpd import (
     DataBreach,
     DataCollection,
@@ -134,6 +135,7 @@ __all__ = [
     "DocumentSequence",
     "DocumentTag",
     "DocumentVersion",
+    "EquipmentReservation",
     "DpoRequest",
     "EmailOutbox",
     "ImportJob",
@@ -158,6 +160,7 @@ __all__ = [
     "ProjectRisk",
     "ProjectTask",
     "RenewalPlan",
+    "ReservableEquipment",
     "RightsRequest",
     "Role",
     "SecurityAction",

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { addDays, endOfWeek, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   Activity,
@@ -42,6 +42,7 @@ import { cn, formatCurrency, formatDate, formatDateTime, formatNumber, formatRel
 import type {
   ActivityItem,
   AlertItem,
+  CalendarEventItem,
   CockpitDeadline,
   CockpitModule,
   DashboardActivity,
@@ -261,8 +262,12 @@ function DeadlineRow({ deadline }: { deadline: CockpitDeadline }) {
 
 export function DashboardPage() {
   const { user, hasPermission } = useAuth();
-  const [tab, setTab] = useState<"cockpit" | "analyses" | "veille">("cockpit");
+  const [tab, setTab] = useState<"cockpit" | "analyses" | "veille" | "week">("cockpit");
   const [showAllCharts, setShowAllCharts] = useState(false);
+
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
 
   const summaryQuery = useQuery({
     queryKey: ["dashboard", "summary"],
@@ -288,6 +293,17 @@ export function DashboardPage() {
     queryKey: ["dashboard", "activity"],
     queryFn: () => apiFetch<DashboardActivity>("/dashboard/activity"),
     staleTime: 30_000,
+  });
+  const weekEventsQuery = useQuery({
+    queryKey: ["calendar", "dashboard-week", format(weekStart, "yyyy-MM-dd")],
+    queryFn: () =>
+      apiFetch<CalendarEventItem[]>(
+        `/calendar/events?start_from=${encodeURIComponent(
+          weekStart.toISOString(),
+        )}&start_to=${encodeURIComponent(weekEnd.toISOString())}`,
+      ),
+    enabled: hasPermission("calendar.read"),
+    staleTime: 60_000,
   });
 
   const isRefreshing =
@@ -317,6 +333,7 @@ export function DashboardPage() {
   const deadlines = cockpitQuery.data?.deadlines ?? [];
   const alerts = alertsQuery.data?.items ?? [];
   const activities = activityQuery.data?.items ?? [];
+  const weekEvents = weekEventsQuery.data ?? [];
   const charts = chartsQuery.data?.series ?? [];
   const orderedCharts = [...charts].sort((a, b) => {
     const indexA = preferredCharts.indexOf(a.key);
@@ -433,11 +450,12 @@ export function DashboardPage() {
       <Tabs
         items={[
           { key: "cockpit", label: "Cockpit", icon: Sparkles },
+          { key: "week", label: "Semaine", icon: CalendarDays },
           { key: "analyses", label: "Analyses", icon: BarChart3 },
           { key: "veille", label: "Alertes & activité", icon: ShieldAlert },
         ]}
         value={tab}
-        onChange={(value) => setTab(value as "cockpit" | "analyses" | "veille")}
+        onChange={(value) => setTab(value as "cockpit" | "analyses" | "veille" | "week")}
       />
 
       {tab === "cockpit" ? (
@@ -527,6 +545,106 @@ export function DashboardPage() {
         </Card>
       </section>
         </>
+      ) : null}
+
+      {tab === "week" ? (
+        <Card className="panel-sheen border-primary/20">
+          <CardHeader>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+                Calendrier
+              </p>
+              <h2 className="text-sm font-semibold text-foreground">
+                Semaine du {format(weekStart, "d MMMM yyyy", { locale: fr })}
+              </h2>
+              <p className="mt-1 text-xs text-muted">
+                Événements de la semaine en cours, du lundi au dimanche.
+              </p>
+            </div>
+            {hasPermission("calendar.read") ? (
+              <Link
+                to="/calendrier"
+                className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
+              >
+                Ouvrir le calendrier
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            ) : null}
+          </CardHeader>
+          <CardContent className="pt-3">
+            {weekEventsQuery.isLoading ? (
+              <div className="grid gap-2 lg:grid-cols-7">
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <Skeleton key={index} className="h-40 rounded-lg" />
+                ))}
+              </div>
+            ) : weekEventsQuery.isError ? (
+              <ErrorState
+                message={
+                  weekEventsQuery.error instanceof Error
+                    ? weekEventsQuery.error.message
+                    : "Erreur inconnue."
+                }
+                onRetry={() => void weekEventsQuery.refetch()}
+              />
+            ) : (
+              <div className="grid gap-2 lg:grid-cols-7">
+                {weekDays.map((day) => {
+                  const dayEvents = weekEvents
+                    .filter((event) => isSameDay(parseISO(event.start_at), day))
+                    .sort((left, right) => left.start_at.localeCompare(right.start_at));
+                  const today = isSameDay(day, new Date());
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={cn(
+                        "min-h-[160px] rounded-lg border p-2",
+                        today
+                          ? "border-accent/40 bg-accent/[0.06]"
+                          : "border-border-soft bg-background/40",
+                      )}
+                    >
+                      <p
+                        className={cn(
+                          "text-[10px] font-semibold uppercase tracking-wide",
+                          today ? "text-accent" : "text-muted-2",
+                        )}
+                      >
+                        {format(day, "EEE d", { locale: fr })}
+                      </p>
+                      <div className="mt-2 space-y-1.5">
+                        {dayEvents.length === 0 ? (
+                          <p className="text-[10px] text-muted-2">Aucun événement</p>
+                        ) : (
+                          dayEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className="rounded-md border border-border-soft bg-surface/70 px-2 py-1.5"
+                            >
+                              <p className="text-[10px] font-medium text-foreground">
+                                {event.all_day
+                                  ? "Journée"
+                                  : format(parseISO(event.start_at), "HH:mm")}
+                              </p>
+                              <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-muted">
+                                {event.title}
+                              </p>
+                              {event.location ? (
+                                <p className="mt-0.5 truncate text-[9px] text-muted-2">
+                                  {event.location}
+                                </p>
+                              ) : null}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       ) : null}
 
       {tab === "analyses" ? (

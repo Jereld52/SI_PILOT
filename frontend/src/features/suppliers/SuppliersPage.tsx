@@ -9,6 +9,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,12 @@ export function SuppliersPage() {
   useEffect(() => {
     setStockPage(1);
   }, [deferredSearch, directionFilter]);
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const suppliersQuery = useQuery({
     queryKey: ["suppliers", deferredSearch],

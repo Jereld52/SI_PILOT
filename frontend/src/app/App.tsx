@@ -25,6 +25,7 @@ import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
 import { ReferentialsPage } from "@/features/referentials/ReferentialsPage";
+import { ReservationsPage } from "@/features/reservations/ReservationsPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { RgpdPage } from "@/features/rgpd/RgpdPage";
 import { SecurityPage } from "@/features/security/SecurityPage";
@@ -43,6 +44,7 @@ const implementedModules = new Set([
   "budget",
   "infrastructure",
   "supervision",
+  "reservations",
   "cybersecurite",
   "projets",
   "documentation",
@@ -194,6 +196,15 @@ export function App() {
             element={
               <RequirePermission permission="stock.read">
                 <StockPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="reservations"
+            element={
+              <RequirePermission permission="reservations.read">
+                <ReservationsPage />
               </RequirePermission>
             }
           />

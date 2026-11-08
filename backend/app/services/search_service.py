@@ -1,5 +1,6 @@
 import time
 from collections.abc import Iterable
+from urllib.parse import quote
 
 from app.core.permissions import has_permission
 from app.models.assets import Asset, Supplier
@@ -17,6 +18,10 @@ from sqlalchemy.orm import Session
 def _pattern(query: str) -> str:
     escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     return f"%{escaped}%"
+
+
+def _search_link(path: str, value: str) -> str:
+    return f"{path}?q={quote(value)}"
 
 
 def _add(
@@ -82,7 +87,7 @@ def global_search(
                 id_value=user_row.id,
                 title=f"{user_row.first_name} {user_row.last_name}",
                 subtitle=user_row.email,
-                link=f"/admin/users/{user_row.id}",
+                link=_search_link("/admin/users", user_row.email),
                 query=clean,
             )
 
@@ -106,7 +111,7 @@ def global_search(
                 id_value=agent_row.id,
                 title=f"{agent_row.first_name} {agent_row.last_name}",
                 subtitle=agent_row.email_pro,
-                link=f"/agents/{agent_row.id}",
+                link=_search_link("/agents", agent_row.email_pro),
                 query=clean,
             )
 
@@ -132,7 +137,7 @@ def global_search(
                 id_value=asset_row.id,
                 title=asset_row.name,
                 subtitle=f"{asset_row.asset_tag} — {asset_row.category.name}",
-                link=f"/parc/{asset_row.id}",
+                link=_search_link("/parc", asset_row.asset_tag),
                 query=clean,
             )
 
@@ -155,7 +160,7 @@ def global_search(
                 id_value=ticket_row.id,
                 title=ticket_row.subject,
                 subtitle=f"{ticket_row.reference} — {ticket_row.status.name}",
-                link=f"/demandes/{ticket_row.id}",
+                link=_search_link("/demandes", ticket_row.reference),
                 query=clean,
             )
 
@@ -201,7 +206,7 @@ def global_search(
                 id_value=project_row.id,
                 title=project_row.name,
                 subtitle=project_row.code,
-                link=f"/projets/{project_row.id}",
+                link=_search_link("/projets", project_row.code),
                 query=clean,
             )
 
@@ -224,11 +229,11 @@ def global_search(
                 id_value=document_row.id,
                 title=document_row.title,
                 subtitle=document_row.doc_type,
-                link=f"/documentation/{document_row.id}",
+                link=_search_link("/documentation", document_row.title),
                 query=clean,
             )
 
-    if can("suppliers", "contracts.read") or can("suppliers", "assets.read"):
+    if can("suppliers", "suppliers.read"):
         supplier_rows = db.scalars(
             select(Supplier)
             .where(Supplier.name.ilike(pattern, escape="\\"))
@@ -242,7 +247,7 @@ def global_search(
                 id_value=supplier_row.id,
                 title=supplier_row.name,
                 subtitle=supplier_row.type,
-                link=f"/contrats/prestataires/{supplier_row.id}",
+                link=_search_link("/fournisseurs", supplier_row.name),
                 query=clean,
             )
 
