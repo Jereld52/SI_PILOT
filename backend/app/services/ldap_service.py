@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.crypto import decrypt_secret, encrypt_secret
-from app.core.errors import ValidationAppError
+from app.core.errors import NotFoundError, ValidationAppError
 from app.db.base import utcnow
 from app.models.auth import User
 from app.models.imports import ImportJob
@@ -15,6 +15,14 @@ from app.models.setting import Setting
 from app.schemas.ldap import (
     LdapConfigRead,
     LdapConfigUpdate,
+    LdapDirectoryActionResponse,
+    LdapDirectoryGroup,
+    LdapDirectoryGroupList,
+    LdapDirectoryUser,
+    LdapDirectoryUserCreate,
+    LdapDirectoryUserList,
+    LdapDirectoryUserUpdate,
+    LdapGroupMembershipUpdate,
     LdapPreviewResponse,
     LdapSyncResponse,
     LdapTestResponse,
@@ -41,6 +49,19 @@ LDAP_ATTRIBUTES = [
     "department",
     "title",
     "distinguishedName",
+]
+
+DIRECTORY_USER_ATTRIBUTES = [
+    *LDAP_ATTRIBUTES,
+    "userAccountControl",
+    "cn",
+]
+
+DIRECTORY_GROUP_ATTRIBUTES = [
+    "cn",
+    "description",
+    "distinguishedName",
+    "member",
 ]
 
 
@@ -85,6 +106,10 @@ def get_config(db: Session) -> LdapConfigRead:
         user_filter=str(_value(db, "ldap.user_filter", DEFAULT_FILTER) or DEFAULT_FILTER),
         tls_verify=bool(_value(db, "ldap.tls_verify", True)),
         bind_password_set=bool(encrypted),
+        users_base_dn=str(_value(db, "ldap.users_base_dn", "") or ""),
+        groups_base_dn=str(_value(db, "ldap.groups_base_dn", "") or ""),
+        write_enabled=bool(_value(db, "ldap.write_enabled", False)),
+        upn_suffix=str(_value(db, "ldap.upn_suffix", "") or ""),
     )
 
 
@@ -102,12 +127,23 @@ def update_config(
         raise ValidationAppError(
             "L'URL et la base de recherche sont obligatoires pour activer la synchronisation."
         )
+    if payload.write_enabled and not payload.bind_dn.strip():
+        raise ValidationAppError(
+            "Un compte de service avec des droits d'écriture est requis pour activer la gestion de l'annuaire."
+        )
+    upn_suffix = payload.upn_suffix.strip()
+    if upn_suffix and not upn_suffix.startswith("@"):
+        upn_suffix = f"@{upn_suffix}"
     _set_value(db, "ldap.enabled", payload.enabled)
     _set_value(db, "ldap.url", url)
     _set_value(db, "ldap.base_dn", payload.base_dn.strip())
     _set_value(db, "ldap.bind_dn", payload.bind_dn.strip())
     _set_value(db, "ldap.user_filter", payload.user_filter.strip() or DEFAULT_FILTER)
     _set_value(db, "ldap.tls_verify", payload.tls_verify)
+    _set_value(db, "ldap.users_base_dn", payload.users_base_dn.strip())
+    _set_value(db, "ldap.groups_base_dn", payload.groups_base_dn.strip())
+    _set_value(db, "ldap.write_enabled", payload.write_enabled)
+    _set_value(db, "ldap.upn_suffix", upn_suffix)
     if payload.bind_password is not None:
         encrypted = encrypt_secret(payload.bind_password) if payload.bind_password else ""
         _set_value(db, "ldap.bind_password_encrypted", encrypted or "", is_secret=True)
@@ -123,6 +159,9 @@ def update_config(
             "url": url,
             "base_dn": payload.base_dn.strip(),
             "bind_dn": payload.bind_dn.strip(),
+            "write_enabled": payload.write_enabled,
+            "users_base_dn": payload.users_base_dn.strip(),
+            "groups_base_dn": payload.groups_base_dn.strip(),
             "password_changed": payload.bind_password is not None,
         },
         request=request,
@@ -136,7 +175,11 @@ def _safe_error(exc: Exception) -> str:
     return text[:400] or exc.__class__.__name__
 
 
-def _connection(db: Session):
+def _connection(db: Session, *, read_only: bool = True):
+    if not read_only and not bool(_value(db, "ldap.write_enabled", False)):
+        raise ValidationAppError(
+            "Activez la gestion de l'annuaire avant toute opération d'écriture."
+        )
     try:
         from ldap3 import ALL, SUBTREE, Connection, Server, Tls
     except ImportError as exc:  # pragma: no cover - dépendance de déploiement
@@ -165,7 +208,7 @@ def _connection(db: Session):
             password=password or None,
             auto_bind=True,
             receive_timeout=20,
-            read_only=True,
+            read_only=read_only,
         )
         return connection, server, SUBTREE
     except Exception as exc:
@@ -439,3 +482,475 @@ def sync_agents(
             f"{skipped} ignoré(s), {errors} erreur(s)."
         ),
     )
+
+
+def _ldap3():
+    try:
+        import ldap3
+        from ldap3.utils.conv import escape_filter_chars
+        from ldap3.utils.dn import escape_rdn
+    except ImportError as exc:  # pragma: no cover - dépendance de déploiement
+        raise ValidationAppError(
+            "Le module ldap3 n'est pas installé sur le serveur."
+        ) from exc
+    return ldap3, escape_filter_chars, escape_rdn
+
+
+def _users_base(db: Session) -> str:
+    base = str(_value(db, "ldap.users_base_dn", "") or "")
+    return base or str(_value(db, "ldap.base_dn", "") or "")
+
+
+def _groups_base(db: Session) -> str:
+    base = str(_value(db, "ldap.groups_base_dn", "") or "")
+    return base or str(_value(db, "ldap.base_dn", "") or "")
+
+
+def _entry_dn(entry: dict[str, Any]) -> str:
+    return str(entry.get("dn") or "").strip()
+
+
+def _attr_list(entry: dict[str, Any], name: str) -> list[str]:
+    value = (entry.get("attributes") or {}).get(name)
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return [str(value).strip()] if str(value).strip() else []
+
+
+def _directory_user(entry: dict[str, Any]) -> LdapDirectoryUser:
+    control = _attr(entry, "userAccountControl")
+    try:
+        uac = int(control) if control else 512
+    except ValueError:
+        uac = 512
+    return LdapDirectoryUser(
+        distinguished_name=_entry_dn(entry),
+        login=_attr(entry, "sAMAccountName"),
+        email=_attr(entry, "mail") or _attr(entry, "userPrincipalName") or None,
+        first_name=_attr(entry, "givenName") or None,
+        last_name=_attr(entry, "sn") or None,
+        display_name=_attr(entry, "displayName") or None,
+        department=_attr(entry, "department") or None,
+        title=_attr(entry, "title") or None,
+        phone=_attr(entry, "telephoneNumber") or None,
+        enabled=not bool(uac & 2),
+    )
+
+
+def _directory_group(entry: dict[str, Any]) -> LdapDirectoryGroup:
+    members = _attr_list(entry, "member")
+    return LdapDirectoryGroup(
+        distinguished_name=_entry_dn(entry),
+        name=_attr(entry, "cn") or _entry_dn(entry),
+        description=_attr(entry, "description") or None,
+        member_count=len(members) if members else None,
+    )
+
+
+def search_directory_users(
+    db: Session,
+    *,
+    query: str | None = None,
+    limit: int = 200,
+) -> LdapDirectoryUserList:
+    base = _users_base(db)
+    if not base:
+        raise ValidationAppError("Configurez la base de recherche des utilisateurs.")
+    _, escape_filter_chars, _ = _ldap3()
+    term = (query or "").strip()
+    search_filter = "(&(objectCategory=person)(objectClass=user)"
+    if term:
+        escaped = escape_filter_chars(term)
+        search_filter += (
+            f"(|(sAMAccountName=*{escaped}*)(mail=*{escaped}*)"
+            f"(displayName=*{escaped}*)(cn=*{escaped}*))"
+        )
+    search_filter += ")"
+
+    connection, _, subtree = _connection(db)
+    rows: list[LdapDirectoryUser] = []
+    truncated = False
+    try:
+        for entry in connection.extend.standard.paged_search(
+            search_base=base,
+            search_filter=search_filter,
+            search_scope=subtree,
+            attributes=DIRECTORY_USER_ATTRIBUTES,
+            paged_size=200,
+            size_limit=limit + 1,
+            generator=True,
+        ):
+            if entry.get("type") != "searchResEntry":
+                continue
+            if len(rows) >= limit:
+                truncated = True
+                break
+            rows.append(_directory_user(entry))
+    except Exception as exc:
+        raise ValidationAppError(f"Lecture de l'annuaire impossible : {_safe_error(exc)}") from exc
+    finally:
+        connection.unbind()
+    rows.sort(key=lambda user: (user.display_name or user.login).lower())
+    return LdapDirectoryUserList(total=len(rows), truncated=truncated, rows=rows)
+
+
+def list_directory_groups(
+    db: Session,
+    *,
+    query: str | None = None,
+    limit: int = 500,
+) -> LdapDirectoryGroupList:
+    base = _groups_base(db)
+    if not base:
+        raise ValidationAppError("Configurez la base de recherche des groupes.")
+    _, escape_filter_chars, _ = _ldap3()
+    term = (query or "").strip()
+    search_filter = "(&(objectClass=group)"
+    if term:
+        search_filter += f"(cn=*{escape_filter_chars(term)}*)"
+    search_filter += ")"
+
+    connection, _, subtree = _connection(db)
+    rows: list[LdapDirectoryGroup] = []
+    try:
+        for entry in connection.extend.standard.paged_search(
+            search_base=base,
+            search_filter=search_filter,
+            search_scope=subtree,
+            attributes=DIRECTORY_GROUP_ATTRIBUTES,
+            paged_size=200,
+            size_limit=limit,
+            generator=True,
+        ):
+            if entry.get("type") != "searchResEntry":
+                continue
+            rows.append(_directory_group(entry))
+    except Exception as exc:
+        raise ValidationAppError(f"Lecture des groupes impossible : {_safe_error(exc)}") from exc
+    finally:
+        connection.unbind()
+    rows.sort(key=lambda group: group.name.lower())
+    return LdapDirectoryGroupList(total=len(rows), rows=rows)
+
+
+def get_user_groups(db: Session, user_dn: str) -> LdapDirectoryGroupList:
+    base = _groups_base(db)
+    if not base:
+        raise ValidationAppError("Configurez la base de recherche des groupes.")
+    _, escape_filter_chars, _ = _ldap3()
+    search_filter = (
+        f"(&(objectClass=group)(member={escape_filter_chars(user_dn)}))"
+    )
+    connection, _, subtree = _connection(db)
+    rows: list[LdapDirectoryGroup] = []
+    try:
+        for entry in connection.extend.standard.paged_search(
+            search_base=base,
+            search_filter=search_filter,
+            search_scope=subtree,
+            attributes=["cn", "description", "distinguishedName"],
+            paged_size=200,
+            size_limit=1000,
+            generator=True,
+        ):
+            if entry.get("type") != "searchResEntry":
+                continue
+            rows.append(_directory_group(entry))
+    except Exception as exc:
+        raise ValidationAppError(f"Lecture des groupes de l'utilisateur impossible : {_safe_error(exc)}") from exc
+    finally:
+        connection.unbind()
+    rows.sort(key=lambda group: group.name.lower())
+    return LdapDirectoryGroupList(total=len(rows), rows=rows)
+
+
+def _find_user_entry(connection: Any, user_dn: str) -> dict[str, Any]:
+    ldap3, _, _ = _ldap3()
+    connection.search(
+        user_dn,
+        "(objectClass=user)",
+        search_scope=ldap3.BASE,
+        attributes=DIRECTORY_USER_ATTRIBUTES,
+    )
+    if not connection.response:
+        raise NotFoundError("Utilisateur Active Directory introuvable.")
+    return connection.response[0]
+
+
+def _require_ldaps_for_password(db: Session, password: str | None) -> None:
+    if not password:
+        return
+    url = str(_value(db, "ldap.url", "") or "")
+    if not url.lower().startswith("ldaps://"):
+        raise ValidationAppError(
+            "La définition d'un mot de passe Active Directory nécessite une connexion LDAPS."
+        )
+
+
+def create_directory_user(
+    db: Session,
+    payload: LdapDirectoryUserCreate,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> LdapDirectoryActionResponse:
+    _require_ldaps_for_password(db, payload.password)
+    ldap3, _, escape_rdn = _ldap3()
+    base = _users_base(db)
+    if not base:
+        raise ValidationAppError("Configurez l'OU ou la base de création des utilisateurs.")
+    connection, _, _ = _connection(db, read_only=False)
+    display_name = f"{payload.first_name} {payload.last_name}".strip()
+    user_dn = f"CN={escape_rdn(display_name)},{base}"
+    suffix = str(_value(db, "ldap.upn_suffix", "") or "")
+    upn = f"{payload.login}{suffix}" if suffix else str(payload.email)
+    attributes: dict[str, Any] = {
+        "objectClass": ["top", "person", "organizationalPerson", "user"],
+        "cn": display_name,
+        "sAMAccountName": payload.login,
+        "userPrincipalName": upn,
+        "givenName": payload.first_name,
+        "sn": payload.last_name,
+        "displayName": display_name,
+        "mail": str(payload.email),
+        "userAccountControl": "514",
+    }
+    if payload.department:
+        attributes["department"] = payload.department
+    if payload.title:
+        attributes["title"] = payload.title
+    if payload.phone:
+        attributes["telephoneNumber"] = payload.phone
+
+    created = False
+    try:
+        if not connection.add(user_dn, attributes=attributes):
+            raise ValidationAppError(
+                f"Création impossible : {connection.result.get('description', 'erreur AD')}"
+            )
+        created = True
+        if payload.password:
+            if not connection.extend.microsoft.modify_password(user_dn, payload.password):
+                raise ValidationAppError(
+                    f"Définition du mot de passe impossible : {connection.result.get('description', 'erreur AD')}"
+                )
+            if not connection.modify(
+                user_dn,
+                {"userAccountControl": [(ldap3.MODIFY_REPLACE, ["512"])]},
+            ):
+                raise ValidationAppError(
+                    f"Activation impossible : {connection.result.get('description', 'erreur AD')}"
+                )
+        write_audit(
+            db,
+            module="ldap",
+            action="ldap_user_created",
+            actor=actor,
+            entity_type="ldap_user",
+            entity_id=user_dn,
+            entity_label=display_name,
+            after={
+                "login": payload.login,
+                "email": str(payload.email),
+                "enabled": bool(payload.password),
+                "department": payload.department,
+            },
+            request=request,
+        )
+        db.commit()
+        message = (
+            "Utilisateur créé et activé."
+            if payload.password
+            else "Utilisateur créé mais désactivé : définissez un mot de passe dans Active Directory pour l'activer."
+        )
+        return LdapDirectoryActionResponse(
+            message=message,
+            user=LdapDirectoryUser(
+                distinguished_name=user_dn,
+                login=payload.login,
+                email=str(payload.email),
+                first_name=payload.first_name,
+                last_name=payload.last_name,
+                display_name=display_name,
+                department=payload.department,
+                title=payload.title,
+                phone=payload.phone,
+                enabled=bool(payload.password),
+            ),
+        )
+    except Exception:
+        if created:
+            connection.delete(user_dn)
+        raise
+    finally:
+        connection.unbind()
+
+
+def update_directory_user(
+    db: Session,
+    payload: LdapDirectoryUserUpdate,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> LdapDirectoryActionResponse:
+    _require_ldaps_for_password(db, payload.password)
+    ldap3, _, _ = _ldap3()
+    connection, _, _ = _connection(db, read_only=False)
+    try:
+        entry = _find_user_entry(connection, payload.user_dn)
+        before = _directory_user(entry)
+        data = payload.model_dump(exclude_unset=True)
+        data.pop("user_dn", None)
+        data.pop("password", None)
+        changes: dict[str, list[tuple[str, list[str]]]] = {}
+
+        for field, attribute in (
+            ("first_name", "givenName"),
+            ("last_name", "sn"),
+            ("department", "department"),
+            ("title", "title"),
+            ("phone", "telephoneNumber"),
+        ):
+            if field not in data:
+                continue
+            value = data[field]
+            if field in {"first_name", "last_name"} and not value:
+                raise ValidationAppError("Le prénom et le nom ne peuvent pas être vides.")
+            changes[attribute] = (
+                [(ldap3.MODIFY_REPLACE, [str(value)])]
+                if value
+                else [(ldap3.MODIFY_DELETE, [])]
+            )
+        if "email" in data and data["email"]:
+            changes["mail"] = [(ldap3.MODIFY_REPLACE, [str(data["email"])])]
+        if "enabled" in data and data["enabled"] is not None:
+            current = int(_attr(entry, "userAccountControl") or 512)
+            enabled = bool(data["enabled"])
+            new_control = (current & ~2) if enabled else (current | 2)
+            changes["userAccountControl"] = [
+                (ldap3.MODIFY_REPLACE, [str(new_control)])
+            ]
+        if "first_name" in data or "last_name" in data:
+            display = (
+                f"{data.get('first_name', before.first_name or '')} "
+                f"{data.get('last_name', before.last_name or '')}"
+            ).strip()
+            if display:
+                changes["displayName"] = [(ldap3.MODIFY_REPLACE, [display])]
+
+        if changes and not connection.modify(payload.user_dn, changes):
+            raise ValidationAppError(
+                f"Modification impossible : {connection.result.get('description', 'erreur AD')}"
+            )
+        if payload.password and not connection.extend.microsoft.modify_password(
+            payload.user_dn, payload.password
+        ):
+            raise ValidationAppError(
+                f"Réinitialisation du mot de passe impossible : {connection.result.get('description', 'erreur AD')}"
+            )
+        write_audit(
+            db,
+            module="ldap",
+            action="ldap_user_updated",
+            actor=actor,
+            entity_type="ldap_user",
+            entity_id=payload.user_dn,
+            entity_label=before.display_name or before.login,
+            before=before.model_dump(exclude={"groups"}),
+            after={
+                **data,
+                "password_changed": bool(payload.password),
+            },
+            request=request,
+        )
+        db.commit()
+        return LdapDirectoryActionResponse(
+            message="Utilisateur mis à jour."
+            + (" Mot de passe réinitialisé." if payload.password else "")
+        )
+    finally:
+        connection.unbind()
+
+
+def update_group_memberships(
+    db: Session,
+    payload: LdapGroupMembershipUpdate,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> LdapDirectoryActionResponse:
+    ldap3, _, _ = _ldap3()
+    current = get_user_groups(db, payload.user_dn)
+    current_dns = {group.distinguished_name for group in current.rows}
+    add_dns = [dn for dn in payload.add_group_dns if dn and dn not in current_dns]
+    remove_dns = [dn for dn in payload.remove_group_dns if dn and dn in current_dns]
+    if not add_dns and not remove_dns:
+        return LdapDirectoryActionResponse(message="Aucun changement d'appartenance.")
+
+    connection, _, _ = _connection(db, read_only=False)
+    applied_add: list[str] = []
+    applied_remove: list[str] = []
+    try:
+        for group_dn in add_dns:
+            if not connection.modify(
+                group_dn,
+                {"member": [(ldap3.MODIFY_ADD, [payload.user_dn])]},
+            ):
+                raise ValidationAppError(
+                    f"Ajout au groupe impossible : {connection.result.get('description', group_dn)}"
+                )
+            applied_add.append(group_dn)
+        for group_dn in remove_dns:
+            if not connection.modify(
+                group_dn,
+                {"member": [(ldap3.MODIFY_DELETE, [payload.user_dn])]},
+            ):
+                raise ValidationAppError(
+                    f"Retrait du groupe impossible : {connection.result.get('description', group_dn)}"
+                )
+            applied_remove.append(group_dn)
+        write_audit(
+            db,
+            module="ldap",
+            action="ldap_user_groups_updated",
+            actor=actor,
+            entity_type="ldap_user",
+            entity_id=payload.user_dn,
+            entity_label=payload.user_dn,
+            after={
+                "added": applied_add,
+                "removed": applied_remove,
+            },
+            request=request,
+        )
+        db.commit()
+        return LdapDirectoryActionResponse(
+            message=(
+                f"{len(applied_add)} groupe(s) ajouté(s), "
+                f"{len(applied_remove)} groupe(s) retiré(s)."
+            )
+        )
+    except Exception:
+        if applied_add or applied_remove:
+            write_audit(
+                db,
+                module="ldap",
+                action="ldap_user_groups_updated",
+                actor=actor,
+                entity_type="ldap_user",
+                entity_id=payload.user_dn,
+                entity_label=payload.user_dn,
+                after={
+                    "added": applied_add,
+                    "removed": applied_remove,
+                    "partial": True,
+                },
+                request=request,
+                status="failure",
+            )
+            db.commit()
+        raise
+    finally:
+        connection.unbind()

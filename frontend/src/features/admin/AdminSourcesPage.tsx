@@ -10,6 +10,7 @@ import {
   Save,
   ShieldCheck,
   Upload,
+  UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ImportDialog } from "@/features/imports/ImportDialog";
+import { LdapDirectoryPanel } from "@/features/admin/LdapDirectoryPanel";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { cn, formatDateTime, formatNumber } from "@/lib/utils";
 import type {
@@ -42,7 +44,7 @@ import type {
   LdapTestResponse,
 } from "@/types/api";
 
-type TabKey = "ldap" | "rdm";
+type TabKey = "ldap" | "directory" | "rdm";
 
 const ldapStatusTones: Record<string, "success" | "info" | "warning" | "danger" | "neutral"> = {
   create: "success",
@@ -74,6 +76,10 @@ export function AdminSourcesPage() {
   const [ldapClearPassword, setLdapClearPassword] = useState(false);
   const [ldapFilter, setLdapFilter] = useState("");
   const [ldapTlsVerify, setLdapTlsVerify] = useState(true);
+  const [ldapUsersBaseDn, setLdapUsersBaseDn] = useState("");
+  const [ldapGroupsBaseDn, setLdapGroupsBaseDn] = useState("");
+  const [ldapWriteEnabled, setLdapWriteEnabled] = useState(false);
+  const [ldapUpnSuffix, setLdapUpnSuffix] = useState("");
   const [ldapPasswordSet, setLdapPasswordSet] = useState(false);
   const [ldapSaving, setLdapSaving] = useState(false);
   const [ldapTesting, setLdapTesting] = useState(false);
@@ -107,6 +113,10 @@ export function AdminSourcesPage() {
     setLdapClearPassword(false);
     setLdapFilter(config.user_filter);
     setLdapTlsVerify(config.tls_verify);
+    setLdapUsersBaseDn(config.users_base_dn ?? "");
+    setLdapGroupsBaseDn(config.groups_base_dn ?? "");
+    setLdapWriteEnabled(config.write_enabled ?? false);
+    setLdapUpnSuffix(config.upn_suffix ?? "");
     setLdapPasswordSet(config.bind_password_set);
   }, [ldapQuery.data]);
 
@@ -126,6 +136,10 @@ export function AdminSourcesPage() {
         bind_dn: ldapBindDn,
         user_filter: ldapFilter,
         tls_verify: ldapTlsVerify,
+        users_base_dn: ldapUsersBaseDn,
+        groups_base_dn: ldapGroupsBaseDn,
+        write_enabled: ldapWriteEnabled,
+        upn_suffix: ldapUpnSuffix,
       };
       if (ldapClearPassword) payload.bind_password = "";
       else if (ldapPassword) payload.bind_password = ldapPassword;
@@ -248,6 +262,7 @@ export function AdminSourcesPage() {
       <div className="flex flex-wrap gap-1 rounded-lg border border-border-soft bg-background-soft/50 p-1">
         {[
           { key: "ldap" as const, label: "Active Directory", icon: Link2 },
+          { key: "directory" as const, label: "Utilisateurs & groupes", icon: UsersRound },
           { key: "rdm" as const, label: "Remote Desktop Manager", icon: MonitorSmartphone },
         ].map((item) => (
           <button
@@ -275,7 +290,8 @@ export function AdminSourcesPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">Annuaire</p>
                 <h2 className="text-sm font-semibold text-foreground">Connexion Active Directory</h2>
                 <p className="mt-1 text-xs text-muted">
-                  Lecture seule. Le mot de passe est chiffré avec la clé de l'application.
+                  Lecture et, si activé, écriture contrôlée. Le mot de passe est chiffré avec la clé
+                  de l'application.
                 </p>
               </div>
               <Badge tone={ldapEnabled ? "success" : "neutral"}>
@@ -321,6 +337,42 @@ export function AdminSourcesPage() {
                   placeholder="OU=Agents,DC=pnfor,DC=local"
                   disabled={!canManageSettings}
                 />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="ldap-users-base">OU de création des utilisateurs</Label>
+                  <Input
+                    id="ldap-users-base"
+                    value={ldapUsersBaseDn}
+                    onChange={(event) => setLdapUsersBaseDn(event.target.value)}
+                    placeholder="OU=Agents,DC=pnfor,DC=local"
+                    disabled={!canManageSettings}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ldap-groups-base">Base des groupes</Label>
+                  <Input
+                    id="ldap-groups-base"
+                    value={ldapGroupsBaseDn}
+                    onChange={(event) => setLdapGroupsBaseDn(event.target.value)}
+                    placeholder="OU=Groupes,DC=pnfor,DC=local"
+                    disabled={!canManageSettings}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="ldap-upn">Suffixe UPN</Label>
+                <Input
+                  id="ldap-upn"
+                  value={ldapUpnSuffix}
+                  onChange={(event) => setLdapUpnSuffix(event.target.value)}
+                  placeholder="@forets-parcnational.fr"
+                  disabled={!canManageSettings}
+                />
+                <p className="mt-1 text-[10px] text-muted-2">
+                  Utilisé pour construire le userPrincipalName à la création. Laissez vide pour
+                  utiliser l'adresse e-mail.
+                </p>
               </div>
               <div>
                 <Label htmlFor="ldap-bind">Compte de service (DN)</Label>
@@ -368,6 +420,26 @@ export function AdminSourcesPage() {
                   disabled={!canManageSettings}
                 />
               </div>
+              <div className="flex items-center justify-between rounded-lg border border-border-soft bg-background/40 px-3 py-2.5">
+                <div>
+                  <p className="text-xs font-medium text-foreground">Gestion de l'annuaire</p>
+                  <p className="text-[10px] text-muted-2">
+                    Autorise la création, la modification des utilisateurs et l'appartenance aux groupes.
+                  </p>
+                </div>
+                <Switch
+                  checked={ldapWriteEnabled}
+                  onCheckedChange={setLdapWriteEnabled}
+                  disabled={!canManageSettings}
+                  label="Gestion de l'annuaire"
+                />
+              </div>
+              {ldapWriteEnabled && !ldapUrl.toLowerCase().startsWith("ldaps://") ? (
+                <p className="rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-[10px] leading-4 text-warning">
+                  Les écritures sont possibles en LDAP simple, mais la définition d'un mot de passe
+                  nécessite impérativement LDAPS.
+                </p>
+              ) : null}
               <div className="flex items-center justify-between rounded-lg border border-border-soft bg-background/40 px-3 py-2.5">
                 <div>
                   <p className="text-xs font-medium text-foreground">Vérifier le certificat TLS</p>
@@ -535,6 +607,14 @@ export function AdminSourcesPage() {
             </CardContent>
           </Card>
         </div>
+      ) : null}
+
+      {tab === "directory" ? (
+        <LdapDirectoryPanel
+          canManage={canManageSettings}
+          writeEnabled={ldapQuery.data?.write_enabled ?? false}
+          configured={ldapConfigured}
+        />
       ) : null}
 
       {tab === "rdm" ? (

@@ -509,6 +509,10 @@ export interface LdapConfig {
   user_filter: string;
   tls_verify: boolean;
   bind_password_set: boolean;
+  users_base_dn: string;
+  groups_base_dn: string;
+  write_enabled: boolean;
+  upn_suffix: string;
 }
 
 export interface LdapTestResponse {
@@ -548,6 +552,85 @@ export interface LdapSyncResponse {
   skipped: number;
   errors: number;
   message: string;
+}
+
+export interface LdapDirectoryGroup {
+  distinguished_name: string;
+  name: string;
+  description: string | null;
+  member_count: number | null;
+}
+
+export interface LdapDirectoryUser {
+  distinguished_name: string;
+  login: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  department: string | null;
+  title: string | null;
+  phone: string | null;
+  enabled: boolean;
+  groups: LdapDirectoryGroup[];
+}
+
+export interface LdapDirectoryUserList {
+  total: number;
+  truncated: boolean;
+  rows: LdapDirectoryUser[];
+}
+
+export interface LdapDirectoryGroupList {
+  total: number;
+  rows: LdapDirectoryGroup[];
+}
+
+export interface LdapDirectoryActionResponse {
+  success: boolean;
+  message: string;
+  user: LdapDirectoryUser | null;
+}
+
+export interface NetworkShareItem {
+  id: string;
+  name: string;
+  unc_path: string;
+  drive_letter: string | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  responsible: string | null;
+  description: string | null;
+  warning_percent: number;
+  critical_percent: number;
+  min_free_gb: number | null;
+  is_active: boolean;
+  sort_order: number;
+  last_checked_at: string | null;
+  last_status: string;
+  last_total_bytes: number | null;
+  last_used_bytes: number | null;
+  last_free_bytes: number | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NetworkShareSummary {
+  total: number;
+  ok: number;
+  warning: number;
+  critical: number;
+  error: number;
+  unknown: number;
+  total_bytes: number;
+  free_bytes: number;
+}
+
+export interface NetworkShareOverview {
+  items: NetworkShareItem[];
+  summary: NetworkShareSummary;
+  alerts: NetworkShareItem[];
 }
 
 export interface StatsKpi {

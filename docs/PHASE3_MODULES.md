@@ -47,6 +47,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - **LDAP/LDAPS** : URL, base de recherche, compte de service, filtre utilisateurs et vérification TLS.
   Le mot de passe du compte de service est chiffré avec `FIELD_ENCRYPTION_KEY` et n'est jamais
   renvoyé par l'API.
+- **Gestion de l'annuaire** : création et modification d'utilisateurs Active Directory, activation
+  et désactivation, réinitialisation de mot de passe via LDAPS, recherche des utilisateurs et
+  ajout/retrait de groupes. Les écritures sont explicitement activables et auditées.
 - Test de connexion, prévisualisation des utilisateurs, création et mise à jour des agents par
   correspondance e-mail ou identifiant. Le filtre par défaut exclut les comptes désactivés.
 - **Remote Desktop Manager** : import CSV des serveurs, VM et équipements réseau (nom, hôte, IP,
@@ -305,6 +308,20 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   dernier contrôle.
 - Aucune sonde réseau n'est exécutée : la carte reflète l'état déclaré et les contrôles autorisés.
 
+### Partages réseau et volumétrie
+
+- Page **Infrastructure → Partages réseau** pour suivre des lecteurs mappés ou des chemins UNC.
+- Fiche partage : nom, chemin, lettre de lecteur, site, responsable, description, seuils d'alerte
+  et critique, libre minimum en Go, ordre et activation.
+- Contrôle de l'espace disponible avec calcul du pourcentage libre et du statut
+  `ok`, `warning`, `critical`, `error` ou `unknown`.
+- Contrôle manuel d'un partage ou de tous les partages, avec audit et conservation du dernier
+  résultat.
+- Les partages en alerte, critique ou inaccessibles remontent sur le tableau de bord.
+- Les chemins doivent être accessibles depuis le compte du serveur d'application ; le contrôle
+  s'exécute dans un processus isolé avec délai maximal pour éviter de bloquer l'API.
+- Archivage d'un partage sans suppression de l'historique de contrôle.
+
 ## Cybersécurité
 
 - Incidents : référence `INC-AAAA-NNNN`, gravité, catégorie, détection, responsable, mesures,
@@ -428,6 +445,10 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /exports/tickets?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET /exports/statistics?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
+- `GET /ldap/directory/users`, `GET /ldap/directory/groups`, `GET /ldap/directory/user-groups`
+- `POST/PATCH /ldap/directory/users`, `PUT /ldap/directory/groups`
+- `GET/POST /network-shares`, `GET /network-shares/overview`, `PATCH/DELETE /network-shares/{id}`
+- `POST /network-shares/{id}/check`, `POST /network-shares/check-all`
 - `GET /imports`, `GET /imports/templates/{type}`, `POST /imports/preview`,
   `POST /imports/{id}/apply`
 - `GET /branding`, `GET /branding/logo`

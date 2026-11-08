@@ -17,7 +17,7 @@ se configurent depuis l'administration.
 
 ## 1. Ce qui fonctionne aujourd'hui
 
-- PostgreSQL 17 portable sous Windows, migrations Alembic et 91 tables métier.
+- PostgreSQL 17 portable sous Windows, migrations Alembic et 92 tables métier.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
@@ -43,6 +43,10 @@ se configurent depuis l'administration.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - **Connexion WAPT** dans Administration : synchronisation de l'inventaire et de l'état en ligne,
   consultation des postes et des logiciels, installation et désinstallation à distance auditée.
+- **Gestion Active Directory** : création et modification d'utilisateurs, activation/désactivation,
+  réinitialisation de mot de passe via LDAPS et gestion de l'appartenance aux groupes, avec audit.
+- **Partages réseau** : suivi de l'espace libre des lecteurs et chemins UNC, seuils d'alerte et
+  critique, contrôle manuel des volumes et remontée des alertes sur le tableau de bord.
 - Supervision globale : plans multiples de site, bâtiment, étage ou baie avec image de fond
   téléversée, équipements représentés et positionnés par glisser-déposer, dépendances, filtres,
   criticité et état des contrôles.
@@ -54,8 +58,9 @@ se configurent depuis l'administration.
   licences et infrastructure, avec prévisualisation, rapport et historique ; exports XLSX/PDF du
   parc, des lignes mobiles, de l'infrastructure, des tickets et des statistiques.
 - Administration → **Sources de données** : connexion Active Directory en LDAP/LDAPS (configuration
-  chiffrée, test, prévisualisation, synchronisation des agents) et enrichissement depuis Remote
-  Desktop Manager par export CSV, sans jamais importer les secrets.
+  chiffrée, test, prévisualisation, synchronisation des agents, création et modification des
+  utilisateurs, groupes) et enrichissement depuis Remote Desktop Manager par export CSV, sans
+  jamais importer les secrets.
 - Demandes IT : création simplifiée, actions rapides, priorités, SLA, assignation, commentaires,
   temps passé, historique complet et interventions liées.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,

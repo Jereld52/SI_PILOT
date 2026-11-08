@@ -47,6 +47,7 @@ from app.models.infrastructure import (
     MonitoringResult,
 )
 from app.models.mobile import MobileLine
+from app.models.network import NetworkShare
 from app.models.notification import Notification
 from app.models.organization import (
     Agent,
@@ -151,6 +152,7 @@ __all__ = [
     "MonitoringCheck",
     "MonitoringResult",
     "MobileLine",
+    "NetworkShare",
     "Notification",
     "PasswordResetToken",
     "Permission",

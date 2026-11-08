@@ -12,6 +12,7 @@ from app.models.calendar import ActionItem
 from app.models.common import UserPreference
 from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
+from app.models.network import NetworkShare
 from app.models.organization import Agent
 from app.models.security import SecurityIncident
 from app.models.tickets import Intervention, Ticket, TicketCategory, TicketStatus
@@ -565,6 +566,32 @@ def get_alerts(db: Session) -> DashboardAlerts:
                 detail=f"Demande {ticket.reference} en retard sur son échéance",
                 link=f"/demandes/{ticket.id}",
                 category="tickets",
+            )
+        )
+
+    share_alerts = db.scalars(
+        select(NetworkShare)
+        .where(
+            NetworkShare.is_active.is_(True),
+            NetworkShare.last_status.in_(("warning", "critical", "error")),
+        )
+        .order_by(NetworkShare.last_status.desc(), NetworkShare.name)
+        .limit(5)
+    ).all()
+    for share in share_alerts:
+        if share.last_total_bytes and share.last_free_bytes is not None:
+            percent = share.last_free_bytes / share.last_total_bytes * 100
+            detail = f"Partage réseau — {percent:.1f} % libre"
+        else:
+            detail = share.last_error or "Partage réseau inaccessible"
+        items.append(
+            AlertItem(
+                id=str(share.id),
+                severity="critical" if share.last_status in {"critical", "error"} else "medium",
+                title=share.name,
+                detail=detail,
+                link="/partages-reseau",
+                category="infrastructure",
             )
         )
 

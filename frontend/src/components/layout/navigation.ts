@@ -8,6 +8,7 @@ import {
   Download,
   FileText,
   FolderKanban,
+  FolderTree,
   CircleHelp,
   LayoutDashboard,
   LifeBuoy,
@@ -107,6 +108,12 @@ export const navigationSections: NavSection[] = [
         to: "/supervision",
         icon: Radar,
         permission: "infrastructure.topology",
+      },
+      {
+        label: "Partages réseau",
+        to: "/partages-reseau",
+        icon: FolderTree,
+        permission: "infrastructure.read",
       },
       {
         label: "Cybersécurité",

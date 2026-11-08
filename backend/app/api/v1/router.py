@@ -20,6 +20,7 @@ from app.api.v1 import (
     ldap,
     licenses,
     mobile,
+    network_shares,
     notifications,
     projects,
     referentials,
@@ -63,6 +64,7 @@ api_router.include_router(rgpd.router)
 api_router.include_router(contracts.router)
 api_router.include_router(budget.router)
 api_router.include_router(infrastructure.router)
+api_router.include_router(network_shares.router)
 api_router.include_router(security.router)
 api_router.include_router(projects.router)
 api_router.include_router(documents.router)

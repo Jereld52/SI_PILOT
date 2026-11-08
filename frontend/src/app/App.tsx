@@ -95,6 +95,11 @@ const MobileLinesPage = lazy(() =>
 const HelpPage = lazy(() =>
   import("@/features/help/HelpPage").then((module) => ({ default: module.HelpPage })),
 );
+const NetworkSharesPage = lazy(() =>
+  import("@/features/infrastructure/NetworkSharesPage").then((module) => ({
+    default: module.NetworkSharesPage,
+  })),
+);
 const ReferentialsPage = lazy(() =>
   import("@/features/referentials/ReferentialsPage").then((module) => ({
     default: module.ReferentialsPage,
@@ -395,6 +400,15 @@ export function App() {
             element={
               <RequirePermission permission="infrastructure.topology">
                 <SupervisionPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="partages-reseau"
+            element={
+              <RequirePermission permission="infrastructure.read">
+                <NetworkSharesPage />
               </RequirePermission>
             }
           />

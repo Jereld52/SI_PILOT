@@ -684,6 +684,39 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "partages-reseau",
+    title: "Partages réseau et alertes de volumétrie",
+    summary: "Suivre l'espace libre des lecteurs et partages réseau avec des seuils d'alerte.",
+    category: "infrastructure",
+    tags: ["partage", "réseau", "UNC", "volumétrie", "espace disque", "alerte"],
+    blocks: [
+      p(
+        "La page Infrastructure → Partages réseau surveille l'espace disponible des lecteurs mappés et des partages UNC accessibles depuis le serveur d'application.",
+      ),
+      steps([
+        "Cliquer sur « Ajouter un partage ».",
+        "Renseigner un nom, le chemin UNC (\\\\serveur\\partage) ou la lettre de lecteur.",
+        "Choisir le site et le responsable.",
+        "Définir le seuil d'alerte, le seuil critique et éventuellement un libre minimum en Go.",
+        "Enregistrer puis lancer « Tout vérifier » ou le contrôle d'un partage.",
+      ]),
+      list([
+        "Le pourcentage libre est calculé à partir de l'espace total et de l'espace libre.",
+        "Le statut passe en alerte ou critique selon les seuils configurés.",
+        "Un partage inaccessible est signalé en erreur avec le message remonté.",
+        "Les partages archivés ne sont plus contrôlés mais leur historique est conservé.",
+      ]),
+      note(
+        "warning",
+        "Le contrôle est exécuté avec le compte du serveur d'application. Le chemin doit être accessible depuis ce serveur et les droits réseau doivent être accordés au compte de service.",
+      ),
+      note(
+        "info",
+        "Les contrôles sont lancés manuellement. Un contrôle peut prendre quelques secondes si le partage réseau est lent ou injoignable.",
+      ),
+    ],
+  },
+  {
     slug: "securite-incidents",
     title: "Cybersécurité",
     summary: "Suivre incidents, actions, vulnérabilités, sauvegardes, certificats et audits.",
@@ -872,6 +905,43 @@ export const HELP_ARTICLES: HelpArticle[] = [
       note(
         "warning",
         "Les identifiants, mots de passe et secrets RDM sont exclus. Le fichier brut n'est pas conservé. Le mot de passe du compte de service est chiffré.",
+      ),
+    ],
+  },
+  {
+    slug: "annuaire-ad",
+    title: "Annuaire Active Directory : utilisateurs et groupes",
+    summary: "Créer, modifier des comptes AD et gérer leur appartenance aux groupes.",
+    category: "administration",
+    tags: ["Active Directory", "LDAP", "utilisateur", "groupe", "annuaire", "LDAPS"],
+    blocks: [
+      p(
+        "L'onglet Administration → Sources de données → Utilisateurs & groupes permet d'agir directement dans Active Directory, en plus de la synchronisation des agents.",
+      ),
+      list([
+        "Recherche des utilisateurs par nom, identifiant ou e-mail.",
+        "Création d'un compte dans l'OU configurée.",
+        "Modification du prénom, du nom, de l'e-mail, du service, de la fonction et du téléphone.",
+        "Activation ou désactivation du compte.",
+        "Ajout et retrait de l'utilisateur dans les groupes AD.",
+      ]),
+      steps([
+        "Renseigner l'URL, la base de recherche et le compte de service dans l'onglet Active Directory.",
+        "Configurer l'OU de création des utilisateurs et la base des groupes.",
+        "Activer « Gestion de l'annuaire » et enregistrer.",
+        "Ouvrir l'onglet Utilisateurs & groupes.",
+        "Créer ou modifier un utilisateur, puis gérer ses groupes.",
+      ]),
+      note(
+        "warning",
+        "La définition ou la réinitialisation d'un mot de passe nécessite une connexion LDAPS. Sans mot de passe, le compte est créé désactivé et doit être activé depuis Active Directory.",
+      ),
+      note(
+        "warning",
+        "Le compte de service doit disposer des droits d'écriture sur les OU concernées. Appliquez le moindre privilège et auditez les opérations.",
+      ),
+      p(
+        "Toutes les créations, modifications, activations et changements de groupes sont audités. Les mots de passe ne sont jamais écrits dans le journal d'audit.",
       ),
     ],
   },
