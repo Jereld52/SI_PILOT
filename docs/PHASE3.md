@@ -151,7 +151,7 @@ des PIN/PUK, écran Téléphonie mobile.
 - Pas encore de mise à jour de masse ni de fusion de doublons.
 - Les comptes applicatifs ne sont pas encore reliés aux fiches agents.
 - Les contrats, le budget, l'infrastructure, la cybersécurité, les projets, la documentation et le
-  calendrier restent en attente.
+  calendrier ont depuis été livrés ; voir le détail dans `PHASE3_MODULES.md`.
 
 ## Tranche suivante
 
