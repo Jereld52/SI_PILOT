@@ -190,6 +190,20 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Les codes PIN/PUK restent gérés séparément avec des permissions dédiées.
 - La suppression est tracée dans l'audit avec un instantané de la ligne.
 
+### Connexion WAPT
+
+- Nouvel onglet **Administration → WAPT** avec trois sections : Connexion, Postes et Logiciels.
+- Configuration de l'URL du serveur, des identifiants, du mot de passe chiffré, de la vérification
+  TLS et des chemins API. Les chemins sont adaptables à la version du serveur WAPT.
+- Test de connexion et synchronisation de l'inventaire des postes.
+- Création ou mise à jour des fiches du parc à partir de WAPT : UUID, nom machine, IP, MAC,
+  numéro de série, fabricant, modèle, système, dernier utilisateur, groupes et domaine.
+- L'inventaire brut WAPT est conservé dans les données externes de l'équipement.
+- État en ligne / hors ligne et dernière connexion visibles dans l'administration et dans le parc.
+- Liste des paquets disponibles, liste des paquets installés par poste.
+- Installation et désinstallation à distance avec confirmation et journal d'audit.
+- Aucune action distante n'est lancée sans validation explicite de l'administrateur.
+
 ### Personnalisation du tableau de bord
 
 - Chaque utilisateur choisit les tuiles de modules affichées et leur ordre.
@@ -383,6 +397,10 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /imports`, `GET /imports/templates/{type}`, `POST /imports/preview`,
   `POST /imports/{id}/apply`
 - `GET/PUT /admin/settings/smtp`, `POST /admin/settings/smtp/test`
+- `GET/PUT /admin/wapt/config`, `POST /admin/wapt/test`, `POST /admin/wapt/sync`
+- `GET /admin/wapt/hosts`, `GET /admin/wapt/packages`,
+  `GET /admin/wapt/hosts/{uuid}/packages`,
+  `POST /admin/wapt/hosts/{uuid}/install`, `POST /admin/wapt/hosts/{uuid}/uninstall`
 - `GET/PUT /dashboard/tiles`
 - `GET /calendar/overview`, `GET/POST /calendar/events`, `GET/PATCH/DELETE /calendar/events/{id}`
 - `GET/POST /calendar/actions`, `GET/PATCH/DELETE /calendar/actions/{id}`
@@ -390,9 +408,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       66 passed
+pytest -q       67 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 144 source files
+mypy app        Success: no issues found in 147 source files
 npm run build   TypeScript + Vite OK
 ```
 

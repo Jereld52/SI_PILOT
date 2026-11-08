@@ -30,6 +30,7 @@ from app.api.v1 import (
     stock,
     suppliers,
     tickets,
+    wapt,
 )
 
 api_router = APIRouter()
@@ -61,4 +62,5 @@ api_router.include_router(projects.router)
 api_router.include_router(documents.router)
 api_router.include_router(calendar.router)
 api_router.include_router(ldap.router)
+api_router.include_router(wapt.router)
 api_router.include_router(statistics.router)

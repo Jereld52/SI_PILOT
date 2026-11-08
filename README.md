@@ -40,6 +40,8 @@ le RGPD, la documentation et les échéances.
   export ICS, QR code par matériel et sortie/retour.- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
+- **Connexion WAPT** dans Administration : synchronisation de l'inventaire et de l'état en ligne,
+  consultation des postes et des logiciels, installation et désinstallation à distance auditée.
 - Supervision globale : carte visuelle cliquable, équipements positionnables par glisser-déposer,
   dépendances, filtres, criticité et état des contrôles.
 - Cybersécurité : incidents, actions, vulnérabilités, sauvegardes, certificats et audits.
@@ -84,7 +86,7 @@ le RGPD, la documentation et les échéances.
   d'un événement ou d'une réservation de matériel depuis le calendrier.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 66 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 67 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

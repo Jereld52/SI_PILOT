@@ -1499,3 +1499,77 @@ export interface SmtpSettings {
   password_set: boolean;
   configured: boolean;
 }
+
+export interface WaptConfig {
+  enabled: boolean;
+  base_url: string;
+  username: string;
+  password_set: boolean;
+  verify_tls: boolean;
+  hosts_path: string;
+  host_detail_path: string;
+  fetch_details: boolean;
+  packages_path: string;
+  host_packages_path: string;
+  install_path: string;
+  uninstall_path: string;
+  package_field: string;
+  timeout_seconds: number;
+  configured: boolean;
+}
+
+export interface WaptTestResponse {
+  ok: boolean;
+  message: string;
+  host_count: number;
+  sample_hosts: string[];
+}
+
+export interface WaptHost {
+  uuid: string;
+  hostname: string;
+  description: string;
+  connected: boolean;
+  last_seen: string;
+  os_name: string;
+  os_version: string;
+  ip_address: string;
+  mac_address: string;
+  serial_number: string;
+  manufacturer: string;
+  model: string;
+  last_user: string;
+  groups: string;
+  domain: string;
+  wapt_version: string;
+  raw: Record<string, unknown>;
+}
+
+export interface WaptPackage {
+  name: string;
+  version: string;
+  description: string;
+  raw: Record<string, unknown>;
+}
+
+export interface WaptHostPackage {
+  name: string;
+  version: string;
+  installed: boolean;
+  raw: Record<string, unknown>;
+}
+
+export interface WaptSyncResponse {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+  duration_seconds: number;
+  synced_at: string;
+}
+
+export interface WaptActionResponse {
+  message: string;
+  result: Record<string, unknown> | null;
+}

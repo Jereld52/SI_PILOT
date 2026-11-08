@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminImportExportPage } from "@/features/admin/AdminImportExportPage";
 import { AdminLayout } from "@/features/admin/AdminLayout";
 import { AdminSourcesPage } from "@/features/admin/AdminSourcesPage";
+import { AdminWaptPage } from "@/features/admin/AdminWaptPage";
 import { AuditPage } from "@/features/admin/AuditPage";
 import { RolesPage } from "@/features/admin/RolesPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
@@ -107,6 +108,14 @@ export function App() {
               element={
                 <RequirePermission permission="admin.settings.read">
                   <AdminSourcesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="wapt"
+              element={
+                <RequirePermission permission="admin.settings.read">
+                  <AdminWaptPage />
                 </RequirePermission>
               }
             />
