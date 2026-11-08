@@ -1,4 +1,4 @@
-import { Database, FileClock, Settings, ShieldAlert, ShieldCheck, UsersRound } from "lucide-react";
+import { Database, FileClock, Plug, Settings, ShieldAlert, ShieldCheck, UsersRound } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { PageHeader } from "@/components/ui/page-header";
@@ -12,6 +12,7 @@ const tabs = [
   { to: "/admin/roles", label: "Rôles & permissions", icon: ShieldCheck, permission: "admin.roles.read" },
   { to: "/admin/referentials", label: "Référentiels", icon: Database, permission: "referentials.read" },
   { to: "/admin/audit", label: "Journal d'audit", icon: FileClock, permission: "audit.read" },
+  { to: "/admin/sources", label: "Sources de données", icon: Plug, permission: "admin.settings.read" },
   { to: "/admin/settings", label: "Paramètres", icon: Settings, permission: "admin.settings.read" },
 ];
 

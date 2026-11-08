@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminLayout } from "@/features/admin/AdminLayout";
+import { AdminSourcesPage } from "@/features/admin/AdminSourcesPage";
 import { AuditPage } from "@/features/admin/AuditPage";
 import { RolesPage } from "@/features/admin/RolesPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
@@ -92,6 +93,14 @@ export function App() {
               element={
                 <RequirePermission permission="referentials.read">
                   <ReferentialsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="sources"
+              element={
+                <RequirePermission permission="admin.settings.read">
+                  <AdminSourcesPage />
                 </RequirePermission>
               }
             />

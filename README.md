@@ -39,9 +39,9 @@ le RGPD, la documentation et les échéances.
 - Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser.
 - Module d'import central : CSV/XLSX pour agents, parc, mobiles, fournisseurs, licences et
   infrastructure, avec prévisualisation, rapport et historique.
-- Connexion Active Directory en LDAP/LDAPS : configuration chiffrée, test, prévisualisation et
-  synchronisation des agents sans écraser les données métier.
-- Enrichissement depuis Remote Desktop Manager par export CSV, sans jamais importer les secrets.
+- Administration → **Sources de données** : connexion Active Directory en LDAP/LDAPS (configuration
+  chiffrée, test, prévisualisation, synchronisation des agents) et enrichissement depuis Remote
+  Desktop Manager par export CSV, sans jamais importer les secrets.
 - Demandes IT : création simplifiée, actions rapides, priorités, SLA, assignation, commentaires,
   temps passé, historique complet et interventions liées.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,

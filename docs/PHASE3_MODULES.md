@@ -20,11 +20,10 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 ## Module d'import, Active Directory et RDM
 
-- Écran **Imports** avec quatre espaces : fichiers, Active Directory, Remote Desktop Manager et
-  historique.
-- Import CSV/XLSX des agents, équipements, lignes mobiles, fournisseurs, licences et infrastructure.
-- Prévisualisation systématique, détection des doublons, rapport d'erreurs et application auditée.
-- Modèles téléchargeables pour chaque type d'import.
+- Écran **Imports** centré sur les fichiers : agents, équipements, lignes mobiles, fournisseurs,
+  licences et infrastructure, avec prévisualisation, détection des doublons, rapport d'erreurs,
+  application auditée, modèles téléchargeables et historique.
+- **Administration → Sources de données** regroupe les connexions d'enrichissement.
 - **LDAP/LDAPS** : URL, base de recherche, compte de service, filtre utilisateurs et vérification TLS.
   Le mot de passe du compte de service est chiffré avec `FIELD_ENCRYPTION_KEY` et n'est jamais
   renvoyé par l'API.
