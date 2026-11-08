@@ -1,16 +1,12 @@
 import io
 from collections import Counter
-from datetime import datetime
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.exports.pdf_utils import create_document, make_table, meta_line
 from app.models.assets import Asset
 
 BASE_HEADERS = [
@@ -230,19 +226,10 @@ def assets_xlsx(
 
 def assets_pdf(assets: list[Asset]) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
+    document = create_document(
         buffer,
-        pagesize=landscape(A4),
-        leftMargin=8 * mm,
-        rightMargin=8 * mm,
-        topMargin=8 * mm,
-        bottomMargin=8 * mm,
         title="Parc informatique détaillé",
-    )
-    styles = getSampleStyleSheet()
-    title = Paragraph(
-        f"Parc informatique détaillé — {len(assets)} équipement(s) — {datetime.now().strftime('%d/%m/%Y')}",
-        styles["Title"],
+        subtitle=f"{len(assets)} équipement(s)",
     )
     headers = [
         "Inventaire",
@@ -277,36 +264,21 @@ def assets_pdf(assets: list[Asset]) -> bytes:
                 asset.wapt_last_user or "",
             ]
         )
-    table = Table(
+    table = make_table(
         rows,
-        repeatRows=1,
-        colWidths=[
+        [
             26 * mm,
-            42 * mm,
+            40 * mm,
             24 * mm,
-            36 * mm,
-            24 * mm,
-            30 * mm,
             34 * mm,
+            23 * mm,
+            28 * mm,
+            32 * mm,
             20 * mm,
-            34 * mm,
-            34 * mm,
+            32 * mm,
+            32 * mm,
         ],
+        font_size=6.2,
     )
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#772B2F")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#F3EFE2")),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 6.5),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CDCDCD")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F4EA")]),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 3),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-            ]
-        )
-    )
-    document.build([title, Spacer(1, 6), table])
+    document.build([meta_line(count=len(assets), label="équipement(s)"), table])
     return buffer.getvalue()

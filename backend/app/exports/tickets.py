@@ -8,11 +8,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Spacer, TableStyle
 
+from app.exports.pdf_utils import create_document, heading, make_table, meta_line
 from app.models.tickets import Ticket
 from app.services.periods import Granularity, StatPeriod, period_key
 
@@ -216,31 +215,25 @@ def tickets_pdf(
     end: date,
 ) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
+    document = create_document(
         buffer,
-        pagesize=landscape(A4),
-        leftMargin=10 * mm,
-        rightMargin=10 * mm,
-        topMargin=10 * mm,
-        bottomMargin=10 * mm,
         title="Statistiques des tickets",
-    )
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph(
-            f"Tickets — {len(tickets)} demande(s) — du {start.strftime('%d/%m/%Y')} "
-            f"au {end.strftime('%d/%m/%Y')} — granularité {granularity}",
-            styles["Title"],
+        subtitle=(
+            f"Du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')} · "
+            f"granularité {granularity}"
         ),
-        Spacer(1, 6),
-    ]
+    )
+    story: list = [meta_line(count=len(tickets), label="ticket(s)")]
 
     period_rows = ticket_period_rows(tickets, periods, granularity)
     if period_rows:
         table_rows = [list(period_rows[0].keys())] + [list(row.values()) for row in period_rows]
-        table = Table(table_rows, repeatRows=1, colWidths=[38 * mm, 50 * mm, 18 * mm, 18 * mm, 18 * mm, 30 * mm, 28 * mm, 28 * mm])
-        table.setStyle(_table_style())
-        story.extend([Paragraph("Synthèse par période", styles["Heading2"]), table, Spacer(1, 8)])
+        table = make_table(
+            table_rows,
+            [36 * mm, 48 * mm, 18 * mm, 18 * mm, 18 * mm, 30 * mm, 28 * mm, 28 * mm],
+            font_size=6.8,
+        )
+        story.extend([heading("Synthèse par période"), table, Spacer(1, 8)])
 
     for title, getter in (
         ("Par statut", lambda ticket: ticket.status.name),
@@ -250,9 +243,8 @@ def tickets_pdf(
     ):
         counts = _distribution(tickets, getter)
         rows = [["Libellé", "Tickets"]] + [[label, count] for label, count in counts.most_common()]
-        table = Table(rows, repeatRows=1, colWidths=[120 * mm, 30 * mm])
-        table.setStyle(_table_style())
-        story.extend([Paragraph(title, styles["Heading2"]), table, Spacer(1, 6)])
+        table = make_table(rows, [120 * mm, 30 * mm], font_size=7)
+        story.extend([heading(title), table, Spacer(1, 6)])
 
     if tickets:
         rows = [["Référence", "Objet", "Statut", "Priorité", "Catégorie", "Assigné", "Ouvert le", "Résolu le", "Temps"]]
@@ -260,7 +252,7 @@ def tickets_pdf(
             rows.append(
                 [
                     ticket.reference,
-                    ticket.subject[:70],
+                    ticket.subject,
                     ticket.status.name,
                     ticket.priority.name,
                     ticket.category.name,
@@ -270,13 +262,12 @@ def tickets_pdf(
                     f"{ticket.time_spent_minutes} min",
                 ]
             )
-        table = Table(
+        table = make_table(
             rows,
-            repeatRows=1,
-            colWidths=[26 * mm, 72 * mm, 24 * mm, 20 * mm, 30 * mm, 36 * mm, 22 * mm, 22 * mm, 18 * mm],
+            [24 * mm, 70 * mm, 23 * mm, 19 * mm, 28 * mm, 34 * mm, 21 * mm, 21 * mm, 18 * mm],
+            font_size=6.2,
         )
-        table.setStyle(_table_style())
-        story.extend([Paragraph("Détail des tickets", styles["Heading2"]), table])
+        story.extend([heading("Détail des tickets"), table])
     document.build(story)
     return buffer.getvalue()
 

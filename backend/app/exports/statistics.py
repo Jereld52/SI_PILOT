@@ -6,11 +6,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Spacer, TableStyle
 
+from app.exports.pdf_utils import create_document, heading, make_table, meta_line
 from app.schemas.statistics import StatisticsOverview, StatsPoint
 
 HEADER_FILL = PatternFill("solid", fgColor="772B2F")
@@ -137,24 +136,15 @@ def _table_style() -> TableStyle:
 
 def statistics_pdf(overview: StatisticsOverview) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
+    document = create_document(
         buffer,
-        pagesize=landscape(A4),
-        leftMargin=10 * mm,
-        rightMargin=10 * mm,
-        topMargin=10 * mm,
-        bottomMargin=10 * mm,
         title="Statistiques consolidées",
-    )
-    styles = getSampleStyleSheet()
-    story = [
-        Paragraph(
-            f"Statistiques consolidées — du {overview.start.strftime('%d/%m/%Y')} "
-            f"au {overview.end.strftime('%d/%m/%Y')} — granularité {overview.granularity}",
-            styles["Title"],
+        subtitle=(
+            f"Du {overview.start.strftime('%d/%m/%Y')} au "
+            f"{overview.end.strftime('%d/%m/%Y')} · granularité {overview.granularity}"
         ),
-        Spacer(1, 6),
-    ]
+    )
+    story: list = [meta_line(count=len(overview.kpis), label="indicateur(s)")]
     kpi_rows = [["Indicateur", "Valeur", "Précision"]] + [
         [
             kpi.label,
@@ -163,9 +153,8 @@ def statistics_pdf(overview: StatisticsOverview) -> bytes:
         ]
         for kpi in overview.kpis
     ]
-    table = Table(kpi_rows, repeatRows=1, colWidths=[80 * mm, 35 * mm, 140 * mm])
-    table.setStyle(_table_style())
-    story.extend([Paragraph("Indicateurs clés", styles["Heading2"]), table, Spacer(1, 8)])
+    table = make_table(kpi_rows, [80 * mm, 35 * mm, 140 * mm], font_size=7)
+    story.extend([heading("Indicateurs clés"), table, Spacer(1, 8)])
 
     period_rows = [["Période", "Créés", "Résolus", "Clos", "Interventions", "Incidents"]] + [
         [
@@ -182,9 +171,12 @@ def statistics_pdf(overview: StatisticsOverview) -> bytes:
         ]
         for index, point in enumerate(overview.ticket_periods)
     ]
-    table = Table(period_rows, repeatRows=1, colWidths=[45 * mm, 22 * mm, 22 * mm, 22 * mm, 32 * mm, 30 * mm])
-    table.setStyle(_table_style())
-    story.extend([Paragraph("Activité par période", styles["Heading2"]), table, Spacer(1, 8)])
+    table = make_table(
+        period_rows,
+        [45 * mm, 22 * mm, 22 * mm, 22 * mm, 32 * mm, 30 * mm],
+        font_size=7,
+    )
+    story.extend([heading("Activité par période"), table, Spacer(1, 8)])
 
     for title, points in (
         ("Tickets par statut", overview.tickets_by_status),
@@ -192,18 +184,16 @@ def statistics_pdf(overview: StatisticsOverview) -> bytes:
         ("Tickets par catégorie", overview.tickets_by_category),
     ):
         rows = [["Libellé", "Tickets"]] + [[point.label, point.value] for point in points]
-        table = Table(rows, repeatRows=1, colWidths=[110 * mm, 30 * mm])
-        table.setStyle(_table_style())
-        story.extend([Paragraph(title, styles["Heading2"]), table, Spacer(1, 5)])
+        table = make_table(rows, [110 * mm, 30 * mm], font_size=7)
+        story.extend([heading(title), table, Spacer(1, 5)])
 
     if overview.budget is not None:
         rows = [["Catégorie", "Voté", "Engagé", "Facturé"]] + [
             [category.label, category.voted, category.committed, category.invoiced]
             for category in overview.budget.categories
         ]
-        table = Table(rows, repeatRows=1, colWidths=[100 * mm, 30 * mm, 30 * mm, 30 * mm])
-        table.setStyle(_table_style())
-        story.extend([Paragraph("Budget par catégorie", styles["Heading2"]), table])
+        table = make_table(rows, [100 * mm, 30 * mm, 30 * mm, 30 * mm], font_size=7)
+        story.extend([heading("Budget par catégorie"), table])
 
     document.build(story)
     return buffer.getvalue()

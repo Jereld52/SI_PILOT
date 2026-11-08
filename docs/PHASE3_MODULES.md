@@ -119,6 +119,10 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
     historique des affectations, lignes mobiles non secrètes, tickets demandés et mouvements
     de stock. Les PIN/PUK ne sont jamais inclus.
 - Les exports sont audités (nombre de lignes et format).
+- Tous les PDF sont harmonisés : logo du Parc national de forêts, nom de l'application, titre de
+  l'export, date de génération, en-tête, pied de page et pagination.
+- Les tableaux PDF utilisent des cellules à retour à la ligne automatique pour éviter les
+  débordements de colonnes.
 - Les secrets mobiles (PIN/PUK) ne sont jamais inclus dans les exports.
 
 ### Exports sur mesure
@@ -386,9 +390,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       65 passed
+pytest -q       66 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 143 source files
+mypy app        Success: no issues found in 144 source files
 npm run build   TypeScript + Vite OK
 ```
 

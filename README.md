@@ -63,6 +63,7 @@ le RGPD, la documentation et les échéances.
   personnelles détenues sur un agent, avec audit. Les PIN/PUK restent exclus.
 - Exports détaillés XLSX et PDF du parc, des lignes mobiles et de l'infrastructure : toutes les
   colonnes des fiches, WAPT dynamique, historique des affectations, dépendances et supervision.
+  Les PDF portent le logo du Parc national de forêts, un titre, un en-tête et une pagination.
   Les PIN/PUK restent exclus des exports.
 - Page **Exports sur mesure** : choix du jeu de données, des colonnes, des filtres (statut, type,
   site, période) et du format XLSX/PDF, pour produire un fichier ciblé.
@@ -83,7 +84,7 @@ le RGPD, la documentation et les échéances.
   d'un événement ou d'une réservation de matériel depuis le calendrier.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 65 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 66 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

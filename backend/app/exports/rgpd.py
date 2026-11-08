@@ -6,12 +6,10 @@ from typing import Any
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.exports.pdf_utils import create_document, make_table, meta_line
 from app.models.assets import Asset, AssetAssignment, StockMovement
 from app.models.mobile import MobileLine
 from app.models.organization import Agent, AgentAccount
@@ -379,25 +377,14 @@ def rgpd_pdf(
     breaches: list[DataBreach],
 ) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
+    document = create_document(
         buffer,
-        pagesize=landscape(A4),
-        leftMargin=8 * mm,
-        rightMargin=8 * mm,
-        topMargin=8 * mm,
-        bottomMargin=8 * mm,
         title="Registre RGPD",
-    )
-    styles = getSampleStyleSheet()
-    title = Paragraph(
-        f"Registre RGPD — {datetime.now().strftime('%d/%m/%Y')}",
-        styles["Title"],
-    )
-    summary = Paragraph(
-        f"{len(activities)} traitement(s) · {len(collections)} collecte(s) · "
-        f"{len(dpo_requests)} demande(s) DPO · {len(rights_requests)} demande(s) de droits · "
-        f"{len(breaches)} violation(s)",
-        styles["Normal"],
+        subtitle=(
+            f"{len(activities)} traitement(s) · {len(collections)} collecte(s) · "
+            f"{len(dpo_requests)} demande(s) DPO · {len(rights_requests)} droit(s) · "
+            f"{len(breaches)} violation(s)"
+        ),
     )
     rows: list[list[Any]] = [
         ["Référence", "Traitement", "Base légale", "Conservation", "Statut", "Prochaine revue"]
@@ -413,27 +400,20 @@ def rgpd_pdf(
                 _text(activity.next_review_at),
             ]
         )
-    table = Table(
+    table = make_table(
         rows,
-        repeatRows=1,
-        colWidths=[24 * mm, 52 * mm, 34 * mm, 34 * mm, 22 * mm, 28 * mm],
+        [24 * mm, 54 * mm, 36 * mm, 36 * mm, 24 * mm, 30 * mm],
+        font_size=7,
     )
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#772B2F")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#F3EFE2")),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 7),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CDCDCD")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F4EA")]),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 3),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-            ]
-        )
+    document.build(
+        [
+            meta_line(
+                count=len(activities),
+                label="traitement(s) — vue synthétique du registre",
+            ),
+            table,
+        ]
     )
-    document.build([title, summary, Spacer(1, 6), table])
     return buffer.getvalue()
 
 
@@ -550,24 +530,14 @@ def rights_dossier_pdf(
     collections: list[DataCollection],
 ) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
+    document = create_document(
         buffer,
+        title=f"Dossier de demande de droits — {request.reference}",
+        subtitle=(
+            f"{RIGHTS_TYPE_LABELS.get(request.request_type, request.request_type)} · "
+            f"{request.requester_name or 'Demandeur non précisé'} · {_status(request.status)}"
+        ),
         pagesize=A4,
-        leftMargin=14 * mm,
-        rightMargin=14 * mm,
-        topMargin=14 * mm,
-        bottomMargin=14 * mm,
-        title=f"Dossier RGPD {request.reference}",
-    )
-    styles = getSampleStyleSheet()
-    title = Paragraph(
-        f"Dossier de demande de droits — {request.reference}",
-        styles["Title"],
-    )
-    summary = Paragraph(
-        f"{RIGHTS_TYPE_LABELS.get(request.request_type, request.request_type)} · "
-        f"{request.requester_name or 'Demandeur non précisé'} · {_status(request.status)}",
-        styles["Normal"],
     )
     rows: list[list[Any]] = [["Champ", "Valeur"]]
     for label, value in (
@@ -585,23 +555,13 @@ def rights_dossier_pdf(
         ("Collectes rattachées", str(len(collections))),
     ):
         rows.append([label, value])
-    table = Table(rows, repeatRows=1, colWidths=[45 * mm, 125 * mm])
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#772B2F")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#F3EFE2")),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CDCDCD")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F4EA")]),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ]
-        )
+    table = make_table(rows, [45 * mm, 105 * mm], font_size=8)
+    document.build(
+        [
+            meta_line(count=len(rows) - 1, label="champ(s) — dossier de demande"),
+            table,
+        ]
     )
-    document.build([title, summary, Spacer(1, 8), table])
     return buffer.getvalue()
 
 
@@ -814,22 +774,15 @@ def agent_pdf(
     mobile_lines: list[MobileLine],
 ) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        leftMargin=14 * mm,
-        rightMargin=14 * mm,
-        topMargin=14 * mm,
-        bottomMargin=14 * mm,
-        title="Données personnelles RGPD",
-    )
-    styles = getSampleStyleSheet()
     full_name = f"{agent.first_name} {agent.last_name}".strip()
-    title = Paragraph(f"Données personnelles — {full_name}", styles["Title"])
-    summary = Paragraph(
-        f"{agent.email_pro} · {agent.service.name if agent.service else 'Service non précisé'} · "
-        f"export du {datetime.now().strftime('%d/%m/%Y')}",
-        styles["Normal"],
+    document = create_document(
+        buffer,
+        title=f"Données personnelles — {full_name}",
+        subtitle=(
+            f"{agent.email_pro} · "
+            f"{agent.service.name if agent.service else 'Service non précisé'}"
+        ),
+        pagesize=A4,
     )
     rows: list[list[Any]] = [["Champ", "Valeur"]]
     for label, value in (
@@ -851,21 +804,11 @@ def agent_pdf(
         ("Mouvements de stock", str(len(stock_movements))),
     ):
         rows.append([label, value])
-    table = Table(rows, repeatRows=1, colWidths=[45 * mm, 125 * mm])
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#772B2F")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#F3EFE2")),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CDCDCD")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F4EA")]),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ]
-        )
+    table = make_table(rows, [45 * mm, 105 * mm], font_size=8)
+    document.build(
+        [
+            meta_line(count=len(rows) - 1, label="champ(s) — données personnelles"),
+            table,
+        ]
     )
-    document.build([title, summary, Spacer(1, 8), table])
     return buffer.getvalue()

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 import io
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -11,15 +10,13 @@ from uuid import UUID
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.permissions import has_permission
+from app.exports.pdf_utils import create_document, make_table, meta_line
 from app.models.assets import Asset, License, Supplier
 from app.models.auth import User
 from app.models.contracts import Contract
@@ -915,50 +912,20 @@ def custom_pdf(
     subtitle: str = "",
 ) -> bytes:
     buffer = io.BytesIO()
-    document = SimpleDocTemplate(
+    document = create_document(
         buffer,
-        pagesize=landscape(A4),
-        leftMargin=8 * mm,
-        rightMargin=8 * mm,
-        topMargin=8 * mm,
-        bottomMargin=8 * mm,
         title=title,
+        subtitle=subtitle or f"{len(rows)} ligne(s)",
     )
-    styles = getSampleStyleSheet()
-    header_style = ParagraphStyle(
-        "CustomHeader",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=7,
-        leading=8,
-        textColor=colors.HexColor("#F3EFE2"),
-    )
-    cell_style = ParagraphStyle(
-        "CustomCell",
-        parent=styles["Normal"],
-        fontSize=6,
-        leading=7,
-        textColor=colors.HexColor("#1F2933"),
-    )
-    title_flow = Paragraph(
-        f"{title} — {len(rows)} ligne(s) — {datetime.now().strftime('%d/%m/%Y')}",
-        styles["Title"],
-    )
-    story: list[Any] = [title_flow]
-    if subtitle:
-        story.append(Paragraph(html.escape(subtitle), styles["Normal"]))
-    story.append(Spacer(1, 6))
+    story: list[Any] = [meta_line(count=len(rows), label="ligne(s)")]
 
     if columns:
-        data: list[list[Any]] = [
-            [Paragraph(html.escape(column.label), header_style) for column in columns]
+        rows_data: list[list[Any]] = [
+            [column.label for column in columns]
         ]
         for row in rows:
-            data.append(
-                [
-                    Paragraph(html.escape(str(_cell(row.get(column.key)))), cell_style)
-                    for column in columns
-                ]
+            rows_data.append(
+                [_cell(row.get(column.key)) for column in columns]
             )
         available = landscape(A4)[0] - 16 * mm
         weights = [
@@ -966,21 +933,6 @@ def custom_pdf(
         ]
         total = sum(weights)
         widths = [available * weight / total for weight in weights]
-        table = Table(data, repeatRows=1, colWidths=widths)
-        table.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#772B2F")),
-                    ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CDCDCD")),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F4EA")]),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 2),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-                    ("TOPPADDING", (0, 0), (-1, -1), 2),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-                ]
-            )
-        )
-        story.append(table)
+        story.append(make_table(rows_data, widths, font_size=6))
     document.build(story)
     return buffer.getvalue()
