@@ -30,7 +30,7 @@ export function AppLayout() {
   }, [collapsed]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Sidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed((value) => !value)}
@@ -66,11 +66,11 @@ export function AppLayout() {
           </div>
         ) : null}
 
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6">
+        <main className="mx-auto w-full max-w-[1560px] px-4 py-5 sm:px-6 sm:py-6">
           <Outlet />
         </main>
 
-        <footer className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 px-4 pb-5 text-[10px] text-muted-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <footer className="mx-auto flex w-full max-w-[1560px] flex-col gap-1 border-t border-border-soft/60 px-4 pb-5 pt-3 text-[9px] uppercase tracking-wide text-muted-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span>SI PNFor PILOTE · Parc national de forêts</span>
           <span>Données hébergées localement · accès journalisé</span>
         </footer>

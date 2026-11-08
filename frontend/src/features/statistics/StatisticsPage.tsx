@@ -69,13 +69,10 @@ const kpiIcons: Record<string, LucideIcon> = {
 };
 
 const kpiTones: Record<string, string> = {
-  danger: "border-danger/30 bg-[linear-gradient(145deg,rgba(224,133,133,0.15),rgba(23,32,29,0.92)_62%)] text-danger",
-  warning:
-    "border-warning/30 bg-[linear-gradient(145deg,rgba(246,219,67,0.13),rgba(23,32,29,0.92)_62%)] text-warning",
-  success:
-    "border-success/30 bg-[linear-gradient(145deg,rgba(140,196,106,0.13),rgba(23,32,29,0.92)_62%)] text-success",
-  neutral:
-    "border-primary/40 bg-[linear-gradient(145deg,rgba(119,43,47,0.32),rgba(23,32,29,0.92)_62%)] text-foreground",
+  danger: "border-l-danger/70 text-danger",
+  warning: "border-l-warning/70 text-warning",
+  success: "border-l-success/70 text-success",
+  neutral: "border-l-primary/70 text-foreground",
 };
 
 const statusLabels: Record<string, string> = {
@@ -151,21 +148,21 @@ function StatKpiCard({ kpi }: { kpi: StatsKpi }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border p-4 shadow-card",
+        "relative overflow-hidden rounded-lg border border-border-soft border-l-2 bg-surface/70 p-3.5 shadow-card",
         kpiTones[kpi.severity] ?? kpiTones.neutral,
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-black/20">
-          <Icon className="h-4 w-4" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border-soft bg-background/40">
+          <Icon className="h-3.5 w-3.5" />
         </span>
-        <span className="rounded-full border border-white/10 bg-black/15 px-2 py-0.5 text-[9px] uppercase tracking-wide text-muted">
+        <span className="rounded-md border border-border-soft bg-background/30 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted-2">
           {kpi.unit ?? "valeur"}
         </span>
       </div>
-      <p className="mt-3 text-[10px] uppercase tracking-wide text-muted-2">{kpi.label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-tight">{kpiValue(kpi)}</p>
-      {kpi.hint ? <p className="mt-1 text-[10px] text-muted-2">{kpi.hint}</p> : null}
+      <p className="mt-2.5 text-[10px] uppercase tracking-[0.12em] text-muted-2">{kpi.label}</p>
+      <p className="mt-0.5 text-[1.6rem] font-semibold tracking-tight">{kpiValue(kpi)}</p>
+      {kpi.hint ? <p className="mt-1 text-[10px] leading-4 text-muted-2">{kpi.hint}</p> : null}
     </div>
   );
 }

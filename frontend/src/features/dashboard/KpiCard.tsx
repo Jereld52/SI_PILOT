@@ -35,37 +35,30 @@ const icons: Record<string, LucideIcon> = {
   budget_consumed: Receipt,
 };
 
-const tones: Record<
-  string,
-  { card: string; icon: string; value: string; bar: string; glow: string }
-> = {
+const tones: Record<string, { card: string; icon: string; value: string; bar: string }> = {
   danger: {
-    card: "border-danger/30 bg-[linear-gradient(145deg,rgba(224,133,133,0.16),rgba(23,32,29,0.92)_58%)]",
-    icon: "border-danger/35 bg-danger/15 text-danger",
+    card: "border-l-danger/70",
+    icon: "border-danger/25 bg-danger/10 text-danger",
     value: "text-danger",
-    bar: "from-danger/80 to-danger/20",
-    glow: "bg-danger/20",
+    bar: "from-danger/70 to-danger/10",
   },
   warning: {
-    card: "border-warning/25 bg-[linear-gradient(145deg,rgba(246,219,67,0.14),rgba(23,32,29,0.92)_58%)]",
-    icon: "border-warning/30 bg-warning/15 text-warning",
+    card: "border-l-warning/70",
+    icon: "border-warning/25 bg-warning/10 text-warning",
     value: "text-warning",
-    bar: "from-warning/80 to-warning/15",
-    glow: "bg-warning/15",
+    bar: "from-warning/70 to-warning/10",
   },
   success: {
-    card: "border-success/25 bg-[linear-gradient(145deg,rgba(140,196,106,0.14),rgba(23,32,29,0.92)_58%)]",
-    icon: "border-success/30 bg-success/15 text-success",
+    card: "border-l-success/70",
+    icon: "border-success/25 bg-success/10 text-success",
     value: "text-success",
-    bar: "from-success/80 to-success/15",
-    glow: "bg-success/15",
+    bar: "from-success/70 to-success/10",
   },
   neutral: {
-    card: "border-primary/40 bg-[linear-gradient(145deg,rgba(119,43,47,0.34),rgba(23,32,29,0.92)_62%)]",
-    icon: "border-primary-bright/40 bg-primary/25 text-primary-strong",
+    card: "border-l-primary/70",
+    icon: "border-primary/30 bg-primary/10 text-primary-strong",
     value: "text-foreground",
-    bar: "from-primary-bright/80 to-primary/20",
-    glow: "bg-primary/25",
+    bar: "from-primary/70 to-primary/10",
   },
 };
 
@@ -80,44 +73,29 @@ export function KpiCard({ kpi }: { kpi: KpiValue }) {
   const content = (
     <div
       className={cn(
-        "group relative h-full overflow-hidden rounded-xl border p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl",
+        "group relative h-full overflow-hidden rounded-lg border border-border-soft border-l-2 bg-surface/70 p-3.5 shadow-card transition-colors hover:border-border hover:bg-surface/85",
         tone.card,
       )}
     >
-      <span
-        className={cn(
-          "pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-2xl",
-          tone.glow,
-        )}
-        aria-hidden="true"
-      />
-      <div className="relative flex items-start justify-between gap-3">
-        <div
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg border shadow-inner",
-            tone.icon,
-          )}
-        >
-          <Icon className="h-4 w-4" aria-hidden="true" />
+      <div className="flex items-start justify-between gap-3">
+        <div className={cn("flex h-8 w-8 items-center justify-center rounded-md border", tone.icon)}>
+          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         </div>
         {kpi.link ? (
-          <span className="text-[10px] text-muted-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="text-[9px] uppercase tracking-wide text-muted-2 opacity-0 transition-opacity group-hover:opacity-100">
             Ouvrir →
           </span>
         ) : null}
       </div>
-      <p className="relative mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-2">
+      <p className="mt-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-2">
         {kpi.label}
       </p>
-      <p className={cn("relative mt-1 text-3xl font-semibold tracking-tight", tone.value)}>{value}</p>
+      <p className={cn("mt-0.5 text-[1.6rem] font-semibold tracking-tight", tone.value)}>{value}</p>
       {kpi.hint ? (
-        <p className="relative mt-1 line-clamp-2 text-[11px] leading-4 text-muted-2">{kpi.hint}</p>
+        <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-muted-2">{kpi.hint}</p>
       ) : null}
       <span
-        className={cn(
-          "absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r opacity-70",
-          tone.bar,
-        )}
+        className={cn("absolute inset-x-0 bottom-0 h-px bg-gradient-to-r opacity-50", tone.bar)}
         aria-hidden="true"
       />
     </div>
@@ -127,7 +105,7 @@ export function KpiCard({ kpi }: { kpi: KpiValue }) {
     return (
       <Link
         to={kpi.link}
-        className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-strong/40"
+        className="block h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-strong/40"
       >
         {content}
       </Link>

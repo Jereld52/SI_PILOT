@@ -3,31 +3,31 @@
 @theme {
   --font-sans: "Inter Variable", "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 
-  --color-background: #0c1110;
-  --color-background-soft: #121917;
-  --color-surface: #17201d;
-  --color-surface-2: #1e2925;
-  --color-surface-3: #26342e;
-  --color-border: #3a4a40;
-  --color-border-soft: #29372f;
-  --color-foreground: #f3efe2;
-  --color-muted: #b9b5a6;
-  --color-muted-2: #8b887c;
+  --color-background: #090e0d;
+  --color-background-soft: #0e1412;
+  --color-surface: #131b18;
+  --color-surface-2: #18221e;
+  --color-surface-3: #1e2b26;
+  --color-border: #2b3a33;
+  --color-border-soft: #202d27;
+  --color-foreground: #ece7db;
+  --color-muted: #a6a396;
+  --color-muted-2: #77766c;
   --color-primary: #772b2f;
-  --color-primary-deep: #4a171a;
-  --color-primary-bright: #a84349;
-  --color-primary-strong: #e0b1b4;
-  --color-primary-foreground: #fff8f6;
-  --color-accent: #cdc97e;
-  --color-success: #8cc46a;
-  --color-warning: #f6db43;
-  --color-danger: #e08585;
-  --color-info: #cdc97e;
-  --color-brand-cream: #f3efe2;
+  --color-primary-deep: #421518;
+  --color-primary-bright: #9d3e44;
+  --color-primary-strong: #d3a1a4;
+  --color-primary-foreground: #fdf8f5;
+  --color-accent: #c9c47a;
+  --color-success: #86b86a;
+  --color-warning: #e8cf4a;
+  --color-danger: #d27f7f;
+  --color-info: #b9b56e;
+  --color-brand-cream: #ece7db;
   --color-brand-green: #4a8a33;
   --color-brand-burgundy: #772b2f;
 
-  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 12px 30px -18px rgb(0 0 0 / 0.6);
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.025) inset, 0 10px 30px -24px rgb(0 0 0 / 0.85);
 }
 
 @layer base {
@@ -54,18 +54,37 @@
   body {
     margin: 0;
     background:
-      radial-gradient(1100px 650px at 6% -12%, rgb(119 43 47 / 0.34), transparent 60%),
-      radial-gradient(900px 600px at 100% 0%, rgb(205 201 126 / 0.10), transparent 55%),
-      radial-gradient(800px 500px at 50% 112%, rgb(74 138 51 / 0.08), transparent 60%),
-      linear-gradient(180deg, #120c0d 0%, #0c1110 34%, #0c1110 100%);
+      radial-gradient(1100px 760px at 8% -12%, rgb(119 43 47 / 0.17), transparent 62%),
+      radial-gradient(900px 620px at 100% -8%, rgb(201 196 122 / 0.045), transparent 58%),
+      radial-gradient(900px 600px at 50% 118%, rgb(74 138 51 / 0.045), transparent 60%),
+      linear-gradient(180deg, #0b100f 0%, #090e0d 42%, #080c0b 100%);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
   }
 
+  body::before {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    content: "";
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.017) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.017) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(1200px 800px at 50% -10%, black 0%, transparent 72%);
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
   ::selection {
-    background: rgb(205 201 126 / 0.28);
+    background: rgb(201 196 122 / 0.22);
     color: #fff;
   }
 
@@ -75,19 +94,19 @@
   }
 
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #3a4a40;
+    background: #2b3a33;
     border-radius: 999px;
     border: 2px solid var(--color-background);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #52665a;
+    background: #3d5146;
   }
 }
 
@@ -103,7 +122,7 @@
 @keyframes zoom-in {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.985);
+    transform: translateY(5px) scale(0.99);
   }
   to {
     opacity: 1;
@@ -114,7 +133,7 @@
 @keyframes slide-in-right {
   from {
     opacity: 0;
-    transform: translateX(12px);
+    transform: translateX(10px);
   }
   to {
     opacity: 1;
@@ -123,50 +142,52 @@
 }
 
 .animate-fade-in {
-  animation: fade-in 160ms ease-out;
+  animation: fade-in 180ms ease-out;
 }
 
 .animate-zoom-in {
-  animation: zoom-in 180ms ease-out;
+  animation: zoom-in 200ms ease-out;
 }
 
 .animate-slide-in-right {
-  animation: slide-in-right 180ms ease-out;
+  animation: slide-in-right 200ms ease-out;
 }
 
 .grid-noise {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.02) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.panel-sheen {
-  background-image:
-    linear-gradient(135deg, rgb(255 255 255 / 0.045) 0%, transparent 42%),
-    radial-gradient(520px 260px at 100% 0%, rgb(119 43 47 / 0.18), transparent 70%);
-}
-
-.hero-wine {
-  background-image:
-    linear-gradient(120deg, rgb(74 23 26 / 0.96) 0%, rgb(119 43 47 / 0.92) 42%, rgb(45 24 26 / 0.94) 100%),
-    radial-gradient(600px 300px at 90% 10%, rgb(205 201 126 / 0.18), transparent 70%);
-}
-
-.hero-grid {
-  background-image:
-    linear-gradient(rgb(255 255 255 / 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.055) 1px, transparent 1px);
+    linear-gradient(rgb(255 255 255 / 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: linear-gradient(90deg, transparent 0%, black 55%, black 100%);
-}
-
-.ring-wine {
-  box-shadow: 0 0 0 1px rgb(168 67 73 / 0.35), 0 18px 40px -24px rgb(0 0 0 / 0.85);
 }
 
 .text-balance {
   text-wrap: balance;
+}
+
+.panel-sheen {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.028) 0%, transparent 34%),
+    radial-gradient(560px 260px at 100% 0%, rgb(119 43 47 / 0.08), transparent 72%);
+}
+
+.hero-wine {
+  background-image:
+    linear-gradient(120deg, #241214 0%, #1a1515 46%, #101614 100%),
+    radial-gradient(620px 340px at 88% 4%, rgb(119 43 47 / 0.28), transparent 72%);
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(90deg, transparent 0%, black 60%, black 100%);
+}
+
+.ring-wine {
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.04) inset,
+    0 24px 60px -38px rgb(0 0 0 / 0.95);
 }
 
 @media (prefers-reduced-motion: reduce) {

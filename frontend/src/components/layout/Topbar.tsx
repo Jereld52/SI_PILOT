@@ -48,7 +48,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-primary/40 bg-[linear-gradient(180deg,rgba(43,20,23,0.92)_0%,rgba(14,20,18,0.90)_100%)] shadow-[0_16px_40px_-32px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-border-soft bg-background/80 shadow-[0_16px_40px_-36px_rgba(0,0,0,0.95)] backdrop-blur-xl">
         <div className="flex h-16 items-center gap-2 px-3 sm:px-4">
           <Button
             variant="ghost"
@@ -61,9 +61,9 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
           </Button>
 
           <div className="hidden min-w-0 md:block">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-accent">SI PNFor PILOTE</p>
-            <p className="truncate text-sm font-medium text-foreground">
-              <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-primary-bright align-middle" />
+            <p className="text-[9px] uppercase tracking-[0.18em] text-muted-2">SI PNFor PILOTE</p>
+            <p className="truncate text-[13px] font-medium text-foreground">
+              <span className="mr-2 inline-block h-1 w-1 rounded-full bg-primary-bright align-middle" />
               {current?.label ?? "Vue générale"}
             </p>
           </div>
