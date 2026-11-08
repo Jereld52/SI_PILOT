@@ -61,6 +61,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 - Refonte du thème avec une présence renforcée du bordeaux officiel `#772B2F` : dégradés,
   bordures, cartes, boutons, navigation active et barre supérieure.
+- Trois thèmes d'interface sélectionnables par utilisateur : **Sombre**, **Clair** et **Moderne**,
+  avec conservation de la couleur principale de la structure et recalcul automatique des nuances.
 - Héro de bienvenue avec date, accès rapides et quatre indicateurs de vigilance.
 - État des 11 modules avec compteurs réels, alertes secondaires et liens directs.
 - Chiffres clés mis en avant, indicateurs complémentaires et graphiques hiérarchisés.

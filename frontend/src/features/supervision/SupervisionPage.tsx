@@ -635,7 +635,7 @@ export function SupervisionPage() {
                   ? { aspectRatio: mapAspect }
                   : {
                       backgroundImage:
-                        "radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px)",
+                        "radial-gradient(circle, var(--color-grid-dot) 1px, transparent 1px)",
                       backgroundSize: "28px 28px",
                     }
               }
@@ -723,7 +723,7 @@ export function SupervisionPage() {
                           y1={source.y}
                           x2={target.x}
                           y2={target.y}
-                          stroke={highlighted ? "rgba(212, 175, 95, 0.9)" : "rgba(148, 163, 184, 0.35)"}
+                          stroke={highlighted ? "var(--color-accent)" : "var(--color-supervision-line)"}
                           strokeWidth={highlighted ? 0.45 : 0.25}
                           strokeDasharray={dependency.dependency_type === "power" ? "1 1" : undefined}
                         />

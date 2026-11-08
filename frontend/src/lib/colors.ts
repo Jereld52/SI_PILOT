@@ -26,14 +26,16 @@ function mix(source: string, target: string, ratio: number): string {
   return `#${toHex(from.r + (to.r - from.r) * ratio)}${toHex(from.g + (to.g - from.g) * ratio)}${toHex(from.b + (to.b - from.b) * ratio)}`;
 }
 
-export function applyPrimaryColor(color: string): void {
+export function applyPrimaryColor(color: string, theme: "dark" | "light" | "modern" = "dark"): void {
   if (!parseHex(color)) return;
   const root = document.documentElement;
+  const dark = theme === "dark";
   root.style.setProperty("--color-primary", color);
-  root.style.setProperty("--color-primary-deep", mix(color, "#000000", 0.45));
-  root.style.setProperty("--color-primary-bright", mix(color, "#ffffff", 0.18));
-  root.style.setProperty("--color-primary-strong", mix(color, "#ffffff", 0.58));
+  root.style.setProperty("--color-primary-deep", mix(color, "#000000", dark ? 0.45 : 0.4));
+  root.style.setProperty("--color-primary-bright", mix(color, "#ffffff", dark ? 0.18 : 0.1));
+  root.style.setProperty(
+    "--color-primary-strong",
+    dark ? mix(color, "#ffffff", 0.58) : mix(color, "#000000", 0.3),
+  );
   root.style.setProperty("--color-brand-burgundy", color);
-  const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (theme) theme.content = color;
 }

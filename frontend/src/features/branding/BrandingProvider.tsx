@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, type ReactNode } from "r
 
 import { applyPrimaryColor } from "@/lib/colors";
 import { apiFetch } from "@/lib/api";
+import { useTheme } from "@/features/theme/ThemeProvider";
 import type { BrandingInfo } from "@/types/api";
 
 const FALLBACK_BRANDING: BrandingInfo = {
@@ -29,6 +30,7 @@ const BrandingContext = createContext<BrandingContextValue>({
 });
 
 export function BrandingProvider({ children }: { children: ReactNode }) {
+  const { theme } = useTheme();
   const query = useQuery({
     queryKey: ["branding"],
     queryFn: () => apiFetch<BrandingInfo>("/branding"),
@@ -58,8 +60,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   }, [branding]);
 
   useEffect(() => {
-    applyPrimaryColor(branding.primary_color);
-  }, [branding.primary_color]);
+    applyPrimaryColor(branding.primary_color, theme);
+  }, [branding.primary_color, theme]);
 
   const value = useMemo<BrandingContextValue>(
     () => ({

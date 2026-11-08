@@ -1,6 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ArrowRight, Database, LockKeyhole, Network, ShieldCheck } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Database,
+  LockKeyhole,
+  Moon,
+  Network,
+  Palette,
+  ShieldCheck,
+  Sun,
+} from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -12,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
+import { THEME_OPTIONS, useTheme } from "@/features/theme/ThemeProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { SetupStatus } from "@/types/api";
 
@@ -31,6 +42,7 @@ const pillars = [
 export function LoginPage() {
   const { user, login } = useAuth();
   const branding = useBranding();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +84,30 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
-      <section className="relative hidden overflow-hidden border-r border-primary/20 bg-gradient-to-br from-[#2a1416] via-[#121917] to-[#0c1110] p-10 lg:flex lg:flex-col lg:justify-between">
+      <div className="absolute right-4 top-4 z-20 flex gap-1 rounded-lg border border-border-soft bg-surface/80 p-1 shadow-lg backdrop-blur">
+        {THEME_OPTIONS.map((option) => {
+          const Icon =
+            option.value === "dark" ? Moon : option.value === "light" ? Sun : Palette;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setTheme(option.value)}
+              title={option.label}
+              aria-label={`Thème ${option.label}`}
+              aria-pressed={theme === option.value}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                theme === option.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted hover:bg-surface-2 hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          );
+        })}
+      </div>
+      <section className="login-visual relative hidden overflow-hidden border-r border-primary/20 p-10 lg:flex lg:flex-col lg:justify-between">
         <div className="grid-noise absolute inset-0 opacity-40" aria-hidden="true" />
         <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
         <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-brand-green/10 blur-3xl" aria-hidden="true" />

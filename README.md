@@ -88,7 +88,8 @@ se configurent depuis l'administration.
 - Recherche globale filtrée par permissions, couvrant agents, parc, téléphonie, infrastructure,
   stock, tickets et interventions, fournisseurs et licences, contrats, budgets, projets,
   cybersécurité, RGPD, réservations, calendrier et documentation.
-- Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
+- Interface React/TypeScript responsive, thèmes **Sombre**, **Clair** et **Moderne**, couleur
+  principale personnalisable et navigation rétractable.
 - Menu latéral regroupé en sections repliables (Pilotage, Support & parc, Infrastructure, Gestion,
   Conformité) pour réduire la hauteur et le nombre d'entrées visibles.
 - Tableau de bord, statistiques et exports organisés en onglets pour limiter le défilement.

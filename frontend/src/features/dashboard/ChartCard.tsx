@@ -20,7 +20,16 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import type { ChartSeries } from "@/types/api";
 
-const palette = ["#a84349", "#cdc97e", "#8cc46a", "#f6db43", "#d59a9d", "#4a8a33", "#7f2f34", "#a9a45e"];
+const palette = [
+  "var(--color-primary-bright)",
+  "var(--color-accent)",
+  "var(--color-brand-green)",
+  "var(--color-warning)",
+  "var(--color-primary-strong)",
+  "var(--color-info)",
+  "var(--color-primary)",
+  "var(--color-muted)",
+];
 
 function ChartTooltip({
   active,
@@ -36,7 +45,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const value = Number(payload[0]?.value ?? 0);
   return (
-    <div className="rounded-lg border border-primary/40 bg-[#241416] px-3 py-2 text-xs shadow-2xl">
+    <div className="rounded-lg border border-primary/40 bg-surface px-3 py-2 text-xs shadow-2xl">
       <p className="font-medium text-foreground">{label}</p>
       <p className="mt-1 text-accent">
         {unit === "EUR" ? formatCurrency(value, 2) : formatNumber(value, 1)}
@@ -51,23 +60,23 @@ function EvolutionChart({ series }: { series: ChartSeries }) {
       <AreaChart data={series.points} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id={`fill-${series.key}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a84349" stopOpacity={0.55} />
-            <stop offset="55%" stopColor="#772b2f" stopOpacity={0.22} />
-            <stop offset="100%" stopColor="#772b2f" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="var(--color-primary-bright)" stopOpacity={0.55} />
+            <stop offset="55%" stopColor="var(--color-primary)" stopOpacity={0.22} />
+            <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#29372f" strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="label" tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+        <CartesianGrid stroke="var(--color-border-soft)" strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="label" tick={{ fill: "var(--color-muted-2)", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: "var(--color-muted-2)", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
         <RechartsTooltip content={<ChartTooltip unit={series.unit} />} />
         <Area
           type="monotone"
           dataKey="value"
-          stroke="#e0b1b4"
+          stroke="var(--color-primary-strong)"
           strokeWidth={2.4}
           fill={`url(#fill-${series.key})`}
           dot={false}
-          activeDot={{ r: 4, fill: "#cdc97e", stroke: "#0c1110", strokeWidth: 2 }}
+          activeDot={{ r: 4, fill: "var(--color-accent)", stroke: "var(--color-background)", strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -85,7 +94,7 @@ function StatusPie({ series }: { series: ChartSeries }) {
           innerRadius={55}
           outerRadius={85}
           paddingAngle={2}
-          stroke="#17201d"
+          stroke="var(--color-background)"
           strokeWidth={2}
         >
           {series.points.map((point, index) => (
@@ -107,13 +116,13 @@ function HorizontalBars({ series }: { series: ChartSeries }) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, series.points.length * 34 + 30)}>
       <BarChart data={series.points} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-        <CartesianGrid stroke="#29372f" strokeDasharray="3 3" horizontal={false} />
-        <XAxis type="number" tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <CartesianGrid stroke="var(--color-border-soft)" strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" tick={{ fill: "var(--color-muted-2)", fontSize: 10 }} axisLine={false} tickLine={false} />
         <YAxis
           type="category"
           dataKey="label"
           width={140}
-          tick={{ fill: "#b9b5a6", fontSize: 10 }}
+          tick={{ fill: "var(--color-muted)", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
         />

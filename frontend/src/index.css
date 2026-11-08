@@ -31,10 +31,154 @@
 }
 
 @layer base {
-  :root {
+  :root,
+  [data-theme="dark"] {
     color-scheme: dark;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
+    --app-body-background:
+      radial-gradient(1100px 760px at 8% -12%, color-mix(in srgb, var(--color-primary) 17%, transparent), transparent 62%),
+      radial-gradient(900px 620px at 100% -8%, color-mix(in srgb, var(--color-accent) 5%, transparent), transparent 58%),
+      radial-gradient(900px 600px at 50% 118%, color-mix(in srgb, var(--color-brand-green) 5%, transparent), transparent 60%),
+      linear-gradient(180deg, #0b100f 0%, #090e0d 42%, #080c0b 100%);
+    --app-grid-line: rgb(255 255 255 / 0.017);
+    --app-grid-size: 42px;
+    --app-selection-bg: rgb(201 196 122 / 0.22);
+    --app-selection-color: #ffffff;
+    --app-scrollbar: #2b3a33;
+    --app-scrollbar-hover: #3d5146;
+    --app-panel-sheen:
+      linear-gradient(180deg, rgb(255 255 255 / 0.028) 0%, transparent 34%),
+      radial-gradient(560px 260px at 100% 0%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 72%);
+    --app-hero-wine:
+      linear-gradient(120deg, #241214 0%, #1a1515 46%, #101614 100%),
+      radial-gradient(620px 340px at 88% 4%, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent 72%);
+    --app-hero-grid-line: rgb(255 255 255 / 0.035);
+    --app-sidebar-background:
+      linear-gradient(180deg, #12100f 0%, #0d1210 42%, #0a0f0e 100%),
+      radial-gradient(420px 300px at 0% 0%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 72%);
+    --app-login-background:
+      linear-gradient(120deg, #2a1416 0%, #121917 50%, #0c1110 100%),
+      radial-gradient(620px 340px at 88% 4%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 72%);
+    --app-topbar-shadow: 0 16px 40px -36px rgb(0 0 0 / 0.95);
+    --app-sidebar-shadow: 18px 0 50px -36px rgb(0 0 0 / 0.95);
+    --app-ring-shadow: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 24px 60px -38px rgb(0 0 0 / 0.95);
+    --app-danger-button: #9b3b3b;
+    --app-danger-button-hover: #b24a4a;
+    --color-grid-dot: rgb(148 163 184 / 0.18);
+    --color-supervision-line: rgb(148 163 184 / 0.35);
+  }
+
+  [data-theme="light"] {
+    color-scheme: light;
+    --color-background: #f3efe7;
+    --color-background-soft: #fbf8f1;
+    --color-surface: #ffffff;
+    --color-surface-2: #f1ece2;
+    --color-surface-3: #e7e0d3;
+    --color-border: #d9d1c2;
+    --color-border-soft: #e8e1d5;
+    --color-foreground: #202b27;
+    --color-muted: #5d6a63;
+    --color-muted-2: #7c8781;
+    --color-primary: #772b2f;
+    --color-primary-deep: #4d1b1e;
+    --color-primary-bright: #8d363b;
+    --color-primary-strong: #5e2226;
+    --color-primary-foreground: #fdf8f5;
+    --color-accent: #8a7a2f;
+    --color-success: #3f7a2a;
+    --color-warning: #a36a00;
+    --color-danger: #b23b3b;
+    --color-info: #6d6a2a;
+    --color-brand-cream: #f4f1e9;
+    --color-brand-green: #3f7a2a;
+    --color-brand-burgundy: #772b2f;
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.65) inset, 0 12px 28px -24px rgb(31 42 38 / 0.35);
+    --app-body-background:
+      radial-gradient(1100px 760px at 8% -12%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 62%),
+      radial-gradient(900px 620px at 100% -8%, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 58%),
+      linear-gradient(180deg, #f8f4ec 0%, #f3efe7 45%, #efeae0 100%);
+    --app-grid-line: rgb(32 43 39 / 0.035);
+    --app-selection-bg: rgb(119 43 47 / 0.14);
+    --app-selection-color: #202b27;
+    --app-scrollbar: #cfc6b6;
+    --app-scrollbar-hover: #b8ae9c;
+    --app-panel-sheen:
+      linear-gradient(180deg, rgb(255 255 255 / 0.7) 0%, transparent 36%),
+      radial-gradient(560px 260px at 100% 0%, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent 72%);
+    --app-hero-wine:
+      linear-gradient(120deg, #241214 0%, #1a1515 46%, #101614 100%),
+      radial-gradient(620px 340px at 88% 4%, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent 72%);
+    --app-hero-grid-line: rgb(255 255 255 / 0.035);
+    --app-sidebar-background:
+      linear-gradient(180deg, #fffdf8 0%, #f7f2e8 55%, #f0ebe1 100%),
+      radial-gradient(420px 300px at 0% 0%, color-mix(in srgb, var(--color-primary) 7%, transparent), transparent 72%);
+    --app-login-background:
+      linear-gradient(120deg, #f0e4df 0%, #f8f4ec 52%, #eef3ec 100%),
+      radial-gradient(620px 340px at 88% 4%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 72%);
+    --app-topbar-shadow: 0 12px 30px -30px rgb(31 42 38 / 0.4);
+    --app-sidebar-shadow: 18px 0 50px -42px rgb(31 42 38 / 0.35);
+    --app-ring-shadow: 0 1px 0 0 rgb(255 255 255 / 0.65) inset, 0 24px 50px -40px rgb(31 42 38 / 0.4);
+    --app-danger-button: #a62f2f;
+    --app-danger-button-hover: #8f2626;
+    --color-grid-dot: rgb(96 112 124 / 0.22);
+    --color-supervision-line: rgb(70 90 105 / 0.28);
+  }
+
+  [data-theme="modern"] {
+    color-scheme: light;
+    --color-background: #eef3f7;
+    --color-background-soft: #f7fafc;
+    --color-surface: #ffffff;
+    --color-surface-2: #e8f0f5;
+    --color-surface-3: #dce7ee;
+    --color-border: #c9d6df;
+    --color-border-soft: #dde7ee;
+    --color-foreground: #12202b;
+    --color-muted: #4f6574;
+    --color-muted-2: #6f8593;
+    --color-primary: #772b2f;
+    --color-primary-deep: #4d1b1e;
+    --color-primary-bright: #8d363b;
+    --color-primary-strong: #5e2226;
+    --color-primary-foreground: #f8fbfd;
+    --color-accent: #2f7d8c;
+    --color-success: #2d7a4f;
+    --color-warning: #a76a00;
+    --color-danger: #b23b3b;
+    --color-info: #2f6f8c;
+    --color-brand-cream: #f8fbfd;
+    --color-brand-green: #2d7a4f;
+    --color-brand-burgundy: #772b2f;
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.8) inset, 0 14px 30px -26px rgb(18 32 43 / 0.35);
+    --app-body-background:
+      radial-gradient(1100px 760px at 8% -12%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 62%),
+      radial-gradient(900px 620px at 100% -8%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 58%),
+      linear-gradient(180deg, #f4f8fb 0%, #eef3f7 48%, #e9f0f5 100%);
+    --app-grid-line: rgb(18 32 43 / 0.03);
+    --app-selection-bg: rgb(47 125 140 / 0.16);
+    --app-selection-color: #12202b;
+    --app-scrollbar: #c3d2dc;
+    --app-scrollbar-hover: #a9bcc9;
+    --app-panel-sheen:
+      linear-gradient(180deg, rgb(255 255 255 / 0.75) 0%, transparent 36%),
+      radial-gradient(560px 260px at 100% 0%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 72%);
+    --app-hero-wine:
+      linear-gradient(120deg, #3b1a1f 0%, #1d2933 52%, #0e1b24 100%),
+      radial-gradient(620px 340px at 88% 4%, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent 72%);
+    --app-hero-grid-line: rgb(255 255 255 / 0.035);
+    --app-sidebar-background:
+      linear-gradient(180deg, #ffffff 0%, #f4f8fb 55%, #eaf1f6 100%),
+      radial-gradient(420px 300px at 0% 0%, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 72%);
+    --app-login-background:
+      linear-gradient(120deg, #e4edf3 0%, #f7fafc 50%, #e6f1ef 100%),
+      radial-gradient(620px 340px at 88% 4%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 72%);
+    --app-topbar-shadow: 0 12px 30px -30px rgb(18 32 43 / 0.35);
+    --app-sidebar-shadow: 18px 0 50px -42px rgb(18 32 43 / 0.3);
+    --app-ring-shadow: 0 1px 0 0 rgb(255 255 255 / 0.8) inset, 0 24px 50px -40px rgb(18 32 43 / 0.35);
+    --app-danger-button: #a62f2f;
+    --app-danger-button-hover: #8f2626;
+    --color-grid-dot: rgb(70 100 120 / 0.18);
+    --color-supervision-line: rgb(70 100 120 / 0.3);
   }
 
   * {
@@ -53,11 +197,8 @@
 
   body {
     margin: 0;
-    background:
-      radial-gradient(1100px 760px at 8% -12%, rgb(119 43 47 / 0.17), transparent 62%),
-      radial-gradient(900px 620px at 100% -8%, rgb(201 196 122 / 0.045), transparent 58%),
-      radial-gradient(900px 600px at 50% 118%, rgb(74 138 51 / 0.045), transparent 60%),
-      linear-gradient(180deg, #0b100f 0%, #090e0d 42%, #080c0b 100%);
+    background: var(--color-background);
+    background: var(--app-body-background);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -72,9 +213,9 @@
     pointer-events: none;
     content: "";
     background-image:
-      linear-gradient(rgb(255 255 255 / 0.017) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 0.017) 1px, transparent 1px);
-    background-size: 42px 42px;
+      linear-gradient(var(--app-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--app-grid-line) 1px, transparent 1px);
+    background-size: var(--app-grid-size) var(--app-grid-size);
     mask-image: radial-gradient(1200px 800px at 50% -10%, black 0%, transparent 72%);
   }
 
@@ -84,8 +225,8 @@
   }
 
   ::selection {
-    background: rgb(201 196 122 / 0.22);
-    color: #fff;
+    background: var(--app-selection-bg);
+    color: var(--app-selection-color);
   }
 
   :focus-visible {
@@ -101,12 +242,12 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2b3a33;
+    background: var(--app-scrollbar);
     border-radius: 999px;
     border: 2px solid var(--color-background);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3d5146;
+    background: var(--app-scrollbar-hover);
   }
 
   th[data-sortable="true"] {
@@ -183,8 +324,8 @@
 
 .grid-noise {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px);
+    linear-gradient(var(--app-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--app-grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
@@ -193,29 +334,70 @@
 }
 
 .panel-sheen {
-  background-image:
-    linear-gradient(180deg, rgb(255 255 255 / 0.028) 0%, transparent 34%),
-    radial-gradient(560px 260px at 100% 0%, rgb(119 43 47 / 0.08), transparent 72%);
+  background-image: var(--app-panel-sheen);
 }
 
 .hero-wine {
-  background-image:
-    linear-gradient(120deg, #241214 0%, #1a1515 46%, #101614 100%),
-    radial-gradient(620px 340px at 88% 4%, rgb(119 43 47 / 0.28), transparent 72%);
+  background-image: var(--app-hero-wine);
 }
 
 .hero-grid {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    linear-gradient(var(--app-hero-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--app-hero-grid-line) 1px, transparent 1px);
   background-size: 36px 36px;
   mask-image: linear-gradient(90deg, transparent 0%, black 60%, black 100%);
 }
 
 .ring-wine {
-  box-shadow:
-    0 1px 0 0 rgb(255 255 255 / 0.04) inset,
-    0 24px 60px -38px rgb(0 0 0 / 0.95);
+  box-shadow: var(--app-ring-shadow);
+}
+
+.app-sidebar {
+  background: var(--app-sidebar-background);
+  box-shadow: var(--app-sidebar-shadow);
+}
+
+.app-sidebar::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(
+    420px 300px at 0% 0%,
+    color-mix(in srgb, var(--color-primary) 10%, transparent),
+    transparent 72%
+  );
+}
+
+.login-visual {
+  background: var(--app-login-background);
+}
+
+.btn-primary {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-primary-bright) 0%,
+    var(--color-primary-deep) 100%
+  );
+}
+
+.btn-primary:hover {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-primary-bright) 0%,
+    var(--color-primary) 100%
+  );
+  filter: brightness(1.04);
+}
+
+.btn-danger {
+  background: var(--app-danger-button);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: var(--app-danger-button-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {

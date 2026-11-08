@@ -112,7 +112,15 @@ const statusLabels: Record<string, string> = {
   critical: "Critique",
 };
 
-const palette = ["#a84349", "#cdc97e", "#8cc46a", "#f6db43", "#d59a9d", "#4a8a33", "#7f2f34"];
+const palette = [
+  "var(--color-primary-bright)",
+  "var(--color-accent)",
+  "var(--color-brand-green)",
+  "var(--color-warning)",
+  "var(--color-primary-strong)",
+  "var(--color-info)",
+  "var(--color-primary)",
+];
 
 function iso(value: Date): string {
   const year = value.getFullYear();
@@ -242,30 +250,31 @@ function ActivityChart({ overview }: { overview: StatisticsOverview }) {
       <AreaChart data={data} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id="stat-created" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a84349" stopOpacity={0.55} />
-            <stop offset="100%" stopColor="#772b2f" stopOpacity={0.04} />
+            <stop offset="0%" stopColor="var(--color-primary-bright)" stopOpacity={0.55} />
+            <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.04} />
           </linearGradient>
           <linearGradient id="stat-resolved" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#cdc97e" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#cdc97e" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#29372f" strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="label" tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "#8b887c", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+        <CartesianGrid stroke="var(--color-border-soft)" strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="label" tick={{ fill: "var(--color-muted-2)", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: "var(--color-muted-2)", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
         <Tooltip
           contentStyle={{
-            background: "#241416",
-            border: "1px solid #772b2f",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
             borderRadius: 8,
             fontSize: 11,
+            color: "var(--color-foreground)",
           }}
         />
-        <Legend wrapperStyle={{ fontSize: 10, color: "#b9b5a6" }} />
+        <Legend wrapperStyle={{ fontSize: 10, color: "var(--color-muted)" }} />
         <Area
           type="monotone"
           dataKey="Créés"
-          stroke="#e0b1b4"
+          stroke="var(--color-primary-strong)"
           strokeWidth={2}
           fill="url(#stat-created)"
           dot={false}
@@ -273,7 +282,7 @@ function ActivityChart({ overview }: { overview: StatisticsOverview }) {
         <Area
           type="monotone"
           dataKey="Résolus"
-          stroke="#cdc97e"
+          stroke="var(--color-accent)"
           strokeWidth={2}
           fill="url(#stat-resolved)"
           dot={false}
@@ -281,7 +290,7 @@ function ActivityChart({ overview }: { overview: StatisticsOverview }) {
         <Area
           type="monotone"
           dataKey="Clos"
-          stroke="#8cc46a"
+          stroke="var(--color-brand-green)"
           strokeWidth={1.5}
           fill="transparent"
           dot={false}

@@ -50,7 +50,7 @@ export function Tabs({ items, value, onChange, className }: TabsProps) {
               <span
                 className={cn(
                   "rounded-full px-1.5 text-[10px]",
-                  active ? "bg-black/20 text-brand-cream" : "bg-white/[0.06] text-muted-2",
+                  active ? "bg-black/20 text-brand-cream" : "bg-surface-2 text-muted-2",
                 )}
               >
                 {item.count}

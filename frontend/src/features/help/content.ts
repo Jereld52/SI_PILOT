@@ -223,6 +223,35 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "themes-interface",
+    title: "Thèmes clair, sombre et moderne",
+    summary: "Changer l'apparence de l'interface tout en conservant la couleur principale.",
+    category: "demarrage",
+    tags: ["thème", "clair", "sombre", "moderne", "apparence", "couleur"],
+    blocks: [
+      p(
+        "Le thème est un choix personnel, enregistré dans le navigateur. Il ne modifie pas les données ni l'identité globale de l'application.",
+      ),
+      steps([
+        "Ouvrir le menu du compte en haut à droite.",
+        "Descendre à la section « Thème de l'interface ».",
+        "Choisir Sombre, Clair ou Moderne.",
+      ]),
+      list([
+        "Sombre : fond profond vert et bordeaux, adapté aux pièces peu éclairées.",
+        "Clair : fond crème chaleureux, texte sombre, plus confortable en plein jour.",
+        "Moderne : fond clair froid, cartes nettes et accents plus techniques.",
+      ]),
+      p(
+        "La couleur principale configurée dans Administration → Paramètres → Identité de l'application reste appliquée dans les trois thèmes. Les nuances de boutons, de navigation active et de graphiques sont recalculées pour conserver un contraste lisible.",
+      ),
+      note(
+        "info",
+        "Le thème est propre à chaque navigateur et à chaque utilisateur. Il se réapplique automatiquement à la prochaine connexion.",
+      ),
+    ],
+  },
+  {
     slug: "referentiels",
     title: "Référentiels",
     summary: "Gérer les services, sites et catégories utilisés dans toute l'application.",

@@ -10,14 +10,14 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "border border-primary-bright/35 bg-[linear-gradient(180deg,#813237_0%,#6c272c_100%)] text-primary-foreground shadow-sm shadow-black/20 hover:border-primary-bright/60 hover:bg-[#7a2e33] active:brightness-95",
+          "btn-primary border border-primary-bright/35 text-primary-foreground shadow-sm shadow-black/20 hover:border-primary-bright/60 active:brightness-95",
         secondary:
           "border border-border bg-surface-2/70 text-foreground hover:border-primary/35 hover:bg-surface-3 hover:text-foreground",
         outline:
           "border border-border bg-transparent text-foreground hover:bg-surface-2 hover:text-foreground",
         ghost: "text-muted hover:bg-surface-2 hover:text-foreground",
-        danger: "bg-[#9b3b3b] text-white hover:bg-[#b24a4a]",
-        success: "bg-brand-green text-brand-cream hover:bg-[#579b3c]",
+        danger: "btn-danger",
+        success: "bg-brand-green text-brand-cream hover:brightness-110",
         link: "text-accent underline-offset-4 hover:underline",
       },
       size: {

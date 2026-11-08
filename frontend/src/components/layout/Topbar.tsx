@@ -1,11 +1,15 @@
 import {
+  Check,
   ChevronDown,
   CircleHelp,
   KeyRound,
   LogOut,
   Menu,
+  Moon,
+  Palette,
   Settings,
   Sparkles,
+  Sun,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -27,6 +31,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
+import { THEME_OPTIONS, useTheme } from "@/features/theme/ThemeProvider";
 import { SylviaDialog } from "@/features/sylvia/SylviaDialog";
 import { fullName } from "@/lib/utils";
 
@@ -38,6 +43,9 @@ interface TopbarProps {
 export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
   const { user, hasPermission, logout } = useAuth();
   const branding = useBranding();
+  const { theme, setTheme, cycleTheme } = useTheme();
+  const themeLabel = THEME_OPTIONS.find((option) => option.value === theme)?.label ?? "Sombre";
+  const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Palette;
   const location = useLocation();
   const navigate = useNavigate();
   const [sylviaOpen, setSylviaOpen] = useState(false);
@@ -51,7 +59,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-border-soft bg-background/80 shadow-[0_16px_40px_-36px_rgba(0,0,0,0.95)] backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-border-soft bg-background/80 shadow-[var(--app-topbar-shadow)] backdrop-blur-xl">
         <div className="flex h-16 items-center gap-2 px-3 sm:px-4">
           <Button
             variant="ghost"
@@ -76,6 +84,20 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
           </div>
 
           <div className="ml-auto flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={cycleTheme}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                  aria-label={`Thème : ${themeLabel}`}
+                >
+                  <ThemeIcon className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Thème : {themeLabel}</TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -161,6 +183,27 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
                     Administration
                   </DropdownMenuItem>
                 ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Thème de l'interface</DropdownMenuLabel>
+                {THEME_OPTIONS.map((option) => {
+                  const Icon =
+                    option.value === "dark" ? Moon : option.value === "light" ? Sun : Palette;
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onSelect={() => setTheme(option.value)}
+                      className="justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon className="h-3.5 w-3.5" />
+                        <span>{option.label}</span>
+                      </span>
+                      {theme === option.value ? (
+                        <Check className="h-3.5 w-3.5 text-accent" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  );
+                })}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => void handleLogout()}

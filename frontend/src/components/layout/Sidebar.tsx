@@ -73,7 +73,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           collapsed && "justify-center px-0",
           active
             ? "border-primary/30 bg-primary/[0.17] text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent"
-            : "border-transparent text-muted hover:bg-white/[0.035] hover:text-foreground",
+            : "border-transparent text-muted hover:bg-surface-2/70 hover:text-foreground",
         )}
       >
         <item.icon
@@ -100,7 +100,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border-soft bg-[linear-gradient(180deg,#12100f_0%,#0d1210_42%,#0a0f0e_100%)] shadow-[18px_0_50px_-36px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(420px_300px_at_0%_0%,rgba(119,43,47,0.12),transparent_72%)]",
+          "app-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border-soft backdrop-blur-xl transition-all duration-200",
           collapsed ? "w-[76px]" : "w-[264px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
@@ -148,7 +148,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                     collapsed && "justify-center px-0 py-2",
                     sectionActive
                       ? "text-accent"
-                      : "text-muted-2 hover:bg-white/[0.03] hover:text-foreground",
+                      : "text-muted-2 hover:bg-surface-2/70 hover:text-foreground",
                   )}
                 >
                   <section.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

@@ -21,6 +21,19 @@ La couleur principale est appliquée aux variables CSS de l'interface et à l'en
 Les nuances `primary-deep`, `primary-bright` et `primary-strong` sont calculées automatiquement
 pour conserver un contraste lisible.
 
+## Thèmes d'interface
+
+Trois thèmes sont proposés dans le menu du compte, section **Thème de l'interface** :
+
+- **Sombre** : fond profond vert et bordeaux, texte crème ;
+- **Clair** : fond crème chaleureux, surfaces blanches et texte sombre ;
+- **Moderne** : fond clair froid, surfaces nettes et accents teintés.
+
+Le thème est un choix personnel stocké dans le navigateur (`localStorage`,
+clé `si-pilot.theme`). Il est appliqué via l'attribut `data-theme` sur `<html>` et les variables
+CSS définies dans `frontend/src/index.css`. La couleur principale reste commune aux trois
+thèmes ; seules les nuances sont recalculées pour préserver le contraste.
+
 ## Logo
 
 - Lockup officiel : `assets/logoweb.png` (République française + Parc national de forêts),
