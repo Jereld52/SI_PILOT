@@ -16,7 +16,7 @@ le RGPD, la documentation et les échéances.
 
 ## 1. Ce qui fonctionne aujourd'hui
 
-- PostgreSQL 17 portable sous Windows, migrations Alembic et 86 tables métier.
+- PostgreSQL 17 portable sous Windows, migrations Alembic et 91 tables métier.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
@@ -42,8 +42,9 @@ le RGPD, la documentation et les échéances.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - **Connexion WAPT** dans Administration : synchronisation de l'inventaire et de l'état en ligne,
   consultation des postes et des logiciels, installation et désinstallation à distance auditée.
-- Supervision globale : carte visuelle cliquable, équipements positionnables par glisser-déposer,
-  dépendances, filtres, criticité et état des contrôles.
+- Supervision globale : plans multiples de site, bâtiment, étage ou baie avec image de fond
+  téléversée, équipements représentés et positionnés par glisser-déposer, dépendances, filtres,
+  criticité et état des contrôles.
 - Cybersécurité : incidents, actions, vulnérabilités, sauvegardes, certificats et audits.
 - Projets : jalons, tâches, risques, décisions et avancement calculé.
 - Documentation : métadonnées, tags, versions et téléversement/téléchargement de fichiers.

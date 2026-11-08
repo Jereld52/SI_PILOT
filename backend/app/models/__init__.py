@@ -42,6 +42,7 @@ from app.models.imports import ImportJob, ImportRow
 from app.models.infrastructure import (
     InfraDependency,
     InfraEquipment,
+    InfraMap,
     MonitoringCheck,
     MonitoringResult,
 )
@@ -142,6 +143,7 @@ __all__ = [
     "ImportRow",
     "InfraDependency",
     "InfraEquipment",
+    "InfraMap",
     "Intervention",
     "InterventionAsset",
     "License",

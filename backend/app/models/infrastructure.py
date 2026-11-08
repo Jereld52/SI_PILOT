@@ -3,7 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin, utcnow
@@ -12,11 +22,43 @@ from app.models.auth import User
 from app.models.organization import Location
 
 
+class InfraMap(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "infra_maps"
+
+    name: Mapped[str] = mapped_column(String(180), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(30), default="site", nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    location_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("locations.id", ondelete="SET NULL"), index=True
+    )
+    background_filename: Mapped[str | None] = mapped_column(String(512))
+    background_width: Mapped[int | None] = mapped_column(Integer)
+    background_height: Mapped[int | None] = mapped_column(Integer)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    location: Mapped[Location | None] = relationship(lazy="joined")
+
+    @property
+    def has_background(self) -> bool:
+        return bool(self.background_filename)
+
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('site','building','floor','rack','other')",
+            name="infra_map_kind",
+        ),
+    )
+
+
 class InfraEquipment(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "infra_equipments"
 
     asset_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("assets.id", ondelete="SET NULL"), unique=True
+    )
+    infra_map_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("infra_maps.id", ondelete="SET NULL"), index=True
     )
     name: Mapped[str] = mapped_column(String(180), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
@@ -42,6 +84,7 @@ class InfraEquipment(Base, UUIDMixin, TimestampMixin):
     last_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     asset: Mapped[Asset | None] = relationship(lazy="joined")
+    infra_map: Mapped[InfraMap | None] = relationship(lazy="joined")
     location: Mapped[Location | None] = relationship(lazy="joined")
     responsible: Mapped[User | None] = relationship(lazy="joined")
 

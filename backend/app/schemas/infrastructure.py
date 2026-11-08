@@ -12,6 +12,7 @@ from app.schemas.tickets import TicketUserRef
 
 class InfraEquipmentCreate(BaseModel):
     asset_id: UUID | None = None
+    infra_map_id: UUID | None = None
     name: str = Field(min_length=1, max_length=180)
     type: Literal[
         "server", "vm", "switch", "router", "firewall", "nas", "access_point", "ups", "other"
@@ -33,6 +34,7 @@ class InfraEquipmentCreate(BaseModel):
 
 class InfraEquipmentUpdate(BaseModel):
     asset_id: UUID | None = None
+    infra_map_id: UUID | None = None
     name: str | None = Field(default=None, min_length=1, max_length=180)
     type: Literal[
         "server", "vm", "switch", "router", "firewall", "nas", "access_point", "ups", "other"
@@ -55,6 +57,7 @@ class InfraEquipmentUpdate(BaseModel):
 class InfraEquipmentRead(ORMModel):
     id: UUID
     asset_id: UUID | None = None
+    infra_map_id: UUID | None = None
     asset: StockAssetRef | None = None
     name: str
     type: str
@@ -141,6 +144,41 @@ class MonitoringResultRead(ORMModel):
     message: str | None = None
 
 
+class SupervisionMapCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=180)
+    kind: Literal["site", "building", "floor", "rack", "other"] = "site"
+    description: str | None = None
+    location_id: UUID | None = None
+    is_active: bool = True
+    sort_order: int = Field(default=0, ge=0, le=10_000)
+
+
+class SupervisionMapUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=180)
+    kind: Literal["site", "building", "floor", "rack", "other"] | None = None
+    description: str | None = None
+    location_id: UUID | None = None
+    is_active: bool | None = None
+    sort_order: int | None = Field(default=None, ge=0, le=10_000)
+
+
+class SupervisionMapRead(ORMModel):
+    id: UUID
+    name: str
+    kind: str
+    description: str | None = None
+    location_id: UUID | None = None
+    location: LocationRef | None = None
+    background_filename: str | None = None
+    background_width: int | None = None
+    background_height: int | None = None
+    has_background: bool = False
+    is_active: bool
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class InfraMapSummary(BaseModel):
     equipments_total: int
     running: int
@@ -160,4 +198,5 @@ class InfraMapRead(BaseModel):
     dependencies: list[InfraDependencyRead]
     checks: list[MonitoringCheckRead]
     locations: list[LocationRef]
+    maps: list[SupervisionMapRead]
     summary: InfraMapSummary

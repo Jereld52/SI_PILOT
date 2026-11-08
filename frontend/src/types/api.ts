@@ -1054,6 +1054,7 @@ export interface BudgetDetailItem extends BudgetItem {
 export interface InfraEquipmentItem {
   id: string;
   asset_id: string | null;
+  infra_map_id: string | null;
   asset: { id: string; asset_tag: string; name: string } | null;
   name: string;
   type: string;
@@ -1131,7 +1132,25 @@ export interface InfraMapData {
   dependencies: InfraDependencyItem[];
   checks: MonitoringCheckItem[];
   locations: LocationItem[];
+  maps: SupervisionMapItem[];
   summary: InfraMapSummary;
+}
+
+export interface SupervisionMapItem {
+  id: string;
+  name: string;
+  kind: string;
+  description: string | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  background_filename: string | null;
+  background_width: number | null;
+  background_height: number | null;
+  has_background: boolean;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CustomExportColumn {

@@ -257,15 +257,24 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 - Carte visuelle interactive des équipements d'infrastructure, accessible depuis le menu
   **Supervision** et depuis la page Infrastructure.
+- **Plans multiples** : création de cartes de site, de bâtiment, d'étage, de baie/rack ou
+  autres, avec nom, type, site, description, ordre d'affichage et activation.
+- **Image de fond** par plan : téléversement PNG, JPEG ou WEBP (12 Mo maximum), dimensions
+  mémorisées, remplacement et suppression. L'image est stockée localement et servie par une
+  route protégée ; le ratio du plan est respecté dans la carte.
+- Sélection du plan actif dans la supervision ; seuls les équipements rattachés à ce plan y
+  sont représentés et déplacés.
 - Chaque équipement est représenté par un nœud cliquable : nom, IP, type, état, criticité.
   Un clic ouvre le détail (rôle, site, système, responsable, contrôles, dépendances).
 - Couleurs d'état : actif, maintenance, hors ligne, retiré. Les équipements critiques sont
   signalés par une bordure renforcée.
 - Liens de dépendance dessinés entre les équipements placés, avec mise en évidence des liens
   du nœud sélectionné.
-- Mode placement : glisser-déposer des nœuds, positions enregistrées en base et auditées.
+- Mode placement : glisser-déposer des nœuds, positions en pourcentage enregistrées en base
+  avec le plan de rattachement, et auditées.
 - Placement automatique en grille des équipements non placés.
 - Retrait d'un équipement de la carte sans suppression de sa fiche.
+- Archivage d'un plan sans suppression des équipements ni de leurs positions.
 - Filtres par recherche, type, état, criticité et site.
 - Indicateurs : total, en service, maintenance, hors ligne, critiques, contrôles actifs et
   dernier contrôle.

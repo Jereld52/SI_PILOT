@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import io
+from pathlib import Path
 from uuid import UUID
 
+from app.core.config import settings
 from app.core.errors import ConflictError, NotFoundError, ValidationAppError
 from app.db.base import utcnow
 from app.models.assets import Asset
@@ -9,6 +12,7 @@ from app.models.auth import User
 from app.models.infrastructure import (
     InfraDependency,
     InfraEquipment,
+    InfraMap,
     MonitoringCheck,
     MonitoringResult,
 )
@@ -26,10 +30,14 @@ from app.schemas.infrastructure import (
     MonitoringCheckUpdate,
     MonitoringResultCreate,
     MonitoringResultRead,
+    SupervisionMapCreate,
+    SupervisionMapRead,
+    SupervisionMapUpdate,
 )
 from app.schemas.referentials import LocationRef
 from app.services.audit_service import write_audit
 from fastapi import Request
+from PIL import Image
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -77,6 +85,7 @@ def _validate_links(
     location_id: UUID | None,
     responsible_user_id: UUID | None,
     parent_id: UUID | None,
+    infra_map_id: UUID | None = None,
     exclude_id: UUID | None = None,
 ) -> None:
     if asset_id and db.get(Asset, asset_id) is None:
@@ -85,6 +94,8 @@ def _validate_links(
         raise NotFoundError("Site introuvable.")
     if responsible_user_id and db.get(User, responsible_user_id) is None:
         raise NotFoundError("Responsable introuvable.")
+    if infra_map_id and db.get(InfraMap, infra_map_id) is None:
+        raise NotFoundError("Plan de supervision introuvable.")
     if parent_id:
         if exclude_id and parent_id == exclude_id:
             raise ValidationAppError("Un équipement ne peut pas être son propre parent.")
@@ -125,6 +136,7 @@ def create_equipment(
         location_id=payload.location_id,
         responsible_user_id=payload.responsible_user_id,
         parent_id=payload.parent_id,
+        infra_map_id=payload.infra_map_id,
     )
     _check_unique(
         db,
@@ -165,6 +177,7 @@ def update_equipment(
         location_id=data.get("location_id"),
         responsible_user_id=data.get("responsible_user_id"),
         parent_id=data.get("parent_id"),
+        infra_map_id=data.get("infra_map_id"),
         exclude_id=equipment.id,
     )
     _check_unique(
@@ -460,6 +473,198 @@ def add_result(
     return MonitoringResultRead.model_validate(result)
 
 
+def list_maps(db: Session, *, include_inactive: bool = False) -> list[SupervisionMapRead]:
+    statement = select(InfraMap)
+    if not include_inactive:
+        statement = statement.where(InfraMap.is_active.is_(True))
+    rows = db.scalars(
+        statement.order_by(InfraMap.sort_order, InfraMap.name)
+    ).all()
+    return [SupervisionMapRead.model_validate(row) for row in rows]
+
+
+def get_map(db: Session, map_id: UUID) -> InfraMap:
+    row = db.get(InfraMap, map_id)
+    if row is None:
+        raise NotFoundError("Plan de supervision introuvable.")
+    return row
+
+
+def create_map(
+    db: Session,
+    payload: SupervisionMapCreate,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> SupervisionMapRead:
+    if payload.location_id and db.get(Location, payload.location_id) is None:
+        raise NotFoundError("Site introuvable.")
+    row = InfraMap(**payload.model_dump())
+    db.add(row)
+    db.flush()
+    write_audit(
+        db,
+        module="infrastructure",
+        action="infra_map_created",
+        actor=actor,
+        entity_type="infra_map",
+        entity_id=str(row.id),
+        entity_label=row.name,
+        after={"kind": row.kind, "location_id": str(row.location_id) if row.location_id else None},
+        request=request,
+    )
+    db.commit()
+    db.refresh(row)
+    return SupervisionMapRead.model_validate(row)
+
+
+def update_map(
+    db: Session,
+    row: InfraMap,
+    payload: SupervisionMapUpdate,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> SupervisionMapRead:
+    data = payload.model_dump(exclude_unset=True)
+    if data.get("location_id") and db.get(Location, data["location_id"]) is None:
+        raise NotFoundError("Site introuvable.")
+    before = {"name": row.name, "kind": row.kind, "is_active": row.is_active}
+    for field, value in data.items():
+        setattr(row, field, value)
+    write_audit(
+        db,
+        module="infrastructure",
+        action="infra_map_updated",
+        actor=actor,
+        entity_type="infra_map",
+        entity_id=str(row.id),
+        entity_label=row.name,
+        before=before,
+        after={"name": row.name, "kind": row.kind, "is_active": row.is_active},
+        request=request,
+    )
+    db.commit()
+    db.refresh(row)
+    return SupervisionMapRead.model_validate(row)
+
+
+def archive_map(
+    db: Session,
+    row: InfraMap,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> SupervisionMapRead:
+    row.is_active = False
+    write_audit(
+        db,
+        module="infrastructure",
+        action="infra_map_archived",
+        actor=actor,
+        entity_type="infra_map",
+        entity_id=str(row.id),
+        entity_label=row.name,
+        after={"is_active": False},
+        request=request,
+    )
+    db.commit()
+    db.refresh(row)
+    return SupervisionMapRead.model_validate(row)
+
+
+def background_path(row: InfraMap) -> Path | None:
+    if not row.background_filename:
+        return None
+    base = Path(settings.upload_dir).resolve()
+    candidate = (base / row.background_filename).resolve()
+    if base not in candidate.parents:
+        return None
+    return candidate
+
+
+def save_background(
+    db: Session,
+    row: InfraMap,
+    *,
+    content: bytes,
+    original_name: str,
+    actor: User,
+    request: Request | None = None,
+) -> SupervisionMapRead:
+    if not content:
+        raise ValidationAppError("Le fichier image est vide.")
+    if len(content) > 12 * 1024 * 1024:
+        raise ValidationAppError("L'image du plan ne doit pas dépasser 12 Mo.")
+    try:
+        image = Image.open(io.BytesIO(content))
+        image_format = (image.format or "").upper()
+        width, height = image.size
+    except Exception as exc:  # noqa: BLE001
+        raise ValidationAppError("Le fichier fourni n'est pas une image valide.") from exc
+    extensions = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
+    extension = extensions.get(image_format)
+    if extension is None:
+        raise ValidationAppError("Formats acceptés : PNG, JPEG ou WEBP.")
+    relative_dir = Path("infra_maps") / str(row.id)
+    target_dir = Path(settings.upload_dir).resolve() / relative_dir
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for existing in target_dir.glob("background.*"):
+        existing.unlink(missing_ok=True)
+    target = target_dir / f"background.{extension}"
+    target.write_bytes(content)
+    row.background_filename = str(relative_dir / target.name).replace("\\", "/")
+    row.background_width = width
+    row.background_height = height
+    write_audit(
+        db,
+        module="infrastructure",
+        action="infra_map_background_updated",
+        actor=actor,
+        entity_type="infra_map",
+        entity_id=str(row.id),
+        entity_label=row.name,
+        after={
+            "original_name": original_name,
+            "width": width,
+            "height": height,
+            "size_bytes": len(content),
+        },
+        request=request,
+    )
+    db.commit()
+    db.refresh(row)
+    return SupervisionMapRead.model_validate(row)
+
+
+def delete_background(
+    db: Session,
+    row: InfraMap,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> SupervisionMapRead:
+    path = background_path(row)
+    if path and path.exists():
+        path.unlink(missing_ok=True)
+    row.background_filename = None
+    row.background_width = None
+    row.background_height = None
+    write_audit(
+        db,
+        module="infrastructure",
+        action="infra_map_background_deleted",
+        actor=actor,
+        entity_type="infra_map",
+        entity_id=str(row.id),
+        entity_label=row.name,
+        request=request,
+    )
+    db.commit()
+    db.refresh(row)
+    return SupervisionMapRead.model_validate(row)
+
+
 def map_overview(db: Session) -> InfraMapRead:
     equipments = list(
         db.scalars(select(InfraEquipment).order_by(InfraEquipment.name)).all()
@@ -500,5 +705,6 @@ def map_overview(db: Session) -> InfraMapRead:
         ],
         checks=[MonitoringCheckRead.model_validate(row) for row in checks],
         locations=[LocationRef.model_validate(row) for row in locations],
+        maps=list_maps(db),
         summary=summary,
     )

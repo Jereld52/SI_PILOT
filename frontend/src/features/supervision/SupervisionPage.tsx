@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Router,
   Server,
+  Settings2,
   Shield,
   Wifi,
   X,
@@ -32,6 +33,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { SupervisionMapDialog } from "@/features/supervision/SupervisionMapDialog";
 import { ApiError, apiFetch } from "@/lib/api";
 import { cn, formatDateTime, formatNumber } from "@/lib/utils";
 import type { InfraEquipmentItem, InfraMapData } from "@/types/api";
@@ -135,6 +137,8 @@ export function SupervisionPage() {
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const [drag, setDrag] = useState<DragState | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const [placementMode, setPlacementMode] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -146,6 +150,8 @@ export function SupervisionPage() {
   const equipments = data?.equipments ?? [];
   const dependencies = data?.dependencies ?? [];
   const checks = data?.checks ?? [];
+  const maps = data?.maps ?? [];
+  const activeMap = maps.find((item) => item.id === selectedMapId) ?? null;
   const summary = data?.summary;
 
   useEffect(() => {
@@ -153,21 +159,42 @@ export function SupervisionPage() {
   }, [drag]);
 
   useEffect(() => {
+    if (!data) return;
+    const ids = data.maps.map((item) => item.id);
+    if (!selectedMapId || !ids.includes(selectedMapId)) {
+      setSelectedMapId(ids[0] ?? null);
+    }
+  }, [data, selectedMapId]);
+
+  useEffect(() => {
     if (!data || dragRef.current) return;
     const next: Record<string, Position> = {};
     for (const equipment of data.equipments) {
-      if (equipment.map_x != null && equipment.map_y != null) {
+      if (
+        equipment.infra_map_id === selectedMapId &&
+        equipment.map_x != null &&
+        equipment.map_y != null
+      ) {
         next[equipment.id] = { x: equipment.map_x, y: equipment.map_y };
       }
     }
     setPositions(next);
-  }, [data]);
+  }, [data, selectedMapId]);
 
   const positionMutation = useMutation({
-    mutationFn: (payload: { id: string; x: number | null; y: number | null }) =>
+    mutationFn: (payload: {
+      id: string;
+      x: number | null;
+      y: number | null;
+      map_id: string | null;
+    }) =>
       apiFetch(`/infrastructure/equipments/${payload.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ map_x: payload.x, map_y: payload.y }),
+        body: JSON.stringify({
+          map_x: payload.x,
+          map_y: payload.y,
+          infra_map_id: payload.map_id,
+        }),
       }),
     onSuccess: () => {
       void mapQuery.refetch();
@@ -220,6 +247,7 @@ export function SupervisionPage() {
           id: drag.id,
           x: Number(current.x.toFixed(2)),
           y: Number(current.y.toFixed(2)),
+          map_id: selectedMapId,
         });
         toast.success("Position enregistrée.");
       }
@@ -234,7 +262,7 @@ export function SupervisionPage() {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  }, [drag]);
+  }, [drag, selectedMapId]);
 
   const startDrag = (event: ReactPointerEvent, equipment: InfraEquipmentItem) => {
     if (!placementMode || !canEdit) return;
@@ -269,9 +297,15 @@ export function SupervisionPage() {
     });
   }, [equipments, search, typeFilter, statusFilter, criticalityFilter, locationFilter]);
 
-  const placed = filtered.filter((equipment) => positions[equipment.id]);
+  const placed = filtered.filter(
+    (equipment) =>
+      equipment.infra_map_id === selectedMapId && Boolean(positions[equipment.id]),
+  );
   const unplaced = filtered
-    .filter((equipment) => !positions[equipment.id])
+    .filter(
+      (equipment) =>
+        !(equipment.infra_map_id === selectedMapId && positions[equipment.id]),
+    )
     .sort(
       (left, right) =>
         (criticalityOrder[left.criticality] ?? 9) - (criticalityOrder[right.criticality] ?? 9) ||
@@ -279,6 +313,10 @@ export function SupervisionPage() {
     );
 
   const selected = equipments.find((equipment) => equipment.id === selectedId) ?? null;
+  const mapAspect =
+    activeMap?.background_width && activeMap.background_height
+      ? `${activeMap.background_width} / ${activeMap.background_height}`
+      : null;
   const selectedChecks = selected ? checks.filter((check) => check.infra_id === selected.id) : [];
   const selectedDependencies = selected
     ? dependencies.filter(
@@ -287,15 +325,13 @@ export function SupervisionPage() {
       )
     : [];
 
-  const locations = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const equipment of equipments) {
-      if (equipment.location_id && equipment.location) {
-        map.set(equipment.location_id, equipment.location.name);
-      }
-    }
-    return [...map.entries()].sort((left, right) => left[1].localeCompare(right[1]));
-  }, [equipments]);
+  const allLocations = (data?.locations ?? []).slice().sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
+  const locations = useMemo(
+    () => allLocations.map((location) => [location.id, location.name] as [string, string]),
+    [allLocations],
+  );
 
   const resetFilters = () => {
     setSearch("");
@@ -306,16 +342,24 @@ export function SupervisionPage() {
   };
 
   const placeAtCenter = (equipment: InfraEquipmentItem) => {
+    if (!selectedMapId) {
+      toast.error("Créez ou sélectionnez une carte avant de placer un équipement.");
+      return;
+    }
     const offset = (Object.keys(positions).length % 6) * 4;
     const x = clamp(50 + offset - 10, 8, 92);
     const y = clamp(50 + offset - 10, 10, 90);
     setPositions((current) => ({ ...current, [equipment.id]: { x, y } }));
     setSelectedId(equipment.id);
     setPlacementMode(true);
-    positionMutation.mutate({ id: equipment.id, x, y });
+    positionMutation.mutate({ id: equipment.id, x, y, map_id: selectedMapId });
   };
 
   const autoLayout = async () => {
+    if (!selectedMapId) {
+      toast.error("Sélectionnez une carte avant de placer les équipements.");
+      return;
+    }
     const targets = unplaced.length > 0 ? unplaced : placed;
     if (targets.length === 0) return;
     const columns = Math.ceil(Math.sqrt(targets.length));
@@ -338,6 +382,7 @@ export function SupervisionPage() {
             body: JSON.stringify({
               map_x: Number(position.x.toFixed(2)),
               map_y: Number(position.y.toFixed(2)),
+              infra_map_id: selectedMapId,
             }),
           });
         }),
@@ -356,7 +401,7 @@ export function SupervisionPage() {
       delete next[equipment.id];
       return next;
     });
-    positionMutation.mutate({ id: equipment.id, x: null, y: null });
+    positionMutation.mutate({ id: equipment.id, x: null, y: null, map_id: null });
   };
 
   const renderNode = (equipment: InfraEquipmentItem) => {
@@ -417,6 +462,24 @@ export function SupervisionPage() {
         description="Carte visuelle des équipements importants, de leur état et de leurs dépendances. Cliquez sur un équipement pour ouvrir sa fiche."
         actions={
           <>
+            {maps.length > 0 ? (
+              <Select
+                value={selectedMapId ?? ""}
+                onChange={(event) => setSelectedMapId(event.target.value)}
+                className="w-52"
+                aria-label="Choisir une carte de supervision"
+              >
+                {maps.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </Select>
+            ) : null}
+            <Button variant="secondary" size="sm" onClick={() => setMapDialogOpen(true)}>
+              <Settings2 className="h-3.5 w-3.5" />
+              Gérer les plans
+            </Button>
             <Button variant="secondary" size="sm" onClick={() => void mapQuery.refetch()}>
               <RefreshCw className={cn("h-3.5 w-3.5", mapQuery.isFetching && "animate-spin")} />
               Actualiser
@@ -425,6 +488,7 @@ export function SupervisionPage() {
               <Button
                 variant={placementMode ? "primary" : "secondary"}
                 size="sm"
+                disabled={!selectedMapId}
                 onClick={() => setPlacementMode((value) => !value)}
               >
                 <Move className="h-3.5 w-3.5" />
@@ -562,15 +626,27 @@ export function SupervisionPage() {
             <div
               ref={mapRef}
               className={cn(
-                "relative h-[520px] overflow-hidden rounded-xl border border-border-soft bg-background-soft/60 xl:h-[660px]",
+                "relative overflow-hidden rounded-xl border border-border-soft bg-background-soft/60",
+                mapAspect ? "w-full" : "h-[520px] xl:h-[660px]",
                 placementMode && "cursor-crosshair",
               )}
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px)",
-                backgroundSize: "28px 28px",
-              }}
+              style={
+                mapAspect
+                  ? { aspectRatio: mapAspect }
+                  : {
+                      backgroundImage:
+                        "radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px)",
+                      backgroundSize: "28px 28px",
+                    }
+              }
             >
+              {activeMap?.has_background ? (
+                <img
+                  src={`/api/v1/infrastructure/maps/${activeMap.id}/background?v=${encodeURIComponent(activeMap.updated_at)}`}
+                  alt={`Plan ${activeMap.name}`}
+                  className="pointer-events-none absolute inset-0 z-0 h-full w-full object-fill"
+                />
+              ) : null}
               <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-border-soft bg-background/80 px-3 py-2 text-[10px] text-muted backdrop-blur">
                 <span className="font-medium text-foreground">Légende</span>
                 {Object.entries(statusLabels).map(([status, label]) => (
@@ -597,6 +673,19 @@ export function SupervisionPage() {
               {mapQuery.isLoading ? (
                 <div className="flex h-full items-center justify-center">
                   <Skeleton className="h-[80%] w-[90%] rounded-xl" />
+                </div>
+              ) : maps.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <EmptyState
+                    icon={MapIcon}
+                    title="Aucune carte de supervision"
+                    description="Créez un plan de site, de bâtiment, d'étage ou de baie pour positionner vos équipements."
+                    action={
+                      <Button size="sm" onClick={() => setMapDialogOpen(true)}>
+                        Créer une carte
+                      </Button>
+                    }
+                  />
                 </div>
               ) : equipments.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
@@ -858,6 +947,16 @@ export function SupervisionPage() {
           </div>
         </CardContent>
       </Card>
+
+      <SupervisionMapDialog
+        open={mapDialogOpen}
+        onOpenChange={setMapDialogOpen}
+        maps={maps}
+        locations={allLocations}
+        selectedMapId={selectedMapId}
+        onSelectMap={setSelectedMapId}
+        onSaved={() => void mapQuery.refetch()}
+      />
     </div>
   );
 }

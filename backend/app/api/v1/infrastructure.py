@@ -1,9 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
+from app.core.errors import NotFoundError
 from app.db.session import get_db
 from app.models.auth import User
 from app.schemas.infrastructure import (
@@ -18,6 +20,9 @@ from app.schemas.infrastructure import (
     MonitoringCheckUpdate,
     MonitoringResultCreate,
     MonitoringResultRead,
+    SupervisionMapCreate,
+    SupervisionMapRead,
+    SupervisionMapUpdate,
 )
 from app.services import infrastructure_service
 
@@ -44,6 +49,101 @@ def map_overview(
     db: Session = Depends(get_db),
 ):
     return infrastructure_service.map_overview(db)
+
+
+@router.get("/maps", response_model=list[SupervisionMapRead])
+def list_maps(
+    include_inactive: bool = False,
+    _: User = Depends(require_permission("infrastructure.topology")),
+    db: Session = Depends(get_db),
+):
+    return infrastructure_service.list_maps(db, include_inactive=include_inactive)
+
+
+@router.post("/maps", response_model=SupervisionMapRead, status_code=201)
+def create_map(
+    payload: SupervisionMapCreate,
+    request: Request,
+    actor: User = Depends(require_permission("infrastructure.update")),
+    db: Session = Depends(get_db),
+):
+    return infrastructure_service.create_map(db, payload, actor=actor, request=request)
+
+
+@router.patch("/maps/{map_id}", response_model=SupervisionMapRead)
+def update_map(
+    map_id: UUID,
+    payload: SupervisionMapUpdate,
+    request: Request,
+    actor: User = Depends(require_permission("infrastructure.update")),
+    db: Session = Depends(get_db),
+):
+    row = infrastructure_service.get_map(db, map_id)
+    return infrastructure_service.update_map(
+        db, row, payload, actor=actor, request=request
+    )
+
+
+@router.delete("/maps/{map_id}", response_model=SupervisionMapRead)
+def archive_map(
+    map_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("infrastructure.update")),
+    db: Session = Depends(get_db),
+):
+    row = infrastructure_service.get_map(db, map_id)
+    return infrastructure_service.archive_map(db, row, actor=actor, request=request)
+
+
+@router.get("/maps/{map_id}/background")
+def get_map_background(
+    map_id: UUID,
+    _: User = Depends(require_permission("infrastructure.topology")),
+    db: Session = Depends(get_db),
+):
+    row = infrastructure_service.get_map(db, map_id)
+    path = infrastructure_service.background_path(row)
+    if path is None or not path.exists():
+        raise NotFoundError("Image de plan introuvable.")
+    media_types = {".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp"}
+    return FileResponse(
+        path,
+        media_type=media_types.get(path.suffix.lower(), "application/octet-stream"),
+        headers={"Cache-Control": "private, max-age=300"},
+    )
+
+
+@router.post("/maps/{map_id}/background", response_model=SupervisionMapRead)
+async def upload_map_background(
+    map_id: UUID,
+    request: Request,
+    file: UploadFile = File(...),
+    actor: User = Depends(require_permission("infrastructure.update")),
+    db: Session = Depends(get_db),
+):
+    row = infrastructure_service.get_map(db, map_id)
+    content = await file.read()
+    return infrastructure_service.save_background(
+        db,
+        row,
+        content=content,
+        original_name=file.filename or "plan",
+        actor=actor,
+        request=request,
+    )
+
+
+@router.delete("/maps/{map_id}/background", response_model=SupervisionMapRead)
+def delete_map_background(
+    map_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("infrastructure.update")),
+    db: Session = Depends(get_db),
+):
+    row = infrastructure_service.get_map(db, map_id)
+    return infrastructure_service.delete_background(
+        db, row, actor=actor, request=request
+    )
 
 
 @router.post("/equipments", response_model=InfraEquipmentRead, status_code=201)
