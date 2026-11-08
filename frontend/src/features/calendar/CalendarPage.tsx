@@ -246,6 +246,18 @@ export function CalendarPage() {
       ),
     enabled: canReadReservations,
   });
+  const upcomingReservationsQuery = useQuery({
+    queryKey: ["calendar", "reservations", "upcoming"],
+    queryFn: () =>
+      apiFetch<EquipmentReservationItem[]>(
+        `/reservations${buildQuery({
+          start: new Date().toISOString(),
+          end: addDays(new Date(), 30).toISOString(),
+        })}`,
+      ),
+    enabled: canReadReservations,
+    staleTime: 60_000,
+  });
   const overviewQuery = useQuery({
     queryKey: ["calendar", "overview"],
     queryFn: () => apiFetch<CalendarOverview>("/calendar/overview"),
@@ -278,6 +290,10 @@ export function CalendarPage() {
 
   const events = eventsQuery.data ?? [];
   const reservations = reservationsQuery.data ?? [];
+  const upcomingReservations = upcomingReservationsQuery.data ?? [];
+  const nextUpcomingReservation = [...upcomingReservations].sort((left, right) =>
+    left.start_at.localeCompare(right.start_at),
+  )[0];
   const actions = actionsQuery.data ?? [];
   const overview = overviewQuery.data;
   const users = usersQuery.data ?? [];
@@ -330,6 +346,7 @@ export function CalendarPage() {
   const refreshEvents = () => {
     void eventsQuery.refetch();
     void reservationsQuery.refetch();
+    void upcomingReservationsQuery.refetch();
     void overviewQuery.refetch();
   };
   const refreshActions = () => {
@@ -737,13 +754,30 @@ export function CalendarPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
           <p className="text-[10px] uppercase tracking-wide text-muted-2">Événements à venir (30 j)</p>
           <p className="mt-1 text-2xl font-semibold text-foreground">
             {formatNumber(overview?.planned_events ?? 0)}
           </p>
         </Card>
+        {canReadReservations ? (
+          <Card className="border-l-2 border-l-success/70 p-4">
+            <p className="text-[10px] uppercase tracking-wide text-muted-2">
+              Réservations à venir (30 j)
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">
+              {formatNumber(upcomingReservations.length)}
+            </p>
+            <p className="mt-0.5 truncate text-[10px] text-muted-2">
+              {nextUpcomingReservation
+                ? `Prochaine : ${nextUpcomingReservation.equipment.name} · ${formatDateTime(
+                    nextUpcomingReservation.start_at,
+                  )}`
+                : "Aucune réservation planifiée"}
+            </p>
+          </Card>
+        ) : null}
         <Card className="p-4">
           <p className="text-[10px] uppercase tracking-wide text-muted-2">Actions ouvertes</p>
           <p className="mt-1 text-2xl font-semibold text-warning">
