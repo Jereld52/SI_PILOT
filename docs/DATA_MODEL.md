@@ -77,9 +77,9 @@ dans les réponses standard.
 
 `calendar_events`, `actions`.
 
-### Automatisations, SylvIA, imports
+### Automatisations, Assistant IA, imports
 
-`automation_rules`, `automation_runs`, `email_outbox`, `sylvia_runs`, `sylvia_proposals`,
+`automation_rules`, `automation_runs`, `email_outbox`, `ai_runs`, `ai_proposals`,
 `import_jobs`, `import_rows`.
 
 ## Relations structurantes

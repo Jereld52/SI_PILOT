@@ -72,7 +72,7 @@ def test_administrator_usage_smoke(admin_client, csrf_headers):
         json={
             "first_name": "Admin",
             "last_name": f"Smoke{suffix}",
-            "email_pro": f"admin.smoke.{suffix}@forets-parcnational.fr",
+            "email_pro": f"admin.smoke.{suffix}@example.org",
             "status": "active",
         },
     )

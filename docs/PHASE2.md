@@ -28,7 +28,7 @@
 - Connexion, bandeau de changement de mot de passe, profil, déconnexion.
 - Tableau de bord connecté aux API réelles.
 - Administration complète (utilisateurs, rôles, audit, paramètres).
-- Recherche globale, notifications, dialogues SylvIA (information).
+- Recherche globale, notifications, dialogues Assistant IA (information).
 - Pages de modules en attente, sans données fictives ni boutons inactifs.
 
 ## Vérifications effectuées
@@ -57,7 +57,7 @@ Tests fonctionnels manuels :
 - Les modules métier (parc, tickets, contrats, budget, projets, RGPD, documentation,
   infrastructure, cybersécurité, calendrier) sont visibles dans la navigation mais affichent
   une page « module en préparation ». Aucune donnée n'est simulée.
-- Pas encore de MFA, LDAP, import/export, automatisation, SylvIA.
+- Pas encore de MFA, LDAP, import/export, automatisation, Assistant IA.
 - Pas de tests E2E Playwright ni de test de charge.
 - Docker n'est pas installé sur le poste ; les fichiers sont fournis mais non exécutés ici.
 - Le frontend est servi par FastAPI en mode natif ; Nginx est prévu pour Docker.

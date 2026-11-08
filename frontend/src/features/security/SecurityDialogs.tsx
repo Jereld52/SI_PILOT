@@ -965,7 +965,7 @@ export function CertificateDialog({
               id="certificate-name"
               value={commonName}
               onChange={(event) => setCommonName(event.target.value)}
-              placeholder="*.pnfor.fr"
+              placeholder="*.example.org"
             />
           </div>
           <div>

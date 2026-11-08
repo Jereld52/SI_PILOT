@@ -285,7 +285,7 @@ export function SetupPage() {
                       id="setup-organization"
                       value={form.organizationName}
                       onChange={(event) => update("organizationName", event.target.value)}
-                      placeholder="Parc national de forêts, Mairie de..., Université de..."
+                      placeholder="Votre structure, Mairie de..., Université de..."
                       autoFocus
                     />
                   </div>

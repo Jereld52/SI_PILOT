@@ -493,4 +493,4 @@ Le frontend charge les pages à la demande pour réduire le bundle initial.
 - La documentation ne gère pas encore l'indexation plein texte ni les ACL par rôle/utilisateur
   au-delà des permissions globales.
 - Le calendrier n'agrège pas encore automatiquement les échéances des autres modules.
-- SylvIA reste facultative et n'est pas encore activée.
+- L'assistant IA reste facultatif et n'est pas encore activé.

@@ -10,8 +10,8 @@ se configurent depuis l'administration.
 > **État actuel : socle et modules métier livrés.**
 > Parc, agents, téléphonie, fournisseurs, licences, stock, tickets, interventions, contrats,
 > budget, infrastructure, supervision, cybersécurité, projets, documentation, RGPD, réservations,
-> exports et administration sont opérationnels. Les automatisations planifiées et l'intégration
-> SylvIA restent à venir.
+> exports et administration sont opérationnels. Les automatisations planifiées et l'assistant IA
+> restent à venir.
 
 ---
 
@@ -149,7 +149,7 @@ création d'un administrateur reste possible en ligne de commande :
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m app.cli create-admin `
-  --email admin@forets-parcnational.fr --first-name Admin --last-name "SI PILOT" --generate
+  --email admin@example.org --first-name Admin --last-name "SI PILOT" --generate
 ```
 
 ### Centre d'aide
@@ -221,8 +221,8 @@ backend/     API, modèles, services, migrations, tests
 frontend/    application React/TypeScript
 infra/       Dockerfiles, Compose, configuration Nginx
 scripts/     scripts Windows (démarrage, sauvegarde, restauration)
-modeles/     fichiers d'import fournis (PC-PNfor.csv, lignes_mobiles.xlsx), non versionnés
-assets/      logos et icônes officiels
+modeles/     fichiers d'import fournis localement, non versionnés
+assets/      logos et icônes
 docs/        architecture, installation, sécurité, exploitation
 .runtime/    PostgreSQL portable, logs, sauvegardes locales (ignoré par Git)
 ```
@@ -251,7 +251,7 @@ npm run build
 - Aucune suppression physique des données sensibles ; archivage ou anonymisation.
 - Aucun mot de passe en clair, aucun secret dans le dépôt.
 - Aucun scan réseau ou action administrative sans autorisation explicite.
-- SylvIA reste facultative : l'application fonctionne intégralement sans elle.
+- L'assistant IA reste facultatif : l'application fonctionne intégralement sans lui.
 - Toute mutation est auditée.
 
 ## 9. Feuille de route
@@ -262,13 +262,12 @@ npm run build
 | Phase 2 | Socle technique, auth, rôles, dashboard, administration | **Terminée** |
 | Phase 3 | Référentiels, agents, parc enrichi WAPT, téléphonie, imports, QR codes, exports, fournisseurs, licences, stock, demandes IT, interventions, contrats, budget | **Livrée** |
 | Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | **Livrée** |
-| Phase 5 | Intégration SylvIA (Ollama / Open WebUI) | Planifiée |
+| Phase 5 | Assistant IA (Ollama / Open WebUI) | Planifiée |
 | Phase 6 | Automatisations, notifications, exports, sauvegardes, industrialisation | Planifiée |
 
 Détail : [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## 10. Licence et propriété
 
-Logiciel conçu pour le Parc national de forêts et personnalisable pour d'autres structures.
-Aucune dépendance à ASTRA, ENKI ou à des environnements personnels. Les composants open source
-conservent leurs licences respectives.
+Logiciel de pilotage du système d'information, personnalisable pour chaque structure.
+Les composants open source conservent leurs licences respectives.

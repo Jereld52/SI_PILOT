@@ -32,7 +32,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { THEME_OPTIONS, useTheme } from "@/features/theme/ThemeProvider";
-import { SylviaDialog } from "@/features/sylvia/SylviaDialog";
+import { AiDialog } from "@/features/ai/AiDialog";
 import { fullName } from "@/lib/utils";
 
 interface TopbarProps {
@@ -48,7 +48,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Palette;
   const location = useLocation();
   const navigate = useNavigate();
-  const [sylviaOpen, setSylviaOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const current = findNavItem(location.pathname);
 
   const handleLogout = async () => {
@@ -134,15 +134,15 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() => setSylviaOpen(true)}
+                  onClick={() => setAiOpen(true)}
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
-                  aria-label="Ouvrir SylvIA"
+                  aria-label="Ouvrir l'assistant IA"
                 >
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">SylvIA</span>
+                  <span className="hidden sm:inline">IA</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>Assistant IA institutionnel — non configuré</TooltipContent>
+              <TooltipContent>Assistant IA — non configuré</TooltipContent>
             </Tooltip>
 
             <DropdownMenu>
@@ -222,7 +222,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
         </div>
       </header>
 
-      <SylviaDialog open={sylviaOpen} onOpenChange={setSylviaOpen} />
+      <AiDialog open={aiOpen} onOpenChange={setAiOpen} />
     </>
   );
 }

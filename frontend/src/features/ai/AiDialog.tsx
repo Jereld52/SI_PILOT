@@ -14,7 +14,7 @@ import {
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 
-interface SylviaDialogProps {
+interface AiDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -28,7 +28,7 @@ const capabilities = [
   "Rédiger un compte rendu d'intervention",
 ];
 
-export function SylviaDialog({ open, onOpenChange }: SylviaDialogProps) {
+export function AiDialog({ open, onOpenChange }: AiDialogProps) {
   const { hasPermission } = useAuth();
   const branding = useBranding();
   const navigate = useNavigate();
@@ -41,13 +41,13 @@ export function SylviaDialog({ open, onOpenChange }: SylviaDialogProps) {
             <Sparkles className="h-5 w-5" aria-hidden="true" />
           </div>
           <DialogTitle className="flex items-center gap-2">
-            SylvIA
-            <Badge tone="warning">Non configurée</Badge>
+            Assistant IA
+            <Badge tone="warning">Non configuré</Badge>
           </DialogTitle>
           <DialogDescription>
             L'assistant IA facultatif de {branding.organization_name || "votre structure"}.
             L'intégration est prévue en Phase 5 et restera facultative : {branding.app_name}{" "}
-            fonctionne intégralement sans elle.
+            fonctionne intégralement sans lui.
           </DialogDescription>
         </DialogHeader>
 

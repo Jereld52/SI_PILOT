@@ -39,7 +39,7 @@ def test_mutation_without_csrf_is_rejected(admin_client):
 def test_change_password_and_session_revocation(admin_client, csrf_headers):
     client, admin_csrf = admin_client
     suffix = uuid4().hex[:8]
-    email = f"password.{suffix}@forets-parcnational.fr"
+    email = f"password.{suffix}@example.org"
     roles = client.get("/api/v1/admin/roles").json()
     reader_role = next(role for role in roles if role["code"] == "reader")
 

@@ -39,14 +39,14 @@ Deny by default. Les permissions sont contrôlées côté serveur et dans les se
 | Calendrier | G | G | C | V | P |
 | Administration | G | Partiel | — | — | — |
 | Audit | G | V | — | — | — |
-| SylvIA | G | Usage | Usage | — | — |
+| Assistant IA | G | Usage | Usage | — | — |
 
 Légende : G gestion, C création/modification, V lecture, R restreint, P personnel.
 
 ## Permissions sensibles
 
 `admin.roles.manage`, `admin.settings.manage`, `admin.backup.manage`, `audit.read`,
-`budget.validate`, `security.manage`, `rgpd.manage`, `sylvia.configure`, `imports.apply`,
+`budget.validate`, `security.manage`, `rgpd.manage`, `ai.configure`, `imports.apply`,
 `mobile_lines.secrets.read`, `mobile_lines.secrets.manage`.
 
 ## Points de contrôle

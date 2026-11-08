@@ -82,7 +82,7 @@ ASSET_HEADERS = [
 AGENT_EXAMPLE = [
     "EXEMPLE",
     "A_Supprimer",
-    "exemple.agent@forets-parcnational.fr",
+    "exemple.agent@example.org",
     "0102030405",
     "DSI",
     "Technicien",
@@ -110,7 +110,7 @@ ASSET_EXAMPLE = [
     "15/01/2025",
     "01/01/2028",
     "850.00",
-    "exemple.agent@forets-parcnational.fr",
+    "exemple.agent@example.org",
     "DSI",
     "SIEGE",
     "good",
@@ -212,7 +212,7 @@ RDM_HEADERS = [
 
 RDM_EXAMPLE = [
     "EXEMPLE-RDM",
-    "srv-exemple.pnfor.fr",
+    "srv-exemple.example.org",
     "192.0.2.30",
     "",
     "Windows Server 2022",
@@ -482,7 +482,7 @@ def _is_example(row: dict[str, str]) -> bool:
     reference = row.get("reference", "").replace(" ", "")
     return (
         name.startswith("EXEMPLE")
-        or email == "exemple.agent@forets-parcnational.fr"
+        or email == "exemple.agent@example.org"
         or serial == "SN-EXEMPLE"
         or reference == "0600000000"
     )

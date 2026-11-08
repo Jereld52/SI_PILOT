@@ -131,7 +131,7 @@ export function ImportDialog({
               </p>
               <p className="mt-0.5 text-[11px] text-muted">
                 {entityType === "assets"
-                  ? "CSV standard ou export WAPT PC-PNfor.csv reconnu automatiquement. 2 000 lignes maximum."
+                  ? "CSV standard ou export WAPT reconnu automatiquement. 2 000 lignes maximum."
                   : entityType === "mobile_lines"
                     ? "CSV, XLSX ou XLSM. Les colonnes PIN, PUK, CSIM et EID ne sont pas importées."
                     : entityType === "rdm"

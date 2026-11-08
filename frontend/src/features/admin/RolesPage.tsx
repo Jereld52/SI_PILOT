@@ -37,7 +37,7 @@ const moduleLabels: Record<string, string> = {
   exports: "Exports",
   admin: "Administration",
   audit: "Journal d'audit",
-  sylvia: "SylvIA",
+  ai: "Assistant IA",
 };
 
 export function RolesPage() {

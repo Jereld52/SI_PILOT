@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin, UUIDMixin, utcnow
 
 
-class SylviaRun(Base, UUIDMixin):
-    __tablename__ = "sylvia_runs"
+class AiRun(Base, UUIDMixin):
+    __tablename__ = "ai_runs"
 
     user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
@@ -28,11 +28,11 @@ class SylviaRun(Base, UUIDMixin):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-class SylviaProposal(Base, UUIDMixin, TimestampMixin):
-    __tablename__ = "sylvia_proposals"
+class AiProposal(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "ai_proposals"
 
     run_id: Mapped[UUID] = mapped_column(
-        ForeignKey("sylvia_runs.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("ai_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
     proposal_type: Mapped[str] = mapped_column(String(80), nullable=False)
     payload_json: Mapped[str | None] = mapped_column(Text)

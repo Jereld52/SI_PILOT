@@ -1151,12 +1151,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
     title: "Questions fréquentes",
     summary: "Réponses rapides sur les données, les droits, les exports et la personnalisation.",
     category: "faq",
-    tags: ["FAQ", "données", "droits", "exports", "personnalisation", "SylvIA"],
+    tags: ["FAQ", "données", "droits", "exports", "personnalisation", "assistant IA"],
     blocks: [
       p("Cette section répond aux questions les plus courantes."),
       list([
         "Les données sont-elles fictives ? Non. L'application n'injecte aucune donnée de démonstration dans les indicateurs.",
-        "Puis-je utiliser SI PILOT sans SylvIA ? Oui. SylvIA reste facultative et désactivée par défaut.",
+        "Puis-je utiliser SI PILOT sans assistant IA ? Oui. L'assistant IA reste facultatif et désactivé par défaut.",
         "Puis-je changer le logo et le nom ? Oui, dans Administration → Paramètres → Identité de l'application.",
         "Qui peut voir les PIN/PUK ? Uniquement les utilisateurs disposant des permissions dédiées. Les secrets ne figurent jamais dans les exports.",
         "Les suppressions sont-elles définitives ? La plupart des objets sont archivés ou clôturés. Les suppressions réelles sont auditées.",

@@ -280,7 +280,7 @@ export function AdminWaptPage() {
                   id="wapt-url"
                   value={baseUrl}
                   onChange={(event) => setBaseUrl(event.target.value)}
-                  placeholder="https://wapt.forets-parcnational.fr"
+                  placeholder="https://wapt.example.org"
                   disabled={!canManage}
                 />
               </div>

@@ -24,10 +24,10 @@ const categoryLabels: Record<string, string> = {
   alerts: "Alertes",
   security: "Sécurité",
   notifications: "Notifications",
-  sylvia: "SylvIA",
+  ai: "Assistant IA",
 };
 
-const categoryOrder = ["general", "dashboard", "alerts", "security", "notifications", "sylvia"];
+const categoryOrder = ["general", "dashboard", "alerts", "security", "notifications", "ai"];
 
 const BRANDING_KEYS = new Set([
   "app.name",
@@ -160,8 +160,8 @@ export function SettingsPage() {
               <CardTitle>{categoryLabels[category] ?? humanize(category)}</CardTitle>
               <CardDescription>{settings.length} paramètre(s).</CardDescription>
             </div>
-            {category === "sylvia" ? (
-              <Badge tone="warning">Désactivée</Badge>
+            {category === "ai" ? (
+              <Badge tone="warning">Désactivé</Badge>
             ) : null}
           </CardHeader>
           <CardContent className="space-y-2">
@@ -227,10 +227,10 @@ export function SettingsPage() {
             <Sparkles className="h-4 w-4" aria-hidden="true" />
           </div>
           <div className="flex-1">
-            <p className="text-xs font-medium text-foreground">Intégration SylvIA</p>
+            <p className="text-xs font-medium text-foreground">Intégration de l'assistant IA</p>
             <p className="mt-1 text-[11px] leading-5 text-muted">
               L'URL et le modèle se configurent ci-dessus. La clé d'API n'est jamais stockée en
-              base : renseignez <span className="font-mono text-[10px]">SYLVIA_API_KEY</span> dans
+              base : renseignez <span className="font-mono text-[10px]">AI_API_KEY</span> dans
               <span className="font-mono text-[10px]"> backend/.env</span>, puis redémarrez l'API.
               L'intégration reste désactivée par défaut et sera branchée en Phase 5.
             </p>

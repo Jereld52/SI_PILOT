@@ -324,7 +324,7 @@ export function AdminSourcesPage() {
                   id="ldap-url"
                   value={ldapUrl}
                   onChange={(event) => setLdapUrl(event.target.value)}
-                  placeholder="ldaps://dc01.pnfor.local:636"
+                  placeholder="ldaps://dc01.example.local:636"
                   disabled={!canManageSettings}
                 />
               </div>
@@ -334,7 +334,7 @@ export function AdminSourcesPage() {
                   id="ldap-base"
                   value={ldapBaseDn}
                   onChange={(event) => setLdapBaseDn(event.target.value)}
-                  placeholder="OU=Agents,DC=pnfor,DC=local"
+                  placeholder="OU=Agents,DC=example,DC=local"
                   disabled={!canManageSettings}
                 />
               </div>
@@ -345,7 +345,7 @@ export function AdminSourcesPage() {
                     id="ldap-users-base"
                     value={ldapUsersBaseDn}
                     onChange={(event) => setLdapUsersBaseDn(event.target.value)}
-                    placeholder="OU=Agents,DC=pnfor,DC=local"
+                    placeholder="OU=Agents,DC=example,DC=local"
                     disabled={!canManageSettings}
                   />
                 </div>
@@ -355,7 +355,7 @@ export function AdminSourcesPage() {
                     id="ldap-groups-base"
                     value={ldapGroupsBaseDn}
                     onChange={(event) => setLdapGroupsBaseDn(event.target.value)}
-                    placeholder="OU=Groupes,DC=pnfor,DC=local"
+                    placeholder="OU=Groupes,DC=example,DC=local"
                     disabled={!canManageSettings}
                   />
                 </div>
@@ -366,7 +366,7 @@ export function AdminSourcesPage() {
                   id="ldap-upn"
                   value={ldapUpnSuffix}
                   onChange={(event) => setLdapUpnSuffix(event.target.value)}
-                  placeholder="@forets-parcnational.fr"
+                  placeholder="@example.org"
                   disabled={!canManageSettings}
                 />
                 <p className="mt-1 text-[10px] text-muted-2">
@@ -380,7 +380,7 @@ export function AdminSourcesPage() {
                   id="ldap-bind"
                   value={ldapBindDn}
                   onChange={(event) => setLdapBindDn(event.target.value)}
-                  placeholder="CN=svc-si,OU=Services,DC=pnfor,DC=local"
+                  placeholder="CN=svc-si,OU=Services,DC=example,DC=local"
                   disabled={!canManageSettings}
                 />
               </div>

@@ -41,12 +41,12 @@ class Settings(BaseSettings):
     serve_frontend: bool = False
     frontend_dist: str = "../frontend/dist"
 
-    sylvia_enabled: bool = False
-    sylvia_base_url: str = ""
-    sylvia_api_key: str = ""
-    sylvia_model: str = ""
-    sylvia_timeout_seconds: int = 30
-    sylvia_verify_tls: bool = True
+    ai_enabled: bool = False
+    ai_base_url: str = ""
+    ai_api_key: str = ""
+    ai_model: str = ""
+    ai_timeout_seconds: int = 30
+    ai_verify_tls: bool = True
 
     bootstrap_admin_email: str = ""
     bootstrap_admin_password: str = ""

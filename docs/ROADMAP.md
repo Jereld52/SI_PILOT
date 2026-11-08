@@ -10,7 +10,7 @@
 | V0.6 | Infrastructure, cybersécurité | Cartographie, incidents liés aux actifs | Planifié |
 | V0.7 | Projets, RGPD, documentation | Timeline, registre, versions documentaires | Planifié |
 | V0.8 | Automatisations, rapports, imports avancés | Règles activables, exécutions tracées | Planifié |
-| V0.9 | SylvIA | Intégration désactivable, aucune écriture directe | Planifié |
+| V0.9 | Assistant IA | Intégration désactivable, aucune écriture directe | Planifié |
 | V1.0 | Recette, sécurité, restauration, documentation, déploiement | Recette métier, sauvegarde restaurée, runbook | Planifié |
 
 ## Prochaine étape recommandée

@@ -101,7 +101,7 @@ def test_security_vulnerabilities_backups_certificates_audits(admin_client, csrf
         "/api/v1/security/certificates",
         headers=csrf_headers(csrf),
         json={
-            "common_name": f"*.{suffix}.pnfor.fr",
+            "common_name": f"*.{suffix}.example.org",
             "issuer": "Autorité interne",
             "valid_from": date.today().isoformat(),
             "valid_to": (date.today() + timedelta(days=60)).isoformat(),

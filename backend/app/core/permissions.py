@@ -140,9 +140,9 @@ PERMISSION_DEFINITIONS: tuple[PermissionDefinition, ...] = (
     _p("admin.settings.manage", "admin", "settings.manage", "Gérer les paramètres"),
     _p("admin.backup.manage", "admin", "backup.manage", "Gérer les sauvegardes"),
     _p("audit.read", "audit", "read", "Consulter le journal d'audit"),
-    # SylvIA
-    _p("sylvia.use", "sylvia", "use", "Utiliser l'assistant SylvIA"),
-    _p("sylvia.configure", "sylvia", "configure", "Configurer la connexion SylvIA"),
+    # Assistant IA
+    _p("ai.use", "ai", "use", "Utiliser l'assistant IA"),
+    _p("ai.configure", "ai", "configure", "Configurer la connexion de l'assistant IA"),
 )
 
 ALL_PERMISSION_CODES = frozenset(item.code for item in PERMISSION_DEFINITIONS)
@@ -155,7 +155,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
         "admin.roles.manage",
         "admin.settings.manage",
         "admin.backup.manage",
-        "sylvia.configure",
+        "ai.configure",
     },
     "technician": frozenset(
         {
@@ -217,7 +217,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "actions.complete",
             "automations.read",
             "exports.run",
-            "sylvia.use",
+            "ai.use",
         }
     ),
     "reader": frozenset(

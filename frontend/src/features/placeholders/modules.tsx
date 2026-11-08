@@ -171,7 +171,7 @@ export const modules: ModuleDefinition[] = [
       "Versionnement et auteur des documents",
       "Recherche, tags et catégories",
       "Permissions documentaires par rôle ou utilisateur",
-      "Préparation de l'indexation sémantique SylvIA",
+      "Préparation de l'indexation sémantique IA",
     ],
   },
   {

@@ -27,7 +27,7 @@ def test_rgpd_register_and_dossier_exports(admin_client, csrf_headers):
             "purpose": "Gestion administrative des agents du parc.",
             "legal_basis": "Mission d'intérêt public",
             "data_categories": "Identité, coordonnées professionnelles, fonction",
-            "data_subjects": "Agents du Parc national de forêts",
+            "data_subjects": "Agents de la structure",
             "recipients": "Service informatique, direction",
             "retention_period": "5 ans après le départ",
             "security_measures": "Accès restreint par permission, journal d'audit",
@@ -129,7 +129,7 @@ def test_rgpd_register_and_dossier_exports(admin_client, csrf_headers):
 def test_agent_personal_data_export(admin_client, csrf_headers):
     client, csrf = admin_client
     suffix = uuid4().hex[:8]
-    email = f"rgpd.export.{suffix}@forets-parcnational.fr"
+    email = f"rgpd.export.{suffix}@example.org"
     agent = client.post(
         "/api/v1/agents",
         headers=csrf_headers(csrf),

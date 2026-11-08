@@ -1,3 +1,4 @@
+from app.models.ai import AiProposal, AiRun
 from app.models.assets import (
     Asset,
     AssetAssignment,
@@ -87,7 +88,6 @@ from app.models.security import (
 )
 from app.models.setting import Setting
 from app.models.stock import StockItem
-from app.models.sylvia import SylviaProposal, SylviaRun
 from app.models.tickets import (
     Intervention,
     InterventionAsset,
@@ -178,8 +178,8 @@ __all__ = [
     "StockMovement",
     "Supplier",
     "SupplierContact",
-    "SylviaProposal",
-    "SylviaRun",
+    "AiProposal",
+    "AiRun",
     "Tag",
     "Ticket",
     "TicketAsset",

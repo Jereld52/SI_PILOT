@@ -36,8 +36,8 @@ thèmes ; seules les nuances sont recalculées pour préserver le contraste.
 
 ## Logo
 
-- Lockup officiel : `assets/logoweb.png` (République française + Parc national de forêts),
-  utilisé sur l'écran de connexion.
+- Lockup officiel fourni avec l'installation : `assets/logoweb.png`, utilisé sur l'écran de
+  connexion.
 - Emblème officiel : `assets/pnf-logo.jpg` et `assets/favicon.png`.
 - Emblème de la sidebar : `frontend/public/favicon.png`.
 - Favicon : `frontend/public/favicon.png`.

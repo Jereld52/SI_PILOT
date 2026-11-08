@@ -14,7 +14,7 @@ FastAPI
     ├── stockage fichiers (data/uploads)
     ├── worker APScheduler (Phase 6)
     ├── SMTP (Phase 6)
-    └── adaptateur SylvIA (Phase 5, facultatif)
+    └── adaptateur IA (Phase 5, facultatif)
 ```
 
 En mode Windows natif, FastAPI sert le frontend compilé (`frontend/dist`) et l'API sur le
@@ -32,7 +32,7 @@ app/
 ├── schemas/      Pydantic (entrées/sorties)
 ├── services/     règles métier, orchestration, audit
 ├── repositories/ accès aux données (à compléter par module)
-├── integrations/ SylvIA, stockage, mail
+├── integrations/ IA, stockage, mail
 ├── jobs/         planificateur et automatisations
 ├── exports/      XLSX, PDF, CSV
 ├── imports/      parseurs, validation, mapping
@@ -77,7 +77,7 @@ Voir [`SECURITY.md`](SECURITY.md). Points structurants :
 - audit chaîné ;
 - en-têtes de sécurité ;
 - secrets hors dépôt ;
-- SylvIA isolée et facultative.
+- Assistant IA isolé et facultatif.
 
 ## 5. Base de données
 
@@ -116,7 +116,7 @@ la cible recommandée pour un serveur.
 Pour un poste unique, servir le SPA compilé par FastAPI évite Nginx et réduit les points de
 panne. En Docker, Nginx reste utilisé pour la mise en cache et la séparation des rôles.
 
-### ADR 004 — SylvIA facultative et isolée
+### ADR 004 — Assistant IA facultatif et isolé
 
 Aucun endpoint n'est supposé. L'adaptateur est isolé, désactivé par défaut et ne peut jamais
 écrire en base. Les données envoyées sont minimisées et journalisées.

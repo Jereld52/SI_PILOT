@@ -72,7 +72,7 @@ def test_mobile_xlsx_import(admin_client, csrf_headers):
             "M.",
             "Import Mobile",
             "Technicien",
-            "mobile.test@forets-parcnational.fr",
+            "mobile.test@example.org",
             "Actif",
             "Forfait import",
             "01/01/2026",
@@ -154,7 +154,7 @@ def test_technician_cannot_read_mobile_secrets(admin_client, csrf_headers):
     assert created.status_code == 201, created.text
     line_id = created.json()["id"]
 
-    email = f"tech.mobile.{suffix}@forets-parcnational.fr"
+    email = f"tech.mobile.{suffix}@example.org"
     roles = client.get("/api/v1/admin/roles").json()
     technician_role = next(role for role in roles if role["code"] == "technician")
     user = client.post(

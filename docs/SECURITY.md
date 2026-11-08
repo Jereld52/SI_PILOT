@@ -6,7 +6,7 @@
 - Deny by default : une permission absente signifie un accès refusé.
 - Moindre privilège : rôles système, permissions granulaires, comptes administrateurs limités.
 - Minimisation : ne collecter et ne transmettre que le nécessaire.
-- Traçabilité : toute mutation, connexion, export et action SylvIA est auditée.
+- Traçabilité : toute mutation, connexion, export et action de l'assistant IA est auditée.
 - Séparation des secrets : variables d'environnement, jamais en base ni dans le dépôt.
 
 ## 2. Authentification
@@ -53,16 +53,16 @@
 - Aucune donnée de production dans l'environnement de développement.
 - Aucune donnée fictive en production.
 
-## 6. SylvIA
+## 6. Assistant IA
 
-- Intégration **désactivée par défaut**, isolée dans `app/integrations/sylvia`.
+- Intégration **désactivée par défaut**, isolée dans `app/integrations/ai`.
 - Aucun endpoint inventé : la documentation réelle d'Open WebUI / Ollama doit être fournie.
 - Données minimisées, pseudonymisées si nécessaire, aperçu avant envoi.
-- Aucune écriture directe en base par SylvIA.
+- Aucune écriture directe en base par l'assistant IA.
 - Toute proposition doit être validée par un utilisateur habilité et exécutée par un service
   métier avec contrôle de permission.
 - Journalisation des requêtes, timeouts, gestion d'erreur, circuit breaker.
-- L'application reste pleinement fonctionnelle sans SylvIA.
+- L'application reste pleinement fonctionnelle sans l'assistant IA.
 
 ## 7. Infrastructure
 

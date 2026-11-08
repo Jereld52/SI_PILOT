@@ -36,7 +36,7 @@ docker compose -f infra/compose.prod.yml up -d --build
 
 Placer Caddy, Nginx ou le reverse proxy de l'établissement devant le port 8080. Configurer :
 
-- `CORS_ORIGINS=https://si-pilot.pnfor.fr`
+- `CORS_ORIGINS=https://si-pilot.example.org`
 - `SECURE_COOKIES=true`
 - certificat TLS valide
 - `X-Forwarded-For` et `X-Forwarded-Proto` transmis

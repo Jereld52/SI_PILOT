@@ -32,7 +32,7 @@ def test_search_links_target_existing_pages(admin_client, csrf_headers):
         json={
             "first_name": "Recherche",
             "last_name": f"Agent{suffix}",
-            "email_pro": f"recherche.{suffix}@forets-parcnational.fr",
+            "email_pro": f"recherche.{suffix}@example.org",
             "status": "active",
         },
     )

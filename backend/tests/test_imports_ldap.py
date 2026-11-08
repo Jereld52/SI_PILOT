@@ -53,7 +53,7 @@ def test_import_suppliers_licenses_and_rdm(admin_client, csrf_headers):
 
     rdm_csv = (
         "Name;Host;IP;OS;Group;Description;Credential\n"
-        f"SRV-RDM-{suffix};rdm-{suffix}.pnfor.fr;192.0.2.77;Windows Server 2022;"
+        f"SRV-RDM-{suffix};rdm-{suffix}.example.org;192.0.2.77;Windows Server 2022;"
         "Serveurs/Production;Serveur de test RDM;secret-a-ne-pas-importer\n"
     )
     preview = _preview(client, csrf_headers, csrf, "rdm", "rdm.csv", rdm_csv)
@@ -94,8 +94,8 @@ def test_ldap_configuration_is_masked(admin_client, csrf_headers):
         json={
             "enabled": False,
             "url": "ldap://127.0.0.1:1",
-            "base_dn": "DC=pnfor,DC=local",
-            "bind_dn": "CN=svc-si,OU=Services,DC=pnfor,DC=local",
+            "base_dn": "DC=example,DC=local",
+            "bind_dn": "CN=svc-si,OU=Services,DC=example,DC=local",
             "bind_password": "mot-de-passe-test",
             "user_filter": "(objectClass=user)",
             "tls_verify": False,

@@ -4,7 +4,7 @@ from uuid import uuid4
 def test_technician_is_limited(admin_client, csrf_headers, client):
     admin, csrf = admin_client
     suffix = uuid4().hex[:8]
-    email = f"tech.{suffix}@forets-parcnational.fr"
+    email = f"tech.{suffix}@example.org"
     roles = admin.get("/api/v1/admin/roles").json()
     technician_role = next(role for role in roles if role["code"] == "technician")
     response = admin.post(

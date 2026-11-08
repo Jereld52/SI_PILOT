@@ -27,7 +27,7 @@ def test_reservation_lifecycle_and_conflicts(admin_client, csrf_headers):
         json={
             "equipment_id": equipment_id,
             "requester_name": "Agent Test",
-            "requester_email": "agent.test@forets-parcnational.fr",
+            "requester_email": "agent.test@example.org",
             "purpose": "Réunion de service",
             "start_at": start.isoformat(),
             "end_at": end.isoformat(),
