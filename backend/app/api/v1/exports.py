@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import UTC, date, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
@@ -10,9 +11,13 @@ from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.exports import assets as assets_export
 from app.exports import mobile as mobile_export
+from app.exports import statistics as statistics_export
+from app.exports import tickets as tickets_export
 from app.models.auth import User
-from app.services import assets_service, mobile_service
+from app.models.tickets import Ticket
+from app.services import assets_service, mobile_service, statistics_service
 from app.services.audit_service import write_audit
+from app.services.periods import Granularity, build_periods, default_range
 
 router = APIRouter(prefix="/exports", tags=["Exports"])
 
@@ -52,6 +57,131 @@ def export_assets(
         content=content,
         media_type=media_type,
         headers={"Content-Disposition": f'attachment; filename="{_filename("parc-informatique", format)}"'},
+    )
+
+
+@router.get("/tickets")
+def export_tickets(
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    start: date | None = None,
+    end: date | None = None,
+    granularity: Granularity = Query("month"),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "tickets.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter les tickets.")
+    if start is None or end is None:
+        start, end = default_range(granularity)
+    periods = build_periods(start, end, granularity)
+    start_dt = datetime.combine(start, datetime.min.time(), tzinfo=UTC)
+    end_dt = datetime.combine(end, datetime.max.time(), tzinfo=UTC)
+    tickets = list(
+        db.scalars(
+            select(Ticket)
+            .where(
+                or_(
+                    Ticket.opened_at.between(start_dt, end_dt),
+                    Ticket.resolved_at.between(start_dt, end_dt),
+                    Ticket.closed_at.between(start_dt, end_dt),
+                )
+            )
+            .order_by(Ticket.opened_at.desc())
+        ).all()
+    )
+    content = (
+        tickets_export.tickets_xlsx(
+            tickets, periods, granularity, start=start, end=end
+        )
+        if format == "xlsx"
+        else tickets_export.tickets_pdf(
+            tickets, periods, granularity, start=start, end=end
+        )
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="tickets_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label=f"tickets.{format}",
+        after={
+            "count": len(tickets),
+            "format": format,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "granularity": granularity,
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="tickets-{start.isoformat()}-{end.isoformat()}-{granularity}.{format}"'
+            )
+        },
+    )
+
+
+@router.get("/statistics")
+def export_statistics(
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    start: date | None = None,
+    end: date | None = None,
+    granularity: Granularity = Query("month"),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "statistics.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter les statistiques.")
+    overview = statistics_service.get_overview(
+        db, start=start, end=end, granularity=granularity
+    )
+    content = (
+        statistics_export.statistics_xlsx(overview)
+        if format == "xlsx"
+        else statistics_export.statistics_pdf(overview)
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="statistics_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label=f"statistics.{format}",
+        after={
+            "format": format,
+            "start": overview.start.isoformat(),
+            "end": overview.end.isoformat(),
+            "granularity": granularity,
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="statistiques-{overview.start.isoformat()}-'
+                f'{overview.end.isoformat()}-{granularity}.{format}"'
+            )
+        },
     )
 
 

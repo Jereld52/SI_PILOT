@@ -25,6 +25,7 @@ from app.api.v1 import (
     rgpd,
     search,
     security,
+    statistics,
     stock,
     suppliers,
     tickets,
@@ -58,3 +59,4 @@ api_router.include_router(projects.router)
 api_router.include_router(documents.router)
 api_router.include_router(calendar.router)
 api_router.include_router(ldap.router)
+api_router.include_router(statistics.router)

@@ -62,4 +62,4 @@ def test_roles_and_permissions(admin_client):
     assert {role["code"] for role in roles.json()} >= {"admin", "dpo", "technician"}
     permissions = client.get("/api/v1/admin/permissions")
     assert permissions.status_code == 200
-    assert len(permissions.json()) == 107
+    assert len(permissions.json()) == 108

@@ -15,6 +15,7 @@ def _p(code: str, module: str, action: str, description: str) -> PermissionDefin
 
 PERMISSION_DEFINITIONS: tuple[PermissionDefinition, ...] = (
     _p("dashboard.read", "dashboard", "read", "Consulter la vue générale"),
+    _p("statistics.read", "statistics", "read", "Consulter les statistiques consolidées"),
     _p("search.read", "search", "read", "Utiliser la recherche globale"),
     _p("notifications.read", "notifications", "read", "Consulter ses notifications"),
     _p("notifications.update", "notifications", "update", "Marquer ses notifications comme lues"),
@@ -154,6 +155,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "technician": frozenset(
         {
             "dashboard.read",
+            "statistics.read",
             "search.read",
             "notifications.read",
             "notifications.update",
@@ -212,6 +214,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "reader": frozenset(
         {
             "dashboard.read",
+            "statistics.read",
             "search.read",
             "notifications.read",
             "notifications.update",

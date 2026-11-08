@@ -55,7 +55,7 @@ export function TicketDetailDialog({
   loading,
   onChanged,
 }: TicketDetailDialogProps) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const [statusId, setStatusId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [comment, setComment] = useState("");
@@ -85,6 +85,51 @@ export function TicketDetailDialog({
     } finally {
       setBusy(false);
     }
+  };
+
+  const findStatus = (code: string) =>
+    (meta?.statuses ?? []).find((status) => status.code === code);
+
+  const takeCharge = async () => {
+    if (!ticket || !user) return;
+    const target = findStatus("in_progress");
+    setBusy(true);
+    try {
+      if (ticket.assignee_user_id !== user.id) {
+        await apiFetch(`/tickets/${ticket.id}/assign`, {
+          method: "POST",
+          body: JSON.stringify({ assignee_user_id: user.id }),
+        });
+      }
+      if (target && ticket.status_id !== target.id) {
+        await apiFetch(`/tickets/${ticket.id}/transition`, {
+          method: "POST",
+          body: JSON.stringify({ status_id: target.id }),
+        });
+      }
+      toast.success("Ticket pris en charge.");
+      onChanged();
+    } catch (caught) {
+      toast.error(caught instanceof ApiError ? caught.message : "Prise en charge impossible.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const moveTo = (code: string, label: string) => {
+    const target = findStatus(code);
+    if (!target) {
+      toast.error(`Statut « ${label} » non configuré.`);
+      return;
+    }
+    void run(
+      () =>
+        apiFetch(`/tickets/${ticket?.id}/transition`, {
+          method: "POST",
+          body: JSON.stringify({ status_id: target.id }),
+        }),
+      `Ticket ${label.toLowerCase()}.`,
+    );
   };
 
   return (
@@ -174,6 +219,42 @@ export function TicketDetailDialog({
                 </div>
               </div>
             ) : null}
+
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 p-3">
+              <p className="mr-1 text-[10px] font-medium uppercase tracking-wide text-muted-2">
+                Actions rapides
+              </p>
+              {hasPermission("tickets.assign") &&
+              user &&
+              !ticket.status.is_closed &&
+              ticket.status.code !== "in_progress" ? (
+                <Button size="sm" loading={busy} onClick={() => void takeCharge()}>
+                  Prendre en charge
+                </Button>
+              ) : null}
+              {hasPermission("tickets.transition") &&
+              !ticket.status.is_closed &&
+              ticket.status.code !== "resolved" ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={busy}
+                  onClick={() => moveTo("resolved", "Résolu")}
+                >
+                  Marquer résolu
+                </Button>
+              ) : null}
+              {hasPermission("tickets.close") && !ticket.status.is_closed ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={busy}
+                  onClick={() => moveTo("closed", "Clos")}
+                >
+                  Clore
+                </Button>
+              ) : null}
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-border-soft p-3">

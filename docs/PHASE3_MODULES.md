@@ -2,6 +2,22 @@
 
 Cette tranche complète les modules métier livrés après le socle et l'inventaire initial.
 
+## Tickets simplifiés, exports et statistiques
+
+- Création de ticket recentrée sur l'objet, la description, la catégorie, la priorité et le
+  demandeur ; les options d'assignation, d'origine et d'équipement sont repliées.
+- Actions rapides dans la fiche : prendre en charge, marquer résolu, clore.
+- Historique complet conservé : statut, priorité, assignation, catégorie, commentaires et temps.
+- Export des tickets en XLSX ou PDF avec granularité **jour, semaine, mois ou année** :
+  synthèse par période, tickets créés/résolus/clos, temps passé, délai moyen, respect du SLA,
+  répartitions par statut, priorité, catégorie, assigné et service, puis détail des tickets.
+- Page **Statistiques consolidée** avec dates de début/fin et granularité :
+  indicateurs clés, activité des tickets, interventions et incidents de sécurité, répartitions
+  parc/contrats/projets/téléphonie/documents, et budget par catégorie.
+- Export complet des statistiques en XLSX multi-feuilles ou PDF.
+- Nouvelle permission `statistics.read` pour les rôles administrateur, responsable informatique,
+  technicien et lecteur.
+
 ## Module d'import, Active Directory et RDM
 
 - Écran **Imports** avec quatre espaces : fichiers, Active Directory, Remote Desktop Manager et
@@ -192,6 +208,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/POST /documents`, `GET/PATCH/DELETE /documents/{id}`, `GET /documents/meta`
 - `GET/POST /documents/{id}/versions`, `GET /documents/versions/{id}/download`
 - `GET /dashboard/cockpit`
+- `GET /statistics/overview?start=&end=&granularity=day|week|month|year`
+- `GET /exports/tickets?format=xlsx|pdf&start=&end=&granularity=...`
+- `GET /exports/statistics?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
 - `GET /imports`, `GET /imports/templates/{type}`, `POST /imports/preview`,
   `POST /imports/{id}/apply`
@@ -201,9 +220,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       45 passed
+pytest -q       46 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 125 source files
+mypy app        Success: no issues found in 131 source files
 npm run build   TypeScript + Vite OK
 ```
 

@@ -26,6 +26,7 @@ import { ReferentialsPage } from "@/features/referentials/ReferentialsPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { RgpdPage } from "@/features/rgpd/RgpdPage";
 import { SecurityPage } from "@/features/security/SecurityPage";
+import { StatisticsPage } from "@/features/statistics/StatisticsPage";
 import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
 import { TicketsPage } from "@/features/tickets/TicketsPage";
 
@@ -127,6 +128,15 @@ export function App() {
             element={
               <RequirePermission permission="mobile_lines.read">
                 <MobileLinesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="statistiques"
+            element={
+              <RequirePermission permission="statistics.read">
+                <StatisticsPage />
               </RequirePermission>
             }
           />

@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  BarChart3,
   BookOpen,
   CalendarDays,
   FileText,
@@ -28,6 +29,7 @@ export interface NavItem {
 
 export const navigation: NavItem[] = [
   { label: "Vue générale", to: "/", icon: LayoutDashboard, permission: "dashboard.read" },
+  { label: "Statistiques", to: "/statistiques", icon: BarChart3, permission: "statistics.read" },
   { label: "Demandes IT", to: "/demandes", icon: LifeBuoy, permission: "tickets.read" },
   { label: "Parc informatique", to: "/parc", icon: MonitorSmartphone, permission: "assets.read" },
   { label: "Fournisseurs & licences", to: "/fournisseurs", icon: Truck, permission: "suppliers.read" },

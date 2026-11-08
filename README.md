@@ -42,15 +42,19 @@ le RGPD, la documentation et les échéances.
 - Connexion Active Directory en LDAP/LDAPS : configuration chiffrée, test, prévisualisation et
   synchronisation des agents sans écraser les données métier.
 - Enrichissement depuis Remote Desktop Manager par export CSV, sans jamais importer les secrets.
-- Demandes IT : références automatiques, priorités, SLA, assignation, commentaires, temps passé,
-  historique et interventions liées.
+- Demandes IT : création simplifiée, actions rapides, priorités, SLA, assignation, commentaires,
+  temps passé, historique complet et interventions liées.
+- Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
+  répartitions et détail.
+- Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, sécurité,
+  projets, téléphonie et documentation, avec export XLSX/PDF.
 - RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
 - Exports XLSX et PDF du parc et des lignes mobiles.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Cockpit d'accueil : état des 10 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 45 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 46 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

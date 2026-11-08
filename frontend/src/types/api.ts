@@ -432,6 +432,70 @@ export interface LdapSyncResponse {
   message: string;
 }
 
+export interface StatsKpi {
+  key: string;
+  label: string;
+  value: number;
+  unit: string | null;
+  hint: string | null;
+  severity: string;
+}
+
+export interface StatsPeriodPoint {
+  key: string;
+  label: string;
+  created: number;
+  resolved: number;
+  closed: number;
+}
+
+export interface StatsPoint {
+  label: string;
+  value: number;
+  color: string | null;
+}
+
+export interface StatsBudgetCategory {
+  label: string;
+  voted: number;
+  committed: number;
+  invoiced: number;
+}
+
+export interface StatsBudget {
+  year: number;
+  status: string;
+  voted: number;
+  committed: number;
+  invoiced: number;
+  available: number;
+  categories: StatsBudgetCategory[];
+}
+
+export interface StatisticsOverview {
+  start: string;
+  end: string;
+  granularity: string;
+  generated_at: string;
+  kpis: StatsKpi[];
+  ticket_periods: StatsPeriodPoint[];
+  intervention_periods: StatsPeriodPoint[];
+  security_periods: StatsPeriodPoint[];
+  tickets_by_status: StatsPoint[];
+  tickets_by_priority: StatsPoint[];
+  tickets_by_category: StatsPoint[];
+  tickets_by_assignee: StatsPoint[];
+  assets_by_status: StatsPoint[];
+  assets_by_category: StatsPoint[];
+  interventions_by_status: StatsPoint[];
+  contracts_by_status: StatsPoint[];
+  projects_by_status: StatsPoint[];
+  security_by_severity: StatsPoint[];
+  mobile_by_status: StatsPoint[];
+  documents_by_status: StatsPoint[];
+  budget: StatsBudget | null;
+}
+
 export interface MobileLineItem {
   id: string;
   line_number: string;

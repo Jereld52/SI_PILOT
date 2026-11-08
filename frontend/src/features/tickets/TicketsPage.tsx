@@ -1,7 +1,11 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
+  BarChart3,
   CalendarClock,
+  Download,
   Eye,
+  FileSpreadsheet,
+  FileText,
   LifeBuoy,
   Pencil,
   Plus,
@@ -9,11 +13,18 @@ import {
   Wrench,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
@@ -73,6 +84,7 @@ const interventionTypeLabels: Record<string, string> = {
 
 export function TicketsPage() {
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
   const canTickets = hasPermission("tickets.read");
   const canInterventions = hasPermission("interventions.read");
   const canCreateTicket = hasPermission("tickets.create");
@@ -88,6 +100,7 @@ export function TicketsPage() {
   const [page, setPage] = useState(1);
   const [interventionStatus, setInterventionStatus] = useState("");
   const [interventionPage, setInterventionPage] = useState(1);
+  const [exportGranularity, setExportGranularity] = useState("month");
 
   const [ticketFormOpen, setTicketFormOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -209,6 +222,57 @@ export function TicketsPage() {
         description="Tickets, priorités, SLA, commentaires, temps passé et interventions liées au parc."
         actions={
           <>
+            {tab === "tickets" ? (
+              <>
+                <Select
+                  value={exportGranularity}
+                  onChange={(event) => setExportGranularity(event.target.value)}
+                  className="w-28"
+                  aria-label="Granularité d'export"
+                >
+                  <option value="day">Jour</option>
+                  <option value="week">Semaine</option>
+                  <option value="month">Mois</option>
+                  <option value="year">Année</option>
+                </Select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" size="sm">
+                      <Download className="h-3.5 w-3.5" />
+                      Exporter
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.open(
+                          `/api/v1/exports/tickets?format=xlsx&granularity=${exportGranularity}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5" />
+                      Excel avec synthèse
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.open(
+                          `/api/v1/exports/tickets?format=pdf&granularity=${exportGranularity}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Rapport PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="secondary" size="sm" onClick={() => navigate("/statistiques")}>
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Statistiques
+                </Button>
+              </>
+            ) : null}
             {tab === "tickets" && canCreateTicket ? (
               <Button size="sm" onClick={() => setTicketFormOpen(true)}>
                 <Plus className="h-3.5 w-3.5" />

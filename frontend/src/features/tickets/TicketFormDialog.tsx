@@ -194,44 +194,57 @@ export function TicketFormDialog({
               </Select>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <Label htmlFor="ticket-assignee">Assigné à</Label>
-              <Select
-                id="ticket-assignee"
-                value={assigneeId}
-                onChange={(event) => setAssigneeId(event.target.value)}
-              >
-                <option value="">Non assigné</option>
-                {assignees.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
-                  </option>
-                ))}
-              </Select>
+          <details className="rounded-lg border border-border-soft bg-background-soft/40 p-3">
+            <summary className="cursor-pointer text-xs font-medium text-muted">
+              Options avancées — assignation, origine, équipement
+            </summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div>
+                <Label htmlFor="ticket-assignee">Assigné à</Label>
+                <Select
+                  id="ticket-assignee"
+                  value={assigneeId}
+                  onChange={(event) => setAssigneeId(event.target.value)}
+                >
+                  <option value="">Non assigné</option>
+                  {assignees.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="ticket-source">Origine</Label>
+                <Select
+                  id="ticket-source"
+                  value={source}
+                  onChange={(event) => setSource(event.target.value)}
+                >
+                  <option value="manual">Saisie manuelle</option>
+                  <option value="phone">Téléphone</option>
+                  <option value="email">E-mail</option>
+                  <option value="portal">Portail</option>
+                  <option value="import">Import</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="ticket-asset">Équipement concerné</Label>
+                <Select
+                  id="ticket-asset"
+                  value={assetId}
+                  onChange={(event) => setAssetId(event.target.value)}
+                >
+                  <option value="">Aucun</option>
+                  {assets.map((asset) => (
+                    <option key={asset.id} value={asset.id}>
+                      {asset.asset_tag} — {asset.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="ticket-source">Origine</Label>
-              <Select id="ticket-source" value={source} onChange={(event) => setSource(event.target.value)}>
-                <option value="manual">Saisie manuelle</option>
-                <option value="phone">Téléphone</option>
-                <option value="email">E-mail</option>
-                <option value="portal">Portail</option>
-                <option value="import">Import</option>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="ticket-asset">Équipement concerné</Label>
-              <Select id="ticket-asset" value={assetId} onChange={(event) => setAssetId(event.target.value)}>
-                <option value="">Aucun</option>
-                {assets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.asset_tag} — {asset.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
+          </details>
           <div>
             <Label htmlFor="ticket-description">Description</Label>
             <Textarea
