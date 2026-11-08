@@ -12,6 +12,7 @@ from app.api.v1 import (
     exports,
     health,
     imports,
+    infrastructure,
     interventions,
     licenses,
     mobile,
@@ -19,6 +20,7 @@ from app.api.v1 import (
     referentials,
     rgpd,
     search,
+    security,
     stock,
     suppliers,
     tickets,
@@ -46,3 +48,5 @@ api_router.include_router(interventions.router)
 api_router.include_router(rgpd.router)
 api_router.include_router(contracts.router)
 api_router.include_router(budget.router)
+api_router.include_router(infrastructure.router)
+api_router.include_router(security.router)

@@ -4,9 +4,12 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin, utcnow
+from app.models.assets import Asset
+from app.models.auth import User
+from app.models.organization import Location
 
 
 class InfraEquipment(Base, UUIDMixin, TimestampMixin):
@@ -38,6 +41,10 @@ class InfraEquipment(Base, UUIDMixin, TimestampMixin):
     map_y: Mapped[float | None] = mapped_column(Float)
     last_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    asset: Mapped[Asset | None] = relationship(lazy="joined")
+    location: Mapped[Location | None] = relationship(lazy="joined")
+    responsible: Mapped[User | None] = relationship(lazy="joined")
+
 
 class InfraDependency(Base, UUIDMixin):
     __tablename__ = "infra_dependencies"
@@ -50,6 +57,17 @@ class InfraDependency(Base, UUIDMixin):
     )
     dependency_type: Mapped[str] = mapped_column(String(50), default="network", nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
+
+    source: Mapped[InfraEquipment] = relationship(foreign_keys=[source_id], lazy="joined")
+    target: Mapped[InfraEquipment] = relationship(foreign_keys=[target_id], lazy="joined")
+
+    @property
+    def source_name(self) -> str:
+        return self.source.name if self.source else ""
+
+    @property
+    def target_name(self) -> str:
+        return self.target.name if self.target else ""
 
     __table_args__ = (
         UniqueConstraint("source_id", "target_id", "dependency_type", name="uq_infra_dependency"),
@@ -72,6 +90,13 @@ class MonitoringCheck(Base, UUIDMixin, TimestampMixin):
     )
     authorized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    infra: Mapped[InfraEquipment] = relationship(lazy="joined")
+    authorized_by: Mapped[User | None] = relationship(lazy="joined")
+
+    @property
+    def infra_name(self) -> str:
+        return self.infra.name if self.infra else ""
+
 
 class MonitoringResult(Base, UUIDMixin):
     __tablename__ = "monitoring_results"
@@ -85,3 +110,5 @@ class MonitoringResult(Base, UUIDMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     message: Mapped[str | None] = mapped_column(Text)
+
+    check: Mapped[MonitoringCheck] = relationship(lazy="joined")

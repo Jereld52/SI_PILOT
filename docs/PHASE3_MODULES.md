@@ -62,6 +62,30 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   supprimée ; un budget clôturé n'est plus modifiable.
 - Validation d'un budget en brouillon, avec traçabilité du valideur et de la date.
 
+## Infrastructure et réseau
+
+- Inventaire des serveurs, VM, switches, routeurs, pare-feu, NAS, points d'accès et onduleurs.
+- Rattachement facultatif à un équipement du parc, à un site et à un responsable.
+- Adresse IP, MAC, système, rôle, criticité, statut et configuration.
+- Dépendances entre équipements (réseau, alimentation, stockage, authentification, applicatif)
+  pour l'analyse d'impact.
+- Supervision : contrôles ping, SNMP, HTTP, TCP ou agent. Aucune sonde n'est lancée par
+  l'application ; un contrôle doit être explicitement autorisé avant activation.
+- Historique des résultats de supervision et dernière vérification par équipement.
+
+## Cybersécurité
+
+- Incidents : référence `INC-AAAA-NNNN`, gravité, catégorie, détection, responsable, mesures,
+  retour d'expérience et clôture sans suppression.
+- Actions correctives ou préventives : priorité, échéance, responsable, preuve et rattachement
+  à un incident ou à un équipement.
+- Vulnérabilités : CVE, score CVSS, gravité, équipement, source, remédiation et échéance.
+- Sauvegardes : exécution, résultat, taille, durée et test de restauration.
+- Certificats : validité, émetteur, responsable, renouvellement automatique et alerte à 30/90/180 jours.
+- Audits : audit interne, externe, test d'intrusion ou conformité, avec constats.
+- Vue d'ensemble : incidents ouverts, actions en retard, vulnérabilités critiques, certificats à
+  échéance et dernière sauvegarde.
+
 ## RGPD et rôle DPO
 
 - Nouveau rôle système `dpo` (Délégué à la protection des données) avec accès au registre,
@@ -99,13 +123,23 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `POST /budgets/{id}/lines`, `PATCH/DELETE /budget-lines/{id}`
 - `POST /budgets/{id}/commitments`, `PATCH/DELETE /budget-commitments/{id}`
 - `POST /budgets/{id}/invoices`, `PATCH/DELETE /budget-invoices/{id}`
+- `GET/POST /infrastructure/equipments`, `GET/PATCH/DELETE /infrastructure/equipments/{id}`
+- `GET/POST /infrastructure/dependencies`, `DELETE /infrastructure/dependencies/{id}`
+- `GET/POST /infrastructure/checks`, `PATCH/DELETE /infrastructure/checks/{id}`,
+  `POST /infrastructure/checks/{id}/authorize`, `GET/POST /infrastructure/checks/{id}/results`
+- `GET /security/overview`, `GET/POST /security/incidents`, `GET/PATCH/DELETE /security/incidents/{id}`
+- `GET/POST /security/actions`, `GET/PATCH/DELETE /security/actions/{id}`
+- `GET/POST /security/vulnerabilities`, `PATCH/DELETE /security/vulnerabilities/{id}`
+- `GET/POST /security/backups`, `PATCH/DELETE /security/backups/{id}`
+- `GET/POST /security/certificates`, `PATCH/DELETE /security/certificates/{id}`
+- `GET/POST /security/audits`, `PATCH/DELETE /security/audits/{id}`
 
 ## Vérifications
 
 ```text
-pytest -q       36 passed
+pytest -q       39 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 106 source files
+mypy app        Success: no issues found in 112 source files
 npm run build   TypeScript + Vite OK
 ```
 
@@ -118,5 +152,6 @@ d'une demande, les interventions et les principaux objets RGPD.
 - Les pièces jointes des tickets et des contrats ne sont pas encore exposées.
 - Le registre RGPD ne gère pas encore les modèles de registre par service.
 - Le budget ne gère pas encore les marchés publics ni les subventions.
-- L'infrastructure, la cybersécurité, les projets, la documentation et le calendrier restent à
-  livrer.
+- La supervision prépare les contrôles mais n'exécute aucune sonde réseau active.
+- La cartographie est une liste de dépendances, sans rendu graphique interactif.
+- Les projets, la documentation, le calendrier et SylvIA restent à livrer.

@@ -846,3 +846,178 @@ export interface BudgetDetailItem extends BudgetItem {
   commitments: BudgetCommitmentItem[];
   invoices: BudgetInvoiceItem[];
 }
+
+export interface InfraEquipmentItem {
+  id: string;
+  asset_id: string | null;
+  asset: { id: string; asset_tag: string; name: string } | null;
+  name: string;
+  type: string;
+  ip_address: string | null;
+  mac_address: string | null;
+  role: string | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  os_name: string | null;
+  os_version: string | null;
+  config_notes: string | null;
+  criticality: string;
+  status: string;
+  responsible_user_id: string | null;
+  responsible: TicketUserRef | null;
+  parent_id: string | null;
+  map_x: number | null;
+  map_y: number | null;
+  last_check_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InfraDependencyItem {
+  id: string;
+  source_id: string;
+  source_name: string;
+  target_id: string;
+  target_name: string;
+  dependency_type: string;
+  description: string | null;
+}
+
+export interface MonitoringCheckItem {
+  id: string;
+  infra_id: string;
+  infra_name: string;
+  check_type: string;
+  config_json: string | null;
+  interval_seconds: number;
+  is_enabled: boolean;
+  requires_authorization: boolean;
+  authorized_by_id: string | null;
+  authorized_by: TicketUserRef | null;
+  authorized_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MonitoringResultItem {
+  id: string;
+  check_id: string;
+  checked_at: string;
+  status: string;
+  latency_ms: number | null;
+  message: string | null;
+}
+
+export interface SecurityIncidentItem {
+  id: string;
+  reference: string;
+  title: string;
+  description: string | null;
+  severity: string;
+  category: string;
+  detected_at: string;
+  status: string;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  actions_taken: string | null;
+  corrective_measures: string | null;
+  lessons_learned: string | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SecurityActionItem {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  priority: string;
+  due_date: string | null;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  status: string;
+  evidence: string | null;
+  incident_id: string | null;
+  incident_reference: string | null;
+  asset_id: string | null;
+  asset_label: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VulnerabilityItem {
+  id: string;
+  title: string;
+  cve_id: string | null;
+  cvss_score: number | null;
+  severity: string;
+  asset_id: string | null;
+  asset_label: string | null;
+  detected_at: string | null;
+  source: string | null;
+  status: string;
+  remediation: string | null;
+  due_date: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackupCheckItem {
+  id: string;
+  scope: string;
+  backup_type: string | null;
+  run_at: string;
+  status: string;
+  size_bytes: number | null;
+  duration_minutes: number | null;
+  restore_tested_at: string | null;
+  restore_status: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CertificateItem {
+  id: string;
+  common_name: string;
+  issuer: string | null;
+  valid_from: string | null;
+  valid_to: string;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  status: string;
+  auto_renew: boolean;
+  notes: string | null;
+  days_to_expiry: number | null;
+  alert_level: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SecurityAuditItem {
+  id: string;
+  title: string;
+  auditor: string | null;
+  type: string | null;
+  planned_at: string | null;
+  completed_at: string | null;
+  status: string;
+  findings: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SecurityOverview {
+  open_incidents: number;
+  critical_incidents: number;
+  open_actions: number;
+  overdue_actions: number;
+  open_vulnerabilities: number;
+  critical_vulnerabilities: number;
+  expiring_certificates: number;
+  last_backup_status: string | null;
+  last_backup_at: string | null;
+}

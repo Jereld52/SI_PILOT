@@ -12,9 +12,11 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.assets import Asset
+from app.models.auth import User
 
 
 class SecurityIncident(Base, UUIDMixin, TimestampMixin):
@@ -35,6 +37,10 @@ class SecurityIncident(Base, UUIDMixin, TimestampMixin):
     lessons_learned: Mapped[str | None] = mapped_column(Text)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    owner: Mapped[User | None] = relationship(
+        foreign_keys=[owner_user_id], lazy="joined"
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -91,6 +97,20 @@ class SecurityAction(Base, UUIDMixin, TimestampMixin):
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    owner: Mapped[User | None] = relationship(lazy="joined")
+    incident: Mapped[SecurityIncident | None] = relationship(lazy="joined")
+    asset: Mapped[Asset | None] = relationship(lazy="joined")
+
+    @property
+    def incident_reference(self) -> str | None:
+        return self.incident.reference if self.incident else None
+
+    @property
+    def asset_label(self) -> str | None:
+        if self.asset is None:
+            return None
+        return f"{self.asset.name} ({self.asset.asset_tag})"
+
 
 class Vulnerability(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "vulnerabilities"
@@ -108,6 +128,14 @@ class Vulnerability(Base, UUIDMixin, TimestampMixin):
     remediation: Mapped[str | None] = mapped_column(Text)
     due_date: Mapped[date | None] = mapped_column(Date, index=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    asset: Mapped[Asset | None] = relationship(lazy="joined")
+
+    @property
+    def asset_label(self) -> str | None:
+        if self.asset is None:
+            return None
+        return f"{self.asset.name} ({self.asset.asset_tag})"
 
 
 class BackupCheck(Base, UUIDMixin, TimestampMixin):
@@ -139,6 +167,8 @@ class Certificate(Base, UUIDMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     auto_renew: Mapped[bool] = mapped_column(default=False, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
+
+    owner: Mapped[User | None] = relationship(lazy="joined")
 
 
 class SecurityAudit(Base, UUIDMixin, TimestampMixin):
