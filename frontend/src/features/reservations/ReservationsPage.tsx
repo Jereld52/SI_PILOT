@@ -22,7 +22,7 @@ import {
   QrCode,
   RefreshCw,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -70,6 +70,7 @@ export function ReservationsPage() {
   const [tab, setTab] = useState<TabKey>("planning");
   const [weekOffset, setWeekOffset] = useState(0);
   const [searchParams] = useSearchParams();
+  const qrHandledRef = useRef(false);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [editingReservation, setEditingReservation] =
     useState<EquipmentReservationItem | null>(null);
@@ -152,6 +153,21 @@ export function ReservationsPage() {
     setReservationKind(kind);
     setReservationOpen(true);
   };
+
+  useEffect(() => {
+    if (qrHandledRef.current) return;
+    const token = searchParams.get("qr");
+    if (!token || equipments.length === 0) return;
+    const target = equipments.find((equipment) => equipment.qr_token === token);
+    if (!target) return;
+    qrHandledRef.current = true;
+    if (canCreate) {
+      openNewReservation(target.id, new Date());
+    } else {
+      setTab("equipments");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, equipments, canCreate]);
 
   const openEditReservation = (reservation: EquipmentReservationItem) => {
     setEditingReservation(reservation);
