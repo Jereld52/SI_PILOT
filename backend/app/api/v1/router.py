@@ -7,8 +7,10 @@ from app.api.v1 import (
     audit,
     auth,
     budget,
+    calendar,
     contracts,
     dashboard,
+    documents,
     exports,
     health,
     imports,
@@ -17,6 +19,7 @@ from app.api.v1 import (
     licenses,
     mobile,
     notifications,
+    projects,
     referentials,
     rgpd,
     search,
@@ -50,3 +53,6 @@ api_router.include_router(contracts.router)
 api_router.include_router(budget.router)
 api_router.include_router(infrastructure.router)
 api_router.include_router(security.router)
+api_router.include_router(projects.router)
+api_router.include_router(documents.router)
+api_router.include_router(calendar.router)

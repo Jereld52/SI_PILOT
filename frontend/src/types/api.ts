@@ -1021,3 +1021,178 @@ export interface SecurityOverview {
   last_backup_status: string | null;
   last_backup_at: string | null;
 }
+
+export interface ProjectItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  objectives: string | null;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  start_date: string | null;
+  due_date: string | null;
+  planned_budget: number | null;
+  priority: string;
+  status: string;
+  progress_percent: number;
+  milestone_count: number;
+  task_count: number;
+  open_task_count: number;
+  risk_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MilestoneItem {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  due_date: string | null;
+  completed_at: string | null;
+  status: string;
+  weight: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectTaskItem {
+  id: string;
+  project_id: string;
+  milestone_id: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  assignee_user_id: string | null;
+  due_date: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectRiskItem {
+  id: string;
+  project_id: string;
+  description: string;
+  probability: number;
+  impact: number;
+  score: number;
+  mitigation: string | null;
+  owner_user_id: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectDecisionItem {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  decision_date: string | null;
+  decided_by: string | null;
+  document_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectDetailItem extends ProjectItem {
+  milestones: MilestoneItem[];
+  tasks: ProjectTaskItem[];
+  risks: ProjectRiskItem[];
+  decisions: ProjectDecisionItem[];
+}
+
+export interface DocumentCategoryItem {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface DocumentVersionItem {
+  id: string;
+  document_id: string;
+  version_number: number;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  sha256: string;
+  changelog: string | null;
+  author_user_id: string | null;
+  created_at: string;
+  is_current: boolean;
+}
+
+export interface DocumentItem {
+  id: string;
+  title: string;
+  doc_type: string | null;
+  category_id: string | null;
+  category: DocumentCategoryItem | null;
+  description: string | null;
+  asset_id: string | null;
+  project_id: string | null;
+  author_user_id: string | null;
+  author: TicketUserRef | null;
+  visibility: string;
+  status: string;
+  tags: string[];
+  current_version: DocumentVersionItem | null;
+  version_count: number;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentDetailItem extends DocumentItem {
+  versions: DocumentVersionItem[];
+}
+
+export interface CalendarEventItem {
+  id: string;
+  title: string;
+  event_type: string;
+  start_at: string;
+  end_at: string | null;
+  all_day: boolean;
+  location: string | null;
+  description: string | null;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  status: string;
+  priority: string;
+  related_type: string | null;
+  related_id: string | null;
+  reminder_minutes: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendarActionItem {
+  id: string;
+  title: string;
+  description: string | null;
+  module: string | null;
+  priority: string;
+  status: string;
+  due_date: string | null;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  related_type: string | null;
+  related_id: string | null;
+  source: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendarOverview {
+  planned_events: number;
+  overdue_actions: number;
+  open_actions: number;
+  next_events: CalendarEventItem[];
+  next_actions: CalendarActionItem[];
+}

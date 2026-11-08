@@ -12,14 +12,17 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { RequirePermission } from "@/features/auth/RequirePermission";
 import { BudgetPage } from "@/features/budget/BudgetPage";
+import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { ContractsPage } from "@/features/contracts/ContractsPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { DocumentsPage } from "@/features/documents/DocumentsPage";
 import { InfrastructurePage } from "@/features/infrastructure/InfrastructurePage";
 import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
 import { ReferentialsPage } from "@/features/referentials/ReferentialsPage";
+import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { RgpdPage } from "@/features/rgpd/RgpdPage";
 import { SecurityPage } from "@/features/security/SecurityPage";
 import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
@@ -34,6 +37,9 @@ const implementedModules = new Set([
   "budget",
   "infrastructure",
   "cybersecurite",
+  "projets",
+  "documentation",
+  "calendrier",
 ]);
 const pendingModules = modules.filter((module) => !implementedModules.has(module.path));
 
@@ -191,6 +197,33 @@ export function App() {
             element={
               <RequirePermission permission="security.read">
                 <SecurityPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="projets"
+            element={
+              <RequirePermission permission="projects.read">
+                <ProjectsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="documentation"
+            element={
+              <RequirePermission permission="documents.read">
+                <DocumentsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="calendrier"
+            element={
+              <RequirePermission permission="calendar.read">
+                <CalendarPage />
               </RequirePermission>
             }
           />

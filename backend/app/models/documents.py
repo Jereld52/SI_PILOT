@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
@@ -11,9 +13,10 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin, utcnow
+from app.models.auth import User
 
 
 class DocumentCategory(Base, UUIDMixin, TimestampMixin):
@@ -45,6 +48,15 @@ class Document(Base, UUIDMixin, TimestampMixin):
     visibility: Mapped[str] = mapped_column(String(20), default="all", nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="published", nullable=False, index=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    category: Mapped[DocumentCategory | None] = relationship(lazy="joined")
+    author: Mapped[User | None] = relationship(lazy="joined")
+    versions: Mapped[list[DocumentVersion]] = relationship(
+        lazy="selectin", cascade="all, delete-orphan", order_by="DocumentVersion.version_number"
+    )
+    tags: Mapped[list[Tag]] = relationship(
+        secondary="document_tags", lazy="selectin"
+    )
 
     __table_args__ = (
         CheckConstraint("visibility IN ('all','module','restricted')", name="document_visibility"),

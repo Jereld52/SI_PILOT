@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.auth import User
 
 
 class CalendarEvent(Base, UUIDMixin, TimestampMixin):
@@ -26,6 +29,10 @@ class CalendarEvent(Base, UUIDMixin, TimestampMixin):
     related_id: Mapped[UUID | None] = mapped_column()
     reminder_minutes: Mapped[int | None] = mapped_column()
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    owner: Mapped[User | None] = relationship(
+        foreign_keys=[owner_user_id], lazy="joined"
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -52,6 +59,10 @@ class ActionItem(Base, UUIDMixin, TimestampMixin):
     source: Mapped[str] = mapped_column(String(20), default="manual", nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    owner: Mapped[User | None] = relationship(
+        foreign_keys=[owner_user_id], lazy="joined"
+    )
 
     __table_args__ = (
         CheckConstraint(

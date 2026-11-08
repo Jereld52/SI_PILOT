@@ -86,6 +86,32 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Vue d'ensemble : incidents ouverts, actions en retard, vulnérabilités critiques, certificats à
   échéance et dernière sauvegarde.
 
+## Projets informatiques
+
+- Portefeuille de projets avec code, objectifs, responsable, dates, budget prévu, priorité et statut.
+- Jalons pondérés avec échéance et statut.
+- Tâches avec jalon, priorité, assignation, échéance et statut ; l'avancement du projet est
+  recalculé automatiquement à partir des tâches terminées.
+- Registre des risques : probabilité, impact, score calculé et mitigation.
+- Registre des décisions : date, décideur et description.
+- Annulation sans suppression des données.
+
+## Documentation
+
+- Référentiel documentaire : titre, type, catégorie, description, visibilité, statut et tags.
+- Versions successives avec numéro, auteur, taille, empreinte SHA-256 et changelog.
+- Téléversement et téléchargement de fichiers protégés par permissions.
+- Archivage sans suppression des fichiers.
+- Les fichiers sont stockés localement sous `data/uploads/documents`.
+
+## Calendrier et actions
+
+- Vue mensuelle des événements avec navigation mois précédent/suivant.
+- Types : maintenance, intervention, échéance, renouvellement, audit, projet, réunion, action.
+- Événements avec lieu, responsable, priorité, statut et description.
+- Actions à réaliser avec module, priorité, échéance, responsable et statut.
+- Vue d'ensemble : événements à venir, actions ouvertes et actions en retard.
+
 ## RGPD et rôle DPO
 
 - Nouveau rôle système `dpo` (Délégué à la protection des données) avec accès au registre,
@@ -133,13 +159,20 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/POST /security/backups`, `PATCH/DELETE /security/backups/{id}`
 - `GET/POST /security/certificates`, `PATCH/DELETE /security/certificates/{id}`
 - `GET/POST /security/audits`, `PATCH/DELETE /security/audits/{id}`
+- `GET/POST /projects`, `GET/PATCH/DELETE /projects/{id}`
+- `POST /projects/{id}/milestones|tasks|risks|decisions`,
+  `PATCH/DELETE /projects/milestones|tasks|risks|decisions/{id}`
+- `GET/POST /documents`, `GET/PATCH/DELETE /documents/{id}`, `GET /documents/meta`
+- `GET/POST /documents/{id}/versions`, `GET /documents/versions/{id}/download`
+- `GET /calendar/overview`, `GET/POST /calendar/events`, `GET/PATCH/DELETE /calendar/events/{id}`
+- `GET/POST /calendar/actions`, `GET/PATCH/DELETE /calendar/actions/{id}`
 
 ## Vérifications
 
 ```text
-pytest -q       39 passed
+pytest -q       42 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 112 source files
+mypy app        Success: no issues found in 121 source files
 npm run build   TypeScript + Vite OK
 ```
 
@@ -154,4 +187,7 @@ d'une demande, les interventions et les principaux objets RGPD.
 - Le budget ne gère pas encore les marchés publics ni les subventions.
 - La supervision prépare les contrôles mais n'exécute aucune sonde réseau active.
 - La cartographie est une liste de dépendances, sans rendu graphique interactif.
-- Les projets, la documentation, le calendrier et SylvIA restent à livrer.
+- La documentation ne gère pas encore l'indexation plein texte ni les ACL par rôle/utilisateur
+  au-delà des permissions globales.
+- Le calendrier n'agrège pas encore automatiquement les échéances des autres modules.
+- SylvIA reste facultative et n'est pas encore activée.

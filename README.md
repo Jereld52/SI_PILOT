@@ -34,6 +34,9 @@ le RGPD, la documentation et les échéances.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - Cybersécurité : incidents, actions, vulnérabilités, sauvegardes, certificats et audits.
+- Projets : jalons, tâches, risques, décisions et avancement calculé.
+- Documentation : métadonnées, tags, versions et téléversement/téléchargement de fichiers.
+- Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser.
 - Demandes IT : références automatiques, priorités, SLA, assignation, commentaires, temps passé,
   historique et interventions liées.
 - RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
@@ -41,7 +44,7 @@ le RGPD, la documentation et les échéances.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, mode sombre, navigation rétractable.
-- Tests backend : 39 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 42 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)
@@ -165,7 +168,7 @@ npm run build
 | Phase 1 | Audit et conception | Terminée |
 | Phase 2 | Socle technique, auth, rôles, dashboard, administration | **Terminée** |
 | Phase 3 | Référentiels, agents, parc enrichi WAPT, téléphonie, imports, QR codes, exports, fournisseurs, licences, stock, demandes IT, interventions, contrats, budget | **Livrée** |
-| Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | **Infrastructure, cybersécurité et RGPD livrés** ; reste projets et documentation |
+| Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | **Livrée** |
 | Phase 5 | Intégration SylvIA (Ollama / Open WebUI) | Planifiée |
 | Phase 6 | Automatisations, notifications, exports, sauvegardes, industrialisation | Planifiée |
 

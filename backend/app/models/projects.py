@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
 from uuid import UUID
@@ -11,9 +13,10 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.auth import User
 
 
 class Project(Base, UUIDMixin, TimestampMixin):
@@ -33,6 +36,22 @@ class Project(Base, UUIDMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(30), default="planned", nullable=False, index=True)
     progress_percent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+    owner: Mapped[User | None] = relationship(
+        foreign_keys=[owner_user_id], lazy="joined"
+    )
+    milestones: Mapped[list[ProjectMilestone]] = relationship(
+        lazy="selectin", cascade="all, delete-orphan", order_by="ProjectMilestone.due_date"
+    )
+    tasks: Mapped[list[ProjectTask]] = relationship(
+        lazy="selectin", cascade="all, delete-orphan", order_by="ProjectTask.position"
+    )
+    risks: Mapped[list[ProjectRisk]] = relationship(
+        lazy="selectin", cascade="all, delete-orphan"
+    )
+    decisions: Mapped[list[ProjectDecision]] = relationship(
+        lazy="selectin", cascade="all, delete-orphan", order_by="ProjectDecision.decision_date"
+    )
 
     __table_args__ = (
         CheckConstraint(
