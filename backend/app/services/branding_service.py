@@ -34,7 +34,7 @@ HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def packaged_logo_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "exports" / "assets" / "logoweb.png"
+    return Path(__file__).resolve().parents[1] / "exports" / "assets" / "si-pilot-logo.png"
 
 
 def custom_logo_path(db: Session) -> Path | None:
@@ -72,7 +72,7 @@ def get_branding(db: Session) -> BrandingRead:
     if not HEX_COLOR.fullmatch(color):
         color = DEFAULT_PRIMARY_COLOR
     support_email = settings_service.get_value(db, "app.support_email")
-    logo_url = "/logoweb.png"
+    logo_url = "/si-pilot-logo.png"
     if custom is not None:
         suffix = f"?v={quote(version_text)}" if version_text else ""
         logo_url = f"{settings.api_prefix}/branding/logo{suffix}"

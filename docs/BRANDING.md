@@ -15,7 +15,7 @@ L'identité de l'application est définie en base et se règle depuis
 Le logo est téléversé au format PNG, JPEG ou WEBP (4 Mo maximum), puis réencodé en PNG et
 stocké dans le répertoire de stockage local. Il est utilisé dans la sidebar, l'écran de
 connexion, le favicon, les e-mails et l'en-tête des exports PDF. Sans logo personnalisé,
-l'application utilise le lockup officiel fourni avec l'installation.
+l'application utilise l'emblème générique `SI PILOT` fourni avec l'installation.
 
 La couleur principale est appliquée aux variables CSS de l'interface et à l'en-tête des PDF.
 Les nuances `primary-deep`, `primary-bright` et `primary-strong` sont calculées automatiquement

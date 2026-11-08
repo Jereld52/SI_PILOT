@@ -13,7 +13,7 @@ const FALLBACK_BRANDING: BrandingInfo = {
     "Centralisez votre parc, vos demandes, vos contrats, votre budget, vos projets et votre sécurité dans un outil unique.",
   support_email: null,
   primary_color: "#772B2F",
-  logo_url: "/logoweb.png",
+  logo_url: "/si-pilot-logo.png",
   logo_custom: false,
   logo_updated_at: null,
   version: "0.1.0",
@@ -54,7 +54,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       icon.rel = "icon";
       document.head.appendChild(icon);
     }
-    icon.href = branding.logo_custom ? branding.logo_url : "/favicon.png";
+    icon.href = branding.logo_custom ? branding.logo_url : "/si-pilot-logo.png";
   }, [branding]);
 
   useEffect(() => {
