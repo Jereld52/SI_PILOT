@@ -10,6 +10,8 @@ from app.schemas.dashboard import (
     DashboardCharts,
     DashboardCockpit,
     DashboardSummary,
+    DashboardTiles,
+    DashboardTilesUpdate,
 )
 from app.services import dashboard_cockpit_service, dashboard_service
 
@@ -54,3 +56,21 @@ def activity(
     db: Session = Depends(get_db),
 ) -> DashboardActivity:
     return dashboard_service.get_activity(db)
+
+
+@router.get("/tiles", response_model=DashboardTiles)
+def get_tiles(
+    user: User = Depends(require_permission("dashboard.read")),
+    db: Session = Depends(get_db),
+) -> DashboardTiles:
+    return DashboardTiles(tiles=dashboard_service.get_dashboard_tiles(db, user))
+
+
+@router.put("/tiles", response_model=DashboardTiles)
+def update_tiles(
+    payload: DashboardTilesUpdate,
+    user: User = Depends(require_permission("dashboard.read")),
+    db: Session = Depends(get_db),
+) -> DashboardTiles:
+    tiles = dashboard_service.set_dashboard_tiles(db, user, payload.tiles)
+    return DashboardTiles(tiles=tiles)

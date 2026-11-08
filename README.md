@@ -23,18 +23,21 @@ le RGPD, la documentation et les échéances.
 - Rôles et permissions : 6 rôles (dont DPO), 107 permissions, portées de données, surcharges utilisateur.
 - Journal d'audit append-only avec chaînage de hash.
 - Notifications in-app.
+- Notifications e-mail avec serveur SMTP externe configurable (STARTTLS ou SSL), mot de passe
+  chiffré, test d'envoi et boîte d'envoi interne avec statut.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
 - Parc enrichi par l'export WAPT : système, IP, dernier utilisateur, dernière connexion, groupes
   et données source complètes ; fiche détaillée et QR code par équipement.
 - Téléphonie mobile : inventaire des 82 lignes, titulaires, forfaits et terminaux ; PIN/PUK
-  chiffrés avec accès contrôlé et audité.
+  chiffrés avec accès contrôlé et audité. Création, modification et suppression des lignes.
 - Fournisseurs, licences, sièges et coûts annuels.
 - **Stock IT** dédié : claviers, souris, écrans, casques, stations d'accueil, câbles et
   consommables, avec quantités, seuils d'alerte, valeur, mouvements et historique.
 - **Réservations de matériel** : vidéoprojecteurs, sonorisation, écrans de projection, mallette
   de micros et enregistreurs, avec planning hebdomadaire, vérification en direct des conflits
-  de créneau et ajout libre de matériel réservable.- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
+  de créneau et ajout libre de matériel réservable. Réservations récurrentes, indisponibilités,
+  export ICS, QR code par matériel et sortie/retour.- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - Supervision globale : carte visuelle cliquable, équipements positionnables par glisser-déposer,
@@ -71,6 +74,7 @@ le RGPD, la documentation et les échéances.
 - Menu latéral regroupé en sections repliables (Pilotage, Support & parc, Infrastructure, Gestion,
   Conformité) pour réduire la hauteur et le nombre d'entrées visibles.
 - Tableau de bord, statistiques et exports organisés en onglets pour limiter le défilement.
+- Tuiles du tableau de bord personnalisables par utilisateur (sélection et ordre).
 - Semaine en cours intégrée au tableau de bord dans l'onglet **Semaine**, avec accès au
   calendrier complet.
 - Calendrier avec vues **jour, semaine, mois et année**, et affichage des réservations de
@@ -79,7 +83,7 @@ le RGPD, la documentation et les échéances.
   d'un événement ou d'une réservation de matériel depuis le calendrier.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 60 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 65 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

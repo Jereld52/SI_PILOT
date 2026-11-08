@@ -23,7 +23,8 @@ from app.schemas.auth import (
     UserUpdateRequest,
 )
 from app.schemas.common import MessageResponse, Page
-from app.services import auth_service
+from app.schemas.mail import SmtpSettingsRead, SmtpSettingsUpdate, SmtpTestRequest
+from app.services import auth_service, email_service
 from app.services.audit_service import write_audit
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
@@ -285,6 +286,37 @@ def update_role_permissions(
     db.commit()
     db.refresh(role)
     return role
+
+
+@router.get("/settings/smtp", response_model=SmtpSettingsRead)
+def get_smtp_settings(
+    _: User = Depends(require_permission("admin.settings.read")),
+    db: Session = Depends(get_db),
+) -> SmtpSettingsRead:
+    return email_service.get_settings(db)
+
+
+@router.put("/settings/smtp", response_model=SmtpSettingsRead)
+def update_smtp_settings(
+    payload: SmtpSettingsUpdate,
+    request: Request,
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> SmtpSettingsRead:
+    return email_service.update_settings(db, payload, actor=actor, request=request)
+
+
+@router.post("/settings/smtp/test", response_model=MessageResponse)
+def test_smtp_settings(
+    payload: SmtpTestRequest,
+    request: Request,
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    message = email_service.send_test_email(
+        db, str(payload.to_email), actor=actor, request=request
+    )
+    return MessageResponse(message=message)
 
 
 @router.get("/settings", response_model=list[SettingRead])

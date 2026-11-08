@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime, timedelta
 
+from app.db.base import utcnow
 from app.models.assets import Asset, AssetAssignment, AssetCategory
 from app.models.audit import AuditLog
 from app.models.auth import User
 from app.models.budget import Budget, BudgetCategory, BudgetCommitment, BudgetInvoice, BudgetLine
 from app.models.calendar import ActionItem
+from app.models.common import UserPreference
 from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
 from app.models.organization import Agent
@@ -642,3 +645,28 @@ def get_activity(db: Session) -> DashboardActivity:
 
     items.sort(key=lambda item: item.occurred_at, reverse=True)
     return DashboardActivity(items=items[:15], generated_at=_now())
+
+
+def get_dashboard_tiles(db: Session, user: User) -> list[str]:
+    preference = db.get(UserPreference, (user.id, "dashboard.tiles"))
+    if preference is None or not preference.value_json:
+        return []
+    try:
+        value = json.loads(preference.value_json)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str)]
+
+
+def set_dashboard_tiles(db: Session, user: User, tiles: list[str]) -> list[str]:
+    clean = list(dict.fromkeys(tile.strip() for tile in tiles if tile.strip()))
+    preference = db.get(UserPreference, (user.id, "dashboard.tiles"))
+    if preference is None:
+        preference = UserPreference(user_id=user.id, key="dashboard.tiles")
+        db.add(preference)
+    preference.value_json = json.dumps(clean, ensure_ascii=False)
+    preference.updated_at = utcnow()
+    db.commit()
+    return clean

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useAuth } from "@/features/auth/AuthProvider";
 import type {
   AgentItem,
   EquipmentReservationItem,
@@ -252,6 +253,7 @@ interface ReservationDialogProps {
   reservation: EquipmentReservationItem | null;
   defaultEquipmentId?: string | null;
   defaultDate?: Date | null;
+  defaultKind?: "reservation" | "unavailability";
   equipments: ReservableEquipmentItem[];
   agents: AgentItem[];
   onSaved: () => void;
@@ -263,10 +265,13 @@ export function EquipmentReservationDialog({
   reservation,
   defaultEquipmentId,
   defaultDate,
+  defaultKind = "reservation",
   equipments,
   agents,
   onSaved,
 }: ReservationDialogProps) {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("reservations.manage");
   const [equipmentId, setEquipmentId] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -274,6 +279,9 @@ export function EquipmentReservationDialog({
   const [requesterName, setRequesterName] = useState("");
   const [requesterEmail, setRequesterEmail] = useState("");
   const [purpose, setPurpose] = useState("");
+  const [kind, setKind] = useState("reservation");
+  const [recurrence, setRecurrence] = useState("none");
+  const [recurrenceUntil, setRecurrenceUntil] = useState("");
   const [status, setStatus] = useState("confirmed");
   const [notes, setNotes] = useState("");
   const { loading, error, setError, submit } = useSubmit(onSaved);
@@ -319,6 +327,9 @@ export function EquipmentReservationDialog({
       setRequesterName(reservation.requester_name ?? "");
       setRequesterEmail(reservation.requester_email ?? "");
       setPurpose(reservation.purpose);
+      setKind(reservation.kind);
+      setRecurrence("none");
+      setRecurrenceUntil("");
       setStatus(reservation.status);
       setNotes(reservation.notes ?? "");
     } else {
@@ -334,11 +345,14 @@ export function EquipmentReservationDialog({
       setRequesterName("");
       setRequesterEmail("");
       setPurpose("");
+      setKind(defaultKind);
+      setRecurrence("none");
+      setRecurrenceUntil("");
       setStatus("confirmed");
       setNotes("");
     }
     setError(null);
-  }, [open, reservation, defaultEquipmentId, defaultDate, equipments, setError]);
+  }, [open, reservation, defaultEquipmentId, defaultDate, defaultKind, equipments, setError]);
 
   const selectAgent = (id: string) => {
     setRequesterAgentId(id);
@@ -371,6 +385,10 @@ export function EquipmentReservationDialog({
       setError("La fin doit être postérieure au début.");
       return;
     }
+    if (!reservation && recurrence !== "none" && !recurrenceUntil) {
+      setError("Indiquez la date de fin de la récurrence.");
+      return;
+    }
     const payload = {
       equipment_id: equipmentId,
       requester_agent_id: requesterAgentId || null,
@@ -379,8 +397,14 @@ export function EquipmentReservationDialog({
       purpose: purpose.trim(),
       start_at: startDate.toISOString(),
       end_at: endDate.toISOString(),
+      kind,
       notes: nullable(notes),
-      ...(reservation ? { status } : {}),
+      ...(reservation
+        ? { status }
+        : {
+            recurrence,
+            recurrence_until: recurrence === "none" ? null : recurrenceUntil || null,
+          }),
     };
     void submit(
       () =>
@@ -430,6 +454,19 @@ export function EquipmentReservationDialog({
               ))}
             </Select>
           </div>
+          {!reservation && canManage ? (
+            <div>
+              <Label htmlFor="reservation-kind">Type de blocage</Label>
+              <Select
+                id="reservation-kind"
+                value={kind}
+                onChange={(event) => setKind(event.target.value)}
+              >
+                <option value="reservation">Réservation de matériel</option>
+                <option value="unavailability">Indisponibilité (maintenance, panne…)</option>
+              </Select>
+            </div>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="reservation-start">Début</Label>
@@ -450,6 +487,34 @@ export function EquipmentReservationDialog({
               />
             </div>
           </div>
+          {!reservation ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="reservation-recurrence">Récurrence</Label>
+                <Select
+                  id="reservation-recurrence"
+                  value={recurrence}
+                  onChange={(event) => setRecurrence(event.target.value)}
+                >
+                  <option value="none">Aucune</option>
+                  <option value="daily">Tous les jours</option>
+                  <option value="weekly">Toutes les semaines</option>
+                  <option value="monthly">Tous les mois</option>
+                </Select>
+              </div>
+              {recurrence !== "none" ? (
+                <div>
+                  <Label htmlFor="reservation-recurrence-until">Jusqu'au</Label>
+                  <Input
+                    id="reservation-recurrence-until"
+                    type="date"
+                    value={recurrenceUntil}
+                    onChange={(event) => setRecurrenceUntil(event.target.value)}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {availabilityQuery.isFetching ? (
             <p className="rounded-lg border border-border-soft bg-background/40 px-3 py-2 text-[11px] text-muted">
               Vérification de la disponibilité…
@@ -506,12 +571,18 @@ export function EquipmentReservationDialog({
             </div>
           </div>
           <div>
-            <Label htmlFor="reservation-purpose">Motif</Label>
+            <Label htmlFor="reservation-purpose">
+              {kind === "unavailability" ? "Motif de l'indisponibilité" : "Motif"}
+            </Label>
             <Input
               id="reservation-purpose"
               value={purpose}
               onChange={(event) => setPurpose(event.target.value)}
-              placeholder="Réunion, formation, projection…"
+              placeholder={
+                kind === "unavailability"
+                  ? "Maintenance, panne, prêt externe…"
+                  : "Réunion, formation, projection…"
+              }
             />
           </div>
           {reservation ? (
@@ -523,6 +594,9 @@ export function EquipmentReservationDialog({
                 onChange={(event) => setStatus(event.target.value)}
               >
                 <option value="confirmed">Confirmée</option>
+                {reservation.kind === "unavailability" ? (
+                  <option value="blocked">Indisponible</option>
+                ) : null}
                 <option value="cancelled">Annulée</option>
               </Select>
             </div>
@@ -538,6 +612,40 @@ export function EquipmentReservationDialog({
           </div>
         </div>
         <DialogFooter>
+          {reservation?.status === "confirmed" && reservation.kind === "reservation" ? (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                void submit(
+                  () =>
+                    apiFetch(`/reservations/${reservation.id}/checkout`, {
+                      method: "POST",
+                    }),
+                  "Sortie de matériel enregistrée.",
+                  () => onOpenChange(false),
+                )
+              }
+            >
+              Sortie matériel
+            </Button>
+          ) : null}
+          {reservation?.status === "checked_out" ? (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                void submit(
+                  () =>
+                    apiFetch(`/reservations/${reservation.id}/return`, {
+                      method: "POST",
+                    }),
+                  "Retour de matériel enregistré.",
+                  () => onOpenChange(false),
+                )
+              }
+            >
+              Retour matériel
+            </Button>
+          ) : null}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>

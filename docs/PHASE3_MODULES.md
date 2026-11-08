@@ -163,6 +163,34 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Plans par défaut créés par migration : Vidéoprojecteur 1 et 2, Sonorisation 1 et 2,
   Écrans de projection 1 à 3, Mallette 8 micros, Enregistreur 1 et 2.
 - Toutes les mutations sont auditées.
+- Réservations récurrentes : quotidiennes, hebdomadaires ou mensuelles, avec date de fin.
+- Indisponibilités de matériel pour maintenance, panne ou prêt externe, affichées comme blocages.
+- Export ICS du planning pour Outlook ou l'agenda du téléphone.
+- QR code par matériel réservable, ouvrant directement la page de réservation.
+- Sortie et retour du matériel avec horodatage, notification et audit.
+- Une réservation retournée libère immédiatement le créneau.
+
+### Notifications et SMTP externe
+
+- Configuration SMTP dans **Administration → Paramètres** : serveur, port, identifiant, mot de
+  passe chiffré, adresse d'expédition, nom, STARTTLS ou SSL, activation de l'envoi.
+- Test d'envoi immédiat vers une adresse de contrôle.
+- Les e-mails sont historisés dans la boîte d'envoi interne avec leur statut et leur erreur.
+- Les réservations génèrent une notification in-app et un e-mail à la création, à la
+  modification, à l'annulation, à la sortie et au retour du matériel.
+- Les gestionnaires de réservations reçoivent également une notification.
+
+### Téléphonie mobile
+
+- Création, modification et suppression des lignes depuis l'interface.
+- Les codes PIN/PUK restent gérés séparément avec des permissions dédiées.
+- La suppression est tracée dans l'audit avec un instantané de la ligne.
+
+### Personnalisation du tableau de bord
+
+- Chaque utilisateur choisit les tuiles de modules affichées et leur ordre.
+- La préférence est enregistrée par compte dans `user_preferences`.
+- Les tuiles disponibles restent filtrées par les permissions de l'utilisateur.
 
 ## Demandes IT et interventions
 
@@ -331,8 +359,11 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /dashboard/cockpit`
 - `GET /stock/overview`, `GET/POST /stock/items`, `GET/PATCH/DELETE /stock/items/{id}`,
   `GET/POST /stock/items/{id}/movements`
-- `GET/POST /reservations/equipments`, `PATCH/DELETE /reservations/equipments/{id}`
-- `GET/POST /reservations`, `GET/PATCH/DELETE /reservations/{id}`
+- `GET/POST /reservations/equipments`, `PATCH/DELETE /reservations/equipments/{id}`,
+  `GET /reservations/equipments/{id}/qr`
+- `GET/POST /reservations`, `GET/PATCH/DELETE /reservations/{id}`,
+  `GET /reservations/availability`, `GET /reservations/export.ics`,
+  `POST /reservations/{id}/checkout`, `POST /reservations/{id}/return`
 - `GET /statistics/overview?start=&end=&granularity=day|week|month|year`
 - `GET /exports/assets?format=xlsx|pdf`
 - `GET /exports/mobile-lines?format=xlsx|pdf`
@@ -347,15 +378,17 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
 - `GET /imports`, `GET /imports/templates/{type}`, `POST /imports/preview`,
   `POST /imports/{id}/apply`
+- `GET/PUT /admin/settings/smtp`, `POST /admin/settings/smtp/test`
+- `GET/PUT /dashboard/tiles`
 - `GET /calendar/overview`, `GET/POST /calendar/events`, `GET/PATCH/DELETE /calendar/events/{id}`
 - `GET/POST /calendar/actions`, `GET/PATCH/DELETE /calendar/actions/{id}`
 
 ## Vérifications
 
 ```text
-pytest -q       60 passed
+pytest -q       65 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 140 source files
+mypy app        Success: no issues found in 143 source files
 npm run build   TypeScript + Vite OK
 ```
 

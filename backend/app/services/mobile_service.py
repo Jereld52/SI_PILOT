@@ -227,3 +227,30 @@ def update_mobile_secrets(
     db.commit()
     db.refresh(line)
     return line
+
+
+def delete_mobile_line(
+    db: Session,
+    line: MobileLine,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> None:
+    write_audit(
+        db,
+        module="mobile_lines",
+        action="mobile_line_deleted",
+        actor=actor,
+        entity_type="mobile_line",
+        entity_id=str(line.id),
+        entity_label=line.line_number,
+        before={
+            "line_number": line.line_number,
+            "holder_name": line.holder_name,
+            "status": line.status,
+            "plan_name": line.plan_name,
+        },
+        request=request,
+    )
+    db.delete(line)
+    db.commit()

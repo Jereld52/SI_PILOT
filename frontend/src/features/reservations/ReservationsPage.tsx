@@ -10,13 +10,16 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  Ban,
   CalendarCheck,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Download,
   Package,
   Pencil,
   Plus,
+  QrCode,
   RefreshCw,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -50,6 +53,14 @@ import type {
 
 type TabKey = "planning" | "equipments";
 
+const reservationStatusLabels: Record<string, string> = {
+  confirmed: "Confirmée",
+  cancelled: "Annulée",
+  blocked: "Indisponible",
+  checked_out: "Sorti",
+  returned: "Retourné",
+};
+
 export function ReservationsPage() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("reservations.create");
@@ -64,6 +75,9 @@ export function ReservationsPage() {
     useState<EquipmentReservationItem | null>(null);
   const [defaultEquipmentId, setDefaultEquipmentId] = useState<string | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | null>(null);
+  const [reservationKind, setReservationKind] = useState<"reservation" | "unavailability">(
+    "reservation",
+  );
   const [equipmentOpen, setEquipmentOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] =
     useState<ReservableEquipmentItem | null>(null);
@@ -127,10 +141,15 @@ export function ReservationsPage() {
     void equipmentsQuery.refetch();
   };
 
-  const openNewReservation = (equipmentId?: string, date?: Date) => {
+  const openNewReservation = (
+    equipmentId?: string,
+    date?: Date,
+    kind: "reservation" | "unavailability" = "reservation",
+  ) => {
     setEditingReservation(null);
     setDefaultEquipmentId(equipmentId ?? null);
     setDefaultDate(date ?? null);
+    setReservationKind(kind);
     setReservationOpen(true);
   };
 
@@ -163,6 +182,31 @@ export function ReservationsPage() {
               <RefreshCw className={cn("h-3.5 w-3.5", reservationsQuery.isFetching && "animate-spin")} />
               Actualiser
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                window.open(
+                  `/api/v1/reservations/export.ics?start=${encodeURIComponent(
+                    weekStart.toISOString(),
+                  )}&end=${encodeURIComponent(weekEnd.toISOString())}`,
+                  "_blank",
+                )
+              }
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exporter ICS
+            </Button>
+            {canManage ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => openNewReservation(undefined, undefined, "unavailability")}
+              >
+                <Ban className="h-3.5 w-3.5" />
+                Indisponibilité
+              </Button>
+            ) : null}
             {canCreate ? (
               <Button size="sm" onClick={() => openNewReservation()}>
                 <CalendarCheck className="h-3.5 w-3.5" />
@@ -296,7 +340,10 @@ export function ReservationsPage() {
                                     disabled={!canUpdate}
                                     onClick={() => openEditReservation(reservation)}
                                     className={cn(
-                                      "block w-full rounded border border-primary/30 bg-primary/10 px-1.5 py-1 text-left transition-colors",
+                                      "block w-full rounded border px-1.5 py-1 text-left transition-colors",
+                                      reservation.kind === "unavailability"
+                                        ? "border-warning/40 bg-warning/10"
+                                        : "border-primary/30 bg-primary/10",
                                       canUpdate && "hover:border-primary/60",
                                     )}
                                   >
@@ -305,11 +352,23 @@ export function ReservationsPage() {
                                       {format(new Date(reservation.end_at), "HH:mm")}
                                     </span>
                                     <span className="block truncate text-[9px] text-muted">
-                                      {reservation.purpose}
+                                      {reservation.kind === "unavailability"
+                                        ? "Indisponible"
+                                        : reservation.purpose}
                                     </span>
                                     <span className="block truncate text-[8px] text-muted-2">
-                                      {reservation.requester_name ?? reservation.requester_email ?? "—"}
+                                      {reservation.kind === "unavailability"
+                                        ? reservation.purpose
+                                        : reservation.requester_name ??
+                                          reservation.requester_email ??
+                                          "—"}
                                     </span>
+                                    {reservation.status !== "confirmed" ? (
+                                      <span className="mt-0.5 block text-[8px] font-medium text-accent">
+                                        {reservationStatusLabels[reservation.status] ??
+                                          reservation.status}
+                                      </span>
+                                    ) : null}
                                   </button>
                                 ))}
                                 {canCreate ? (
@@ -416,6 +475,19 @@ export function ReservationsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label={`QR code de ${equipment.name}`}
+                              onClick={() =>
+                                window.open(
+                                  `/api/v1/reservations/equipments/${equipment.id}/qr`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              <QrCode className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               aria-label={`Modifier ${equipment.name}`}
                               onClick={() => {
                                 setEditingEquipment(equipment);
@@ -467,6 +539,7 @@ export function ReservationsPage() {
         reservation={editingReservation}
         defaultEquipmentId={defaultEquipmentId}
         defaultDate={defaultDate}
+        defaultKind={reservationKind}
         equipments={equipments}
         agents={agents}
         onSaved={refresh}

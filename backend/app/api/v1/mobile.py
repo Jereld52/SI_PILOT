@@ -83,6 +83,18 @@ def update_mobile_line(
     return mobile_service.update_mobile_line(db, line, payload, actor=actor, request=request)
 
 
+@router.delete("/{line_id}", status_code=204)
+def delete_mobile_line(
+    line_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("mobile_lines.update")),
+    db: Session = Depends(get_db),
+) -> Response:
+    line = mobile_service.get_mobile_line(db, line_id)
+    mobile_service.delete_mobile_line(db, line, actor=actor, request=request)
+    return Response(status_code=204)
+
+
 @router.get("/{line_id}/secrets", response_model=MobileSecretsRead)
 def get_mobile_secrets(
     line_id: UUID,

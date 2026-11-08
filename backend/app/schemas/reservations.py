@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -38,6 +38,7 @@ class ReservableEquipmentRead(ORMModel):
     location: LocationRef | None = None
     is_active: bool
     sort_order: int
+    qr_token: str
     notes: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -51,6 +52,9 @@ class EquipmentReservationCreate(BaseModel):
     purpose: str = Field(min_length=1, max_length=255)
     start_at: datetime
     end_at: datetime
+    kind: Literal["reservation", "unavailability"] = "reservation"
+    recurrence: Literal["none", "daily", "weekly", "monthly"] = "none"
+    recurrence_until: date | None = None
     notes: str | None = None
 
 
@@ -62,7 +66,7 @@ class EquipmentReservationUpdate(BaseModel):
     purpose: str | None = Field(default=None, min_length=1, max_length=255)
     start_at: datetime | None = None
     end_at: datetime | None = None
-    status: Literal["confirmed", "cancelled"] | None = None
+    status: Literal["confirmed", "cancelled", "blocked"] | None = None
     notes: str | None = None
 
 
@@ -78,6 +82,9 @@ class EquipmentReservationRead(ORMModel):
     start_at: datetime
     end_at: datetime
     status: str
+    kind: str
+    checked_out_at: datetime | None = None
+    returned_at: datetime | None = None
     notes: str | None = None
     created_by_id: UUID | None = None
     created_by_label: str | None = None

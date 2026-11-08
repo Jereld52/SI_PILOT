@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { SmtpSettingsCard } from "@/features/admin/SmtpSettingsCard";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { cn, humanize } from "@/lib/utils";
@@ -81,6 +82,9 @@ export function SettingsPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, SettingItem[]>();
     (settingsQuery.data ?? []).forEach((setting) => {
+      if (setting.key.startsWith("smtp.") || setting.key === "notifications.email_enabled") {
+        return;
+      }
       const list = map.get(setting.category) ?? [];
       list.push(setting);
       map.set(setting.category, list);
@@ -130,8 +134,9 @@ export function SettingsPage() {
         </p>
       </div>
 
-      {grouped.map(([category, settings]) => (
-        <Card key={category}>
+      <SmtpSettingsCard canManage={canManage} />
+
+      {grouped.map(([category, settings]) => (        <Card key={category}>
           <CardHeader>
             <div>
               <CardTitle>{categoryLabels[category] ?? humanize(category)}</CardTitle>

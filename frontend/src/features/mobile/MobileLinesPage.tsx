@@ -4,18 +4,25 @@ import {
   Eye,
   FileSpreadsheet,
   FileText,
+  MoreHorizontal,
+  Pencil,
   Phone,
+  Plus,
   Search,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 
 import { ImportDialog } from "@/features/imports/ImportDialog";
 import { MobileLineDetailDialog } from "@/features/mobile/MobileLineDetailDialog";
+import { MobileLineDialog } from "@/features/mobile/MobileLineDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +37,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { apiFetch, buildQuery } from "@/lib/api";
+import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { formatDate, formatPhone } from "@/lib/utils";
 import type { MobileLineItem, Page } from "@/types/api";
 
@@ -51,6 +58,10 @@ export function MobileLinesPage() {
   const [page, setPage] = useState(1);
   const [importOpen, setImportOpen] = useState(false);
   const [selected, setSelected] = useState<MobileLineItem | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<MobileLineItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MobileLineItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -85,6 +96,23 @@ export function MobileLinesPage() {
 
   const lines = linesQuery.data?.items ?? [];
   const canImport = hasPermission("imports.preview");
+  const canCreate = hasPermission("mobile_lines.create");
+  const canUpdate = hasPermission("mobile_lines.update");
+
+  const removeLine = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/mobile-lines/${deleteTarget.id}`, { method: "DELETE" });
+      toast.success("Ligne mobile supprimée.");
+      setDeleteTarget(null);
+      void linesQuery.refetch();
+    } catch (caught) {
+      toast.error(caught instanceof ApiError ? caught.message : "Suppression impossible.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -128,6 +156,18 @@ export function MobileLinesPage() {
               <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
                 <Upload className="h-3.5 w-3.5" />
                 Importer
+              </Button>
+            ) : null}
+            {canCreate ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouvelle ligne
               </Button>
             ) : null}
           </>
@@ -215,7 +255,7 @@ export function MobileLinesPage() {
                   <TableHead className="hidden xl:table-cell">Forfait</TableHead>
                   <TableHead className="hidden xl:table-cell">Terminal</TableHead>
                   <TableHead className="hidden lg:table-cell">Fin engagement</TableHead>
-                  <TableHead className="w-10 text-right">Détail</TableHead>
+                  <TableHead className="w-20 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -244,14 +284,43 @@ export function MobileLinesPage() {
                       {formatDate(line.commitment_end_date)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Détail de la ligne ${formatPhone(line.line_number)}`}
-                        onClick={() => setSelected(line)}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Actions pour la ligne ${formatPhone(line.line_number)}`}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onSelect={() => setSelected(line)}>
+                            <Eye className="h-3.5 w-3.5" />
+                            Voir le détail
+                          </DropdownMenuItem>
+                          {canUpdate ? (
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setEditing(line);
+                                setFormOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Modifier
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canUpdate ? (
+                            <DropdownMenuItem
+                              className="text-danger focus:bg-danger/10 focus:text-danger"
+                              onSelect={() => setDeleteTarget(line)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -294,6 +363,24 @@ export function MobileLinesPage() {
         open={Boolean(selected)}
         onOpenChange={(open) => !open && setSelected(null)}
         line={selected}
+      />
+
+      <MobileLineDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        line={editing}
+        onSaved={() => void linesQuery.refetch()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Supprimer cette ligne mobile ?"
+        description={`La ligne ${deleteTarget ? formatPhone(deleteTarget.line_number) : ""} et ses informations seront définitivement supprimées.`}
+        confirmLabel="Supprimer"
+        tone="danger"
+        loading={deleting}
+        onConfirm={() => void removeLine()}
       />
     </div>
   );

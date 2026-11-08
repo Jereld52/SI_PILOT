@@ -144,6 +144,10 @@ export interface DashboardCockpit {
   generated_at: string;
 }
 
+export interface DashboardTiles {
+  tiles: string[];
+}
+
 export interface NotificationItem {
   id: string;
   type: string;
@@ -1441,6 +1445,7 @@ export interface ReservableEquipmentItem {
   location: LocationItem | null;
   is_active: boolean;
   sort_order: number;
+  qr_token: string;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -1458,6 +1463,9 @@ export interface EquipmentReservationItem {
   start_at: string;
   end_at: string;
   status: string;
+  kind: string;
+  checked_out_at: string | null;
+  returned_at: string | null;
   notes: string | null;
   created_by_id: string | null;
   created_by_label: string | null;
@@ -1477,4 +1485,17 @@ export interface ReservationConflict {
 export interface ReservationAvailability {
   available: boolean;
   conflict: ReservationConflict | null;
+}
+
+export interface SmtpSettings {
+  host: string;
+  port: number;
+  username: string;
+  from_email: string;
+  from_name: string;
+  use_tls: boolean;
+  use_ssl: boolean;
+  email_enabled: boolean;
+  password_set: boolean;
+  configured: boolean;
 }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime
 from uuid import UUID
 
@@ -22,6 +23,13 @@ class ReservableEquipment(Base, UUIDMixin, TimestampMixin):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    qr_token: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        index=True,
+        nullable=False,
+        default=lambda: secrets.token_urlsafe(24),
+    )
     notes: Mapped[str | None] = mapped_column(Text)
 
     location: Mapped[Location | None] = relationship(lazy="joined")
@@ -46,6 +54,11 @@ class EquipmentReservation(Base, UUIDMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(
         String(20), default="confirmed", nullable=False, index=True
     )
+    kind: Mapped[str] = mapped_column(
+        String(20), default="reservation", nullable=False, index=True
+    )
+    checked_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notes: Mapped[str | None] = mapped_column(Text)
     created_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
@@ -64,7 +77,11 @@ class EquipmentReservation(Base, UUIDMixin, TimestampMixin):
     __table_args__ = (
         CheckConstraint("end_at > start_at", name="reservation_period"),
         CheckConstraint(
-            "status IN ('confirmed','cancelled')",
+            "status IN ('confirmed','cancelled','blocked','checked_out','returned')",
             name="reservation_status",
+        ),
+        CheckConstraint(
+            "kind IN ('reservation','unavailability')",
+            name="reservation_kind",
         ),
     )

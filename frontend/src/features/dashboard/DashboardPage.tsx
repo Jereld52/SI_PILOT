@@ -19,16 +19,18 @@ import {
   Scale,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Smartphone,
   Sparkles,
   TriangleAlert,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { ChartCard } from "@/features/dashboard/ChartCard";
+import { DashboardTilesDialog } from "@/features/dashboard/DashboardTilesDialog";
 import { KpiCard } from "@/features/dashboard/KpiCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -50,6 +52,7 @@ import type {
   DashboardCharts,
   DashboardCockpit,
   DashboardSummary,
+  DashboardTiles,
   EquipmentReservationItem,
   KpiValue,
 } from "@/types/api";
@@ -265,6 +268,8 @@ export function DashboardPage() {
   const { user, hasPermission } = useAuth();
   const [tab, setTab] = useState<"cockpit" | "analyses" | "veille" | "week">("cockpit");
   const [showAllCharts, setShowAllCharts] = useState(false);
+  const [tilesDialogOpen, setTilesDialogOpen] = useState(false);
+  const [tileKeys, setTileKeys] = useState<string[]>([]);
 
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -279,6 +284,10 @@ export function DashboardPage() {
     queryKey: ["dashboard", "cockpit"],
     queryFn: () => apiFetch<DashboardCockpit>("/dashboard/cockpit"),
     staleTime: 30_000,
+  });
+  const tilesQuery = useQuery({
+    queryKey: ["dashboard", "tiles"],
+    queryFn: () => apiFetch<DashboardTiles>("/dashboard/tiles"),
   });
   const chartsQuery = useQuery({
     queryKey: ["dashboard", "charts"],
@@ -342,6 +351,16 @@ export function DashboardPage() {
   const featuredSet = new Set(featured.map((kpi) => kpi.key));
   const secondaryKpis = kpis.filter((kpi) => !featuredSet.has(kpi.key));
   const modules = cockpitQuery.data?.modules ?? [];
+  useEffect(() => {
+    if (tilesQuery.data) setTileKeys(tilesQuery.data.tiles);
+  }, [tilesQuery.data]);
+  const moduleMap = new Map(modules.map((module) => [module.key, module]));
+  const visibleModules =
+    tileKeys.length > 0
+      ? tileKeys
+          .map((key) => moduleMap.get(key))
+          .filter((module): module is NonNullable<typeof module> => Boolean(module))
+      : modules;
   const deadlines = cockpitQuery.data?.deadlines ?? [];
   const alerts = alertsQuery.data?.items ?? [];
   const activities = activityQuery.data?.items ?? [];
@@ -479,7 +498,18 @@ export function DashboardPage() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">Pilotage</p>
             <h2 className="text-base font-semibold text-foreground">État des modules</h2>
           </div>
-          <p className="text-[11px] text-muted-2">Accès direct aux domaines qui demandent votre attention.</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] text-muted-2">Accès direct aux domaines qui demandent votre attention.</p>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={modules.length === 0}
+              onClick={() => setTilesDialogOpen(true)}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Personnaliser
+            </Button>
+          </div>
         </div>
         {cockpitQuery.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -496,7 +526,7 @@ export function DashboardPage() {
           </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {modules.map((module) => (
+            {visibleModules.map((module) => (
               <ModuleCard key={module.key} module={module} />
             ))}
           </div>
@@ -629,7 +659,10 @@ export function DashboardPage() {
                         parseISO(reservation.end_at),
                         "HH:mm",
                       )}`,
-                      title: reservation.equipment.name,
+                      title:
+                        reservation.kind === "unavailability"
+                          ? `Indisponible — ${reservation.equipment.name}`
+                          : reservation.equipment.name,
                       meta:
                         reservation.requester_name ??
                         reservation.requester_email ??
@@ -862,6 +895,14 @@ export function DashboardPage() {
         </Card>
       </section>
       ) : null}
+
+      <DashboardTilesDialog
+        open={tilesDialogOpen}
+        onOpenChange={setTilesDialogOpen}
+        modules={modules}
+        selected={tileKeys}
+        onSaved={setTileKeys}
+      />
     </div>
   );
 }

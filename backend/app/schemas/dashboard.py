@@ -91,3 +91,11 @@ class DashboardCockpit(BaseModel):
     modules: list[CockpitModule]
     deadlines: list[CockpitDeadline]
     generated_at: datetime
+
+
+class DashboardTiles(BaseModel):
+    tiles: list[str]
+
+
+class DashboardTilesUpdate(BaseModel):
+    tiles: list[str]

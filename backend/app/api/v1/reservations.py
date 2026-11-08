@@ -1,10 +1,13 @@
+import io
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+import qrcode
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.auth import User
 from app.schemas.reservations import (
@@ -117,6 +120,41 @@ def check_availability(
     )
 
 
+@router.get("/equipments/{equipment_id}/qr")
+def equipment_qr(
+    equipment_id: UUID,
+    _: User = Depends(require_permission("reservations.read")),
+    db: Session = Depends(get_db),
+):
+    equipment = reservations_service.get_equipment(db, equipment_id)
+    url = f"{settings.public_base_url.rstrip('/')}/reservations?qr={equipment.qr_token}"
+    image = qrcode.make(url)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return Response(
+        content=buffer.getvalue(),
+        media_type="image/png",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@router.get("/export.ics")
+def export_reservations_ics(
+    start: datetime | None = None,
+    end: datetime | None = None,
+    _: User = Depends(require_permission("reservations.read")),
+    db: Session = Depends(get_db),
+):
+    content = reservations_service.export_ics(db, start=start, end=end)
+    return Response(
+        content=content,
+        media_type="text/calendar; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="reservations-si-pnfor.ics"'
+        },
+    )
+
+
 @router.get("/{reservation_id}", response_model=EquipmentReservationRead)
 def get_reservation(
     reservation_id: UUID,
@@ -139,6 +177,28 @@ def update_reservation(
     return reservations_service.update_reservation(
         db, row, payload, actor=actor, request=request
     )
+
+
+@router.post("/{reservation_id}/checkout", response_model=EquipmentReservationRead)
+def checkout_reservation(
+    reservation_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("reservations.update")),
+    db: Session = Depends(get_db),
+):
+    row = reservations_service.get_reservation(db, reservation_id)
+    return reservations_service.check_out(db, row, actor=actor, request=request)
+
+
+@router.post("/{reservation_id}/return", response_model=EquipmentReservationRead)
+def return_reservation(
+    reservation_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("reservations.update")),
+    db: Session = Depends(get_db),
+):
+    row = reservations_service.get_reservation(db, reservation_id)
+    return reservations_service.return_material(db, row, actor=actor, request=request)
 
 
 @router.delete("/{reservation_id}", response_model=EquipmentReservationRead)

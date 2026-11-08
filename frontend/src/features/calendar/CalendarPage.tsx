@@ -124,6 +124,14 @@ const eventTypeColors: Record<string, string> = {
 
 const reservationTone = "bg-brand-green/20 text-brand-green border-brand-green/30";
 
+const reservationStatusLabels: Record<string, string> = {
+  confirmed: "Confirmée",
+  cancelled: "Annulée",
+  blocked: "Indisponible",
+  checked_out: "Matériel sorti",
+  returned: "Matériel retourné",
+};
+
 const actionStatusLabels: Record<string, string> = {
   todo: "À faire",
   in_progress: "En cours",
@@ -292,7 +300,10 @@ export function CalendarPage() {
       kind: "reservation" as const,
       start: reservation.start_at,
       end: reservation.end_at,
-      title: reservation.equipment.name,
+      title:
+        reservation.kind === "unavailability"
+          ? `Indisponible — ${reservation.equipment.name}`
+          : reservation.equipment.name,
       subtitle: [
         reservation.requester_name ?? reservation.requester_email ?? "Demandeur non précisé",
         reservation.purpose,
@@ -994,7 +1005,8 @@ export function CalendarPage() {
               <div className="flex justify-between gap-3">
                 <span className="text-muted-2">Statut</span>
                 <span className="text-right text-foreground">
-                  {selectedReservation.status === "confirmed" ? "Confirmée" : "Annulée"}
+                  {reservationStatusLabels[selectedReservation.status] ??
+                    selectedReservation.status}
                 </span>
               </div>
               {selectedReservation.notes ? (
