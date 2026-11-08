@@ -83,3 +83,17 @@ class EquipmentReservationRead(ORMModel):
     created_by_label: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class ReservationConflict(BaseModel):
+    id: UUID
+    equipment_name: str
+    requester_name: str | None = None
+    purpose: str
+    start_at: datetime
+    end_at: datetime
+
+
+class ReservationAvailability(BaseModel):
+    available: bool
+    conflict: ReservationConflict | None = None

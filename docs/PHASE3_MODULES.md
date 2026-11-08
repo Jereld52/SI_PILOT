@@ -155,6 +155,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Planning hebdomadaire par matériel et par jour, avec navigation semaine précédente/suivante.
 - Réservation par créneau avec demandeur (agent ou saisie libre), e-mail, motif et notes.
 - Contrôle automatique des chevauchements : un créneau déjà réservé est refusé.
+- Vérification en direct dans le formulaire : dès que le matériel et les dates sont saisis,
+  l'application indique si le créneau est disponible ou affiche la réservation en conflit
+  (demandeur, motif et horaires). Le bouton de validation est bloqué en cas de conflit.
 - Modification et annulation d'une réservation ; une annulation libère le créneau.
 - Gestion du catalogue réservable : ajout, modification, site de stockage, ordre et retrait.
 - Plans par défaut créés par migration : Vidéoprojecteur 1 et 2, Sonorisation 1 et 2,

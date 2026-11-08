@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ import type {
   AgentItem,
   EquipmentReservationItem,
   LocationItem,
+  ReservationAvailability,
   ReservableEquipmentItem,
 } from "@/types/api";
 
@@ -38,6 +40,12 @@ function nullable(value: string): string | null {
 
 function toLocalInput(value: string | Date): string {
   return format(value, "yyyy-MM-dd'T'HH:mm");
+}
+
+function toIso(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function useSubmit(onSaved: () => void) {
@@ -270,6 +278,37 @@ export function EquipmentReservationDialog({
   const [notes, setNotes] = useState("");
   const { loading, error, setError, submit } = useSubmit(onSaved);
 
+  const startIso = toIso(start);
+  const endIso = toIso(end);
+  const availabilityQuery = useQuery({
+    queryKey: [
+      "reservations",
+      "availability",
+      equipmentId,
+      startIso,
+      endIso,
+      reservation?.id ?? "",
+      status,
+    ],
+    queryFn: () =>
+      apiFetch<ReservationAvailability>(
+        `/reservations/availability?equipment_id=${equipmentId}&start=${encodeURIComponent(
+          startIso ?? "",
+        )}&end=${encodeURIComponent(endIso ?? "")}${
+          reservation ? `&exclude_id=${reservation.id}` : ""
+        }`,
+      ),
+    enabled:
+      open &&
+      Boolean(equipmentId) &&
+      Boolean(startIso) &&
+      Boolean(endIso) &&
+      new Date(startIso ?? 0) < new Date(endIso ?? 0) &&
+      !(reservation && status === "cancelled"),
+    retry: false,
+  });
+  const hasConflict = availabilityQuery.data?.available === false;
+
   useEffect(() => {
     if (!open) return;
     if (reservation) {
@@ -312,6 +351,10 @@ export function EquipmentReservationDialog({
   const doSubmit = () => {
     if (!equipmentId) {
       setError("Sélectionnez le matériel à réserver.");
+      return;
+    }
+    if (hasConflict) {
+      setError("Ce matériel est déjà réservé sur ce créneau.");
       return;
     }
     if (!purpose.trim()) {
@@ -407,6 +450,27 @@ export function EquipmentReservationDialog({
               />
             </div>
           </div>
+          {availabilityQuery.isFetching ? (
+            <p className="rounded-lg border border-border-soft bg-background/40 px-3 py-2 text-[11px] text-muted">
+              Vérification de la disponibilité…
+            </p>
+          ) : hasConflict && availabilityQuery.data?.conflict ? (
+            <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[11px] text-danger">
+              <p className="font-semibold">Ce matériel est déjà réservé sur ce créneau.</p>
+              <p className="mt-1 text-danger/90">
+                {availabilityQuery.data.conflict.requester_name ?? "Demandeur non précisé"} ·{" "}
+                {availabilityQuery.data.conflict.purpose}
+              </p>
+              <p className="text-danger/80">
+                {format(new Date(availabilityQuery.data.conflict.start_at), "dd/MM/yyyy HH:mm")} →{" "}
+                {format(new Date(availabilityQuery.data.conflict.end_at), "dd/MM/yyyy HH:mm")}
+              </p>
+            </div>
+          ) : availabilityQuery.data?.available ? (
+            <p className="rounded-lg border border-success/25 bg-success/10 px-3 py-2 text-[11px] text-success">
+              Créneau disponible pour ce matériel.
+            </p>
+          ) : null}
           <div>
             <Label htmlFor="reservation-agent">Agent demandeur</Label>
             <Select
@@ -477,7 +541,7 @@ export function EquipmentReservationDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button loading={loading} onClick={doSubmit}>
+          <Button loading={loading} disabled={hasConflict} onClick={doSubmit}>
             {reservation ? "Enregistrer" : "Réserver"}
           </Button>
         </DialogFooter>

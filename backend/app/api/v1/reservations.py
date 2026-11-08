@@ -14,6 +14,7 @@ from app.schemas.reservations import (
     ReservableEquipmentCreate,
     ReservableEquipmentRead,
     ReservableEquipmentUpdate,
+    ReservationAvailability,
 )
 from app.services import reservations_service
 
@@ -95,6 +96,24 @@ def create_reservation(
 ):
     return reservations_service.create_reservation(
         db, payload, actor=actor, request=request
+    )
+
+
+@router.get("/availability", response_model=ReservationAvailability)
+def check_availability(
+    equipment_id: UUID,
+    start: datetime,
+    end: datetime,
+    exclude_id: UUID | None = None,
+    _: User = Depends(require_permission("reservations.read")),
+    db: Session = Depends(get_db),
+):
+    return reservations_service.check_availability(
+        db,
+        equipment_id=equipment_id,
+        start_at=start,
+        end_at=end,
+        exclude_id=exclude_id,
     )
 
 

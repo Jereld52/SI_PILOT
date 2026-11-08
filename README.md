@@ -33,9 +33,8 @@ le RGPD, la documentation et les échéances.
 - **Stock IT** dédié : claviers, souris, écrans, casques, stations d'accueil, câbles et
   consommables, avec quantités, seuils d'alerte, valeur, mouvements et historique.
 - **Réservations de matériel** : vidéoprojecteurs, sonorisation, écrans de projection, mallette
-  de micros et enregistreurs, avec planning hebdomadaire, contrôle des chevauchements et ajout
-  libre de matériel réservable.
-- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
+  de micros et enregistreurs, avec planning hebdomadaire, vérification en direct des conflits
+  de créneau et ajout libre de matériel réservable.- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - Supervision globale : carte visuelle cliquable, équipements positionnables par glisser-déposer,

@@ -1464,3 +1464,17 @@ export interface EquipmentReservationItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface ReservationConflict {
+  id: string;
+  equipment_name: string;
+  requester_name: string | null;
+  purpose: string;
+  start_at: string;
+  end_at: string;
+}
+
+export interface ReservationAvailability {
+  available: boolean;
+  conflict: ReservationConflict | null;
+}

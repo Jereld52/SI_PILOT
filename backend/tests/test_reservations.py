@@ -39,6 +39,41 @@ def test_reservation_lifecycle_and_conflicts(admin_client, csrf_headers):
     assert reservation["equipment"]["name"] == f"Vidéoprojecteur test {suffix}"
     reservation_id = reservation["id"]
 
+    availability = client.get(
+        "/api/v1/reservations/availability",
+        params={
+            "equipment_id": equipment_id,
+            "start": (start + timedelta(minutes=15)).isoformat(),
+            "end": (end - timedelta(minutes=15)).isoformat(),
+        },
+    )
+    assert availability.status_code == 200, availability.text
+    assert availability.json()["available"] is False
+    assert availability.json()["conflict"]["id"] == reservation_id
+
+    availability_excluded = client.get(
+        "/api/v1/reservations/availability",
+        params={
+            "equipment_id": equipment_id,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "exclude_id": reservation_id,
+        },
+    )
+    assert availability_excluded.status_code == 200
+    assert availability_excluded.json()["available"] is True
+
+    availability_free = client.get(
+        "/api/v1/reservations/availability",
+        params={
+            "equipment_id": equipment_id,
+            "start": (end + timedelta(hours=1)).isoformat(),
+            "end": (end + timedelta(hours=2)).isoformat(),
+        },
+    )
+    assert availability_free.status_code == 200
+    assert availability_free.json()["available"] is True
+
     overlap = client.post(
         "/api/v1/reservations",
         headers=csrf_headers(csrf),

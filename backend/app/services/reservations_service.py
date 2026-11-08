@@ -14,6 +14,8 @@ from app.schemas.reservations import (
     ReservableEquipmentCreate,
     ReservableEquipmentRead,
     ReservableEquipmentUpdate,
+    ReservationAvailability,
+    ReservationConflict,
 )
 from app.services.audit_service import write_audit
 from fastapi import Request
@@ -163,14 +165,14 @@ def get_reservation(db: Session, reservation_id: UUID) -> EquipmentReservation:
     return row
 
 
-def _check_conflict(
+def _find_conflict(
     db: Session,
     *,
     equipment_id: UUID,
     start_at: datetime,
     end_at: datetime,
     exclude_id: UUID | None = None,
-) -> None:
+) -> EquipmentReservation | None:
     statement = select(EquipmentReservation).where(
         EquipmentReservation.equipment_id == equipment_id,
         EquipmentReservation.status != "cancelled",
@@ -179,14 +181,61 @@ def _check_conflict(
     )
     if exclude_id:
         statement = statement.where(EquipmentReservation.id != exclude_id)
-    conflict = db.scalar(
-        statement.order_by(EquipmentReservation.start_at).limit(1)
+    return db.scalar(statement.order_by(EquipmentReservation.start_at).limit(1))
+
+
+def _check_conflict(
+    db: Session,
+    *,
+    equipment_id: UUID,
+    start_at: datetime,
+    end_at: datetime,
+    exclude_id: UUID | None = None,
+) -> None:
+    conflict = _find_conflict(
+        db,
+        equipment_id=equipment_id,
+        start_at=start_at,
+        end_at=end_at,
+        exclude_id=exclude_id,
     )
     if conflict is not None:
         raise ConflictError(
             "Ce matériel est déjà réservé sur ce créneau "
             f"({conflict.start_at:%d/%m/%Y %H:%M} → {conflict.end_at:%d/%m/%Y %H:%M})."
         )
+
+
+def check_availability(
+    db: Session,
+    *,
+    equipment_id: UUID,
+    start_at: datetime,
+    end_at: datetime,
+    exclude_id: UUID | None = None,
+) -> ReservationAvailability:
+    equipment = get_equipment(db, equipment_id)
+    _validate_period(start_at, end_at)
+    conflict = _find_conflict(
+        db,
+        equipment_id=equipment_id,
+        start_at=start_at,
+        end_at=end_at,
+        exclude_id=exclude_id,
+    )
+    if conflict is None:
+        return ReservationAvailability(available=True)
+    return ReservationAvailability(
+        available=False,
+        conflict=ReservationConflict(
+            id=conflict.id,
+            equipment_name=equipment.name,
+            requester_name=conflict.requester_name or conflict.requester_email,
+            purpose=conflict.purpose,
+            start_at=conflict.start_at,
+            end_at=conflict.end_at,
+        ),
+    )
 
 
 def _validate_period(start_at: datetime, end_at: datetime) -> None:
