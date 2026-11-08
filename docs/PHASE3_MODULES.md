@@ -246,6 +246,11 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Calendrier et actions
 
 - Vue mensuelle des événements avec navigation mois précédent/suivant.
+- Vues **jour, semaine, mois et année** avec navigation adaptée et retour à aujourd'hui.
+- Les réservations de matériel sont intégrées au calendrier avec le matériel, le créneau, le
+  demandeur, le motif et le statut. Un clic ouvre le détail et permet de rejoindre le module
+  Réservations.
+- Le tableau de bord affiche également les réservations de la semaine dans l'onglet **Semaine**.
 - Types : maintenance, intervention, échéance, renouvellement, audit, projet, réunion, action.
 - Événements avec lieu, responsable, priorité, statut et description.
 - Actions à réaliser avec module, priorité, échéance, responsable et statut.

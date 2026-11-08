@@ -72,6 +72,8 @@ le RGPD, la documentation et les échéances.
 - Tableau de bord, statistiques et exports organisés en onglets pour limiter le défilement.
 - Semaine en cours intégrée au tableau de bord dans l'onglet **Semaine**, avec accès au
   calendrier complet.
+- Calendrier avec vues **jour, semaine, mois et année**, et affichage des réservations de
+  matériel avec le nom du demandeur.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
 - Tests backend : 60 tests passants (`pytest`), `ruff` et `mypy` sans erreur.

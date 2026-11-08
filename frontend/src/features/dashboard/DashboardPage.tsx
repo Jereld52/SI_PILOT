@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { addDays, endOfWeek, format, isSameDay, parseISO, startOfWeek } from "date-fns";
+import { addDays, endOfDay, endOfWeek, format, isSameDay, parseISO, startOfDay, startOfWeek } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   Activity,
@@ -50,6 +50,7 @@ import type {
   DashboardCharts,
   DashboardCockpit,
   DashboardSummary,
+  EquipmentReservationItem,
   KpiValue,
 } from "@/types/api";
 
@@ -305,6 +306,17 @@ export function DashboardPage() {
     enabled: hasPermission("calendar.read"),
     staleTime: 60_000,
   });
+  const weekReservationsQuery = useQuery({
+    queryKey: ["reservations", "dashboard-week", format(weekStart, "yyyy-MM-dd")],
+    queryFn: () =>
+      apiFetch<EquipmentReservationItem[]>(
+        `/reservations?start=${encodeURIComponent(
+          weekStart.toISOString(),
+        )}&end=${encodeURIComponent(weekEnd.toISOString())}`,
+      ),
+    enabled: hasPermission("reservations.read"),
+    staleTime: 60_000,
+  });
 
   const isRefreshing =
     summaryQuery.isFetching ||
@@ -334,6 +346,7 @@ export function DashboardPage() {
   const alerts = alertsQuery.data?.items ?? [];
   const activities = activityQuery.data?.items ?? [];
   const weekEvents = weekEventsQuery.data ?? [];
+  const weekReservations = weekReservationsQuery.data ?? [];
   const charts = chartsQuery.data?.series ?? [];
   const orderedCharts = [...charts].sort((a, b) => {
     const indexA = preferredCharts.indexOf(a.key);
@@ -593,6 +606,37 @@ export function DashboardPage() {
                   const dayEvents = weekEvents
                     .filter((event) => isSameDay(parseISO(event.start_at), day))
                     .sort((left, right) => left.start_at.localeCompare(right.start_at));
+                  const dayReservations = weekReservations.filter(
+                    (reservation) =>
+                      new Date(reservation.start_at) < endOfDay(day) &&
+                      new Date(reservation.end_at) > startOfDay(day),
+                  );
+                  const dayItems = [
+                    ...dayEvents.map((event) => ({
+                      key: `event-${event.id}`,
+                      start: event.start_at,
+                      time: event.all_day
+                        ? "Journée"
+                        : format(parseISO(event.start_at), "HH:mm"),
+                      title: event.title,
+                      meta: event.location ?? "",
+                      reservation: false,
+                    })),
+                    ...dayReservations.map((reservation) => ({
+                      key: `reservation-${reservation.id}`,
+                      start: reservation.start_at,
+                      time: `${format(parseISO(reservation.start_at), "HH:mm")}–${format(
+                        parseISO(reservation.end_at),
+                        "HH:mm",
+                      )}`,
+                      title: reservation.equipment.name,
+                      meta:
+                        reservation.requester_name ??
+                        reservation.requester_email ??
+                        "Demandeur non précisé",
+                      reservation: true,
+                    })),
+                  ].sort((left, right) => left.start.localeCompare(right.start));
                   const today = isSameDay(day, new Date());
                   return (
                     <div
@@ -613,25 +657,28 @@ export function DashboardPage() {
                         {format(day, "EEE d", { locale: fr })}
                       </p>
                       <div className="mt-2 space-y-1.5">
-                        {dayEvents.length === 0 ? (
-                          <p className="text-[10px] text-muted-2">Aucun événement</p>
+                        {dayItems.length === 0 ? (
+                          <p className="text-[10px] text-muted-2">Aucun élément</p>
                         ) : (
-                          dayEvents.map((event) => (
+                          dayItems.map((item) => (
                             <div
-                              key={event.id}
-                              className="rounded-md border border-border-soft bg-surface/70 px-2 py-1.5"
+                              key={item.key}
+                              className={cn(
+                                "rounded-md border px-2 py-1.5",
+                                item.reservation
+                                  ? "border-brand-green/30 bg-brand-green/10"
+                                  : "border-border-soft bg-surface/70",
+                              )}
                             >
                               <p className="text-[10px] font-medium text-foreground">
-                                {event.all_day
-                                  ? "Journée"
-                                  : format(parseISO(event.start_at), "HH:mm")}
+                                {item.time}
                               </p>
                               <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-muted">
-                                {event.title}
+                                {item.title}
                               </p>
-                              {event.location ? (
+                              {item.meta ? (
                                 <p className="mt-0.5 truncate text-[9px] text-muted-2">
-                                  {event.location}
+                                  {item.meta}
                                 </p>
                               ) : null}
                             </div>
