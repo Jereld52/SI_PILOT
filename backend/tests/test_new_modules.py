@@ -115,13 +115,14 @@ def test_ticket_lifecycle(admin_client, csrf_headers):
             "description": "Test de cycle de vie.",
             "category_id": category["id"],
             "priority_id": priority["id"],
-            "source": "phone",
+            "source": "direct",
         },
     )
     assert created.status_code == 201, created.text
     ticket = created.json()
     assert ticket["reference"].startswith("DEM-")
     assert ticket["status"]["code"] == "new"
+    assert ticket["source"] == "direct"
     assert ticket["due_at"] is not None
 
     assignees = client.get("/api/v1/tickets/assignees")

@@ -29,6 +29,15 @@ const priorityTones: Record<string, "danger" | "warning" | "info" | "neutral"> =
   low: "neutral",
 };
 
+const sourceLabels: Record<string, string> = {
+  manual: "Saisie manuelle",
+  direct: "Demande directe",
+  email: "E-mail",
+  phone: "Téléphone",
+  portal: "Portail",
+  import: "Import",
+};
+
 function statusTone(ticket: TicketDetailItem) {
   if (ticket.status.is_closed) return "success" as const;
   if (ticket.status.code === "in_progress") return "info" as const;
@@ -195,6 +204,12 @@ export function TicketDetailDialog({
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-muted-2">Clôture</p>
                 <p className="mt-0.5 text-xs text-foreground">{formatDateTime(ticket.closed_at)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-2">Origine</p>
+                <p className="mt-0.5 text-xs text-foreground">
+                  {sourceLabels[ticket.source] ?? ticket.source}
+                </p>
               </div>
             </div>
 

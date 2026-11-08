@@ -56,7 +56,7 @@ class TicketCreate(BaseModel):
     category_id: UUID
     priority_id: UUID
     assignee_user_id: UUID | None = None
-    source: Literal["manual", "email", "phone", "portal", "import"] = "manual"
+    source: Literal["manual", "direct", "email", "phone", "portal", "import"] = "manual"
     asset_ids: list[UUID] = Field(default_factory=list)
     due_at: datetime | None = None
 

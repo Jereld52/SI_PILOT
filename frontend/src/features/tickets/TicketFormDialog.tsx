@@ -222,6 +222,7 @@ export function TicketFormDialog({
                   onChange={(event) => setSource(event.target.value)}
                 >
                   <option value="manual">Saisie manuelle</option>
+                  <option value="direct">Demande directe</option>
                   <option value="phone">Téléphone</option>
                   <option value="email">E-mail</option>
                   <option value="portal">Portail</option>

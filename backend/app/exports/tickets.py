@@ -36,6 +36,15 @@ HEADERS = [
     "Satisfaction",
 ]
 
+SOURCE_LABELS = {
+    "manual": "Saisie manuelle",
+    "direct": "Demande directe",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "portal": "Portail",
+    "import": "Import",
+}
+
 HEADER_FILL = PatternFill("solid", fgColor="772B2F")
 HEADER_FONT = Font(color="F3EFE2", bold=True)
 
@@ -58,7 +67,7 @@ def _row(ticket: Ticket) -> list:
         _name(ticket.requester_agent),
         ticket.service.name if ticket.service else "",
         _user_name(ticket.assignee),
-        ticket.source,
+        SOURCE_LABELS.get(ticket.source, ticket.source),
         ticket.opened_at.isoformat() if ticket.opened_at else "",
         ticket.first_response_at.isoformat() if ticket.first_response_at else "",
         ticket.resolved_at.isoformat() if ticket.resolved_at else "",
