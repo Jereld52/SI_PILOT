@@ -1,40 +1,134 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/layout/AppLayout";
-import { AdminImportExportPage } from "@/features/admin/AdminImportExportPage";
 import { AdminLayout } from "@/features/admin/AdminLayout";
-import { AdminSourcesPage } from "@/features/admin/AdminSourcesPage";
-import { AdminWaptPage } from "@/features/admin/AdminWaptPage";
-import { AuditPage } from "@/features/admin/AuditPage";
-import { RolesPage } from "@/features/admin/RolesPage";
-import { SettingsPage } from "@/features/admin/SettingsPage";
-import { UsersPage } from "@/features/admin/UsersPage";
-import { AgentsPage } from "@/features/agents/AgentsPage";
-import { AssetsPage } from "@/features/assets/AssetsPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { RequirePermission } from "@/features/auth/RequirePermission";
-import { BudgetPage } from "@/features/budget/BudgetPage";
-import { CalendarPage } from "@/features/calendar/CalendarPage";
-import { ContractsPage } from "@/features/contracts/ContractsPage";
-import { DashboardPage } from "@/features/dashboard/DashboardPage";
-import { DocumentsPage } from "@/features/documents/DocumentsPage";
-import { ExportsPage } from "@/features/exports/ExportsPage";
-import { InfrastructurePage } from "@/features/infrastructure/InfrastructurePage";
-import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
-import { ReferentialsPage } from "@/features/referentials/ReferentialsPage";
-import { ReservationsPage } from "@/features/reservations/ReservationsPage";
-import { ProjectsPage } from "@/features/projects/ProjectsPage";
-import { RgpdPage } from "@/features/rgpd/RgpdPage";
-import { SecurityPage } from "@/features/security/SecurityPage";
-import { StatisticsPage } from "@/features/statistics/StatisticsPage";
-import { StockPage } from "@/features/stock/StockPage";
-import { SupervisionPage } from "@/features/supervision/SupervisionPage";
-import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
-import { TicketsPage } from "@/features/tickets/TicketsPage";
+
+const AdminImportExportPage = lazy(() =>
+  import("@/features/admin/AdminImportExportPage").then((module) => ({
+    default: module.AdminImportExportPage,
+  })),
+);
+const AdminSourcesPage = lazy(() =>
+  import("@/features/admin/AdminSourcesPage").then((module) => ({
+    default: module.AdminSourcesPage,
+  })),
+);
+const AdminWaptPage = lazy(() =>
+  import("@/features/admin/AdminWaptPage").then((module) => ({
+    default: module.AdminWaptPage,
+  })),
+);
+const AuditPage = lazy(() =>
+  import("@/features/admin/AuditPage").then((module) => ({ default: module.AuditPage })),
+);
+const RolesPage = lazy(() =>
+  import("@/features/admin/RolesPage").then((module) => ({ default: module.RolesPage })),
+);
+const SettingsPage = lazy(() =>
+  import("@/features/admin/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
+const UsersPage = lazy(() =>
+  import("@/features/admin/UsersPage").then((module) => ({ default: module.UsersPage })),
+);
+const AgentsPage = lazy(() =>
+  import("@/features/agents/AgentsPage").then((module) => ({ default: module.AgentsPage })),
+);
+const AssetsPage = lazy(() =>
+  import("@/features/assets/AssetsPage").then((module) => ({ default: module.AssetsPage })),
+);
+const BudgetPage = lazy(() =>
+  import("@/features/budget/BudgetPage").then((module) => ({ default: module.BudgetPage })),
+);
+const CalendarPage = lazy(() =>
+  import("@/features/calendar/CalendarPage").then((module) => ({
+    default: module.CalendarPage,
+  })),
+);
+const ContractsPage = lazy(() =>
+  import("@/features/contracts/ContractsPage").then((module) => ({
+    default: module.ContractsPage,
+  })),
+);
+const DashboardPage = lazy(() =>
+  import("@/features/dashboard/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+const DocumentsPage = lazy(() =>
+  import("@/features/documents/DocumentsPage").then((module) => ({
+    default: module.DocumentsPage,
+  })),
+);
+const ExportsPage = lazy(() =>
+  import("@/features/exports/ExportsPage").then((module) => ({
+    default: module.ExportsPage,
+  })),
+);
+const InfrastructurePage = lazy(() =>
+  import("@/features/infrastructure/InfrastructurePage").then((module) => ({
+    default: module.InfrastructurePage,
+  })),
+);
+const MobileLinesPage = lazy(() =>
+  import("@/features/mobile/MobileLinesPage").then((module) => ({
+    default: module.MobileLinesPage,
+  })),
+);
+const ReferentialsPage = lazy(() =>
+  import("@/features/referentials/ReferentialsPage").then((module) => ({
+    default: module.ReferentialsPage,
+  })),
+);
+const ReservationsPage = lazy(() =>
+  import("@/features/reservations/ReservationsPage").then((module) => ({
+    default: module.ReservationsPage,
+  })),
+);
+const ProjectsPage = lazy(() =>
+  import("@/features/projects/ProjectsPage").then((module) => ({
+    default: module.ProjectsPage,
+  })),
+);
+const RgpdPage = lazy(() =>
+  import("@/features/rgpd/RgpdPage").then((module) => ({ default: module.RgpdPage })),
+);
+const SecurityPage = lazy(() =>
+  import("@/features/security/SecurityPage").then((module) => ({
+    default: module.SecurityPage,
+  })),
+);
+const StatisticsPage = lazy(() =>
+  import("@/features/statistics/StatisticsPage").then((module) => ({
+    default: module.StatisticsPage,
+  })),
+);
+const StockPage = lazy(() =>
+  import("@/features/stock/StockPage").then((module) => ({ default: module.StockPage })),
+);
+const SupervisionPage = lazy(() =>
+  import("@/features/supervision/SupervisionPage").then((module) => ({
+    default: module.SupervisionPage,
+  })),
+);
+const SuppliersPage = lazy(() =>
+  import("@/features/suppliers/SuppliersPage").then((module) => ({
+    default: module.SuppliersPage,
+  })),
+);
+const TicketsPage = lazy(() =>
+  import("@/features/tickets/TicketsPage").then((module) => ({
+    default: module.TicketsPage,
+  })),
+);
 
 const implementedModules = new Set([
   "agents",
@@ -330,6 +424,6 @@ export function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
   );
 }

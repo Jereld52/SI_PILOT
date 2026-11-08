@@ -408,14 +408,16 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       67 passed
+pytest -q       68 passed
 ruff check      All checks passed
 mypy app        Success: no issues found in 147 source files
 npm run build   TypeScript + Vite OK
 ```
 
 Les tests couvrent les fournisseurs, licences, stock, contrats, budget, le cycle de vie complet
-d'une demande, les interventions et les principaux objets RGPD.
+d'une demande, les interventions, les principaux objets RGPD, les exports PDF, WAPT, les
+réservations et un parcours administrateur complet des modules et actions principales.
+Le frontend charge les pages à la demande pour réduire le bundle initial.
 
 ## Limites connues
 

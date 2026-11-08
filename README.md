@@ -86,7 +86,8 @@ le RGPD, la documentation et les échéances.
   d'un événement ou d'une réservation de matériel depuis le calendrier.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 67 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 68 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Frontend découpé en pages chargées à la demande pour réduire le chargement initial.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

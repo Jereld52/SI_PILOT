@@ -1,5 +1,5 @@
 import { AlertTriangle, KeyRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -67,7 +67,17 @@ export function AppLayout() {
         ) : null}
 
         <main className="mx-auto w-full max-w-[1560px] px-4 py-5 sm:px-6 sm:py-6">
-          <Outlet />
+          <Suspense
+            fallback={
+              <div className="space-y-3">
+                <div className="h-8 w-52 animate-pulse rounded-lg bg-surface-2" />
+                <div className="h-40 animate-pulse rounded-xl bg-surface-2" />
+                <div className="h-64 animate-pulse rounded-xl bg-surface-2" />
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </main>
 
         <footer className="mx-auto flex w-full max-w-[1560px] flex-col gap-1 border-t border-border-soft/60 px-4 pb-5 pt-3 text-[9px] uppercase tracking-wide text-muted-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
