@@ -158,8 +158,12 @@ export function InfrastructurePage() {
   const resultsQuery = useQuery({
     queryKey: ["infrastructure", "results", resultsCheck?.id],
     queryFn: () =>
-      apiFetch<MonitoringResultItem[]>(`/infrastructure/checks/${resultsCheck?.id}/results`),
-    enabled: Boolean(resultsCheck),
+      resultsCheck
+        ? apiFetch<MonitoringResultItem[]>(
+            `/infrastructure/checks/${resultsCheck.id}/results`,
+          )
+        : Promise.resolve([]),
+    enabled: Boolean(resultsCheck?.id),
   });
   const locationsQuery = useQuery({
     queryKey: ["referentials", "locations"],

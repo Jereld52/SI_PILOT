@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { apiFetch } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
@@ -164,6 +165,7 @@ export function ExportsPage() {
 
   const initialDataset = new URLSearchParams(window.location.search).get("dataset") ?? "";
   const [datasetKey, setDatasetKey] = useState(initialDataset);
+  const [tab, setTab] = useState("custom");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [columnSearch, setColumnSearch] = useState("");
   const [format, setFormat] = useState<"xlsx" | "pdf">("xlsx");
@@ -269,6 +271,16 @@ export function ExportsPage() {
         description="Choisissez le jeu de données, les colonnes et les filtres, puis générez un fichier Excel ou PDF adapté à votre besoin."
       />
 
+      <Tabs
+        items={[
+          { key: "custom", label: "Export sur mesure", icon: SlidersHorizontal },
+          { key: "quick", label: "Exports rapides", icon: FileSpreadsheet },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+
+      {tab === "custom" ? (
       <Card className="border-primary/20">
         <CardHeader>
           <div className="flex items-start gap-3">
@@ -510,8 +522,9 @@ export function ExportsPage() {
           )}
         </CardContent>
       </Card>
+      ) : null}
 
-      {hasPermission("exports.run") ? (
+      {tab === "quick" && hasPermission("exports.run") ? (
         <Card>
           <CardHeader>
             <div>

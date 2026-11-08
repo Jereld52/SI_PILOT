@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  BarChart3,
   BookOpen,
   CalendarRange,
   Clock,
@@ -7,6 +8,7 @@ import {
   FileClock,
   FileSpreadsheet,
   FileText,
+  Layers,
   LifeBuoy,
   MonitorSmartphone,
   RefreshCw,
@@ -41,6 +43,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
 import { apiFetch, buildQuery } from "@/lib/api";
 import { cn, formatCurrency, formatNumber } from "@/lib/utils";
 import type { StatisticsOverview, StatsKpi, StatsPoint } from "@/types/api";
@@ -289,6 +292,7 @@ function ActivityChart({ overview }: { overview: StatisticsOverview }) {
 }
 
 export function StatisticsPage() {
+  const [tab, setTab] = useState<"overview" | "distributions" | "budget">("overview");
   const [granularity, setGranularity] = useState<Granularity>("month");
   const [range, setRange] = useState(() => defaultRange("month"));
 
@@ -410,6 +414,16 @@ export function StatisticsPage() {
         </div>
       </Card>
 
+      <Tabs
+        items={[
+          { key: "overview", label: "Vue d'ensemble", icon: BarChart3 },
+          { key: "distributions", label: "Répartitions", icon: Layers },
+          { key: "budget", label: "Budget", icon: Wallet },
+        ]}
+        value={tab}
+        onChange={(value) => setTab(value as "overview" | "distributions" | "budget")}
+      />
+
       {overviewQuery.isError ? (
         <Card>
           <ErrorState
@@ -430,6 +444,8 @@ export function StatisticsPage() {
         </>
       ) : (
         <>
+          {tab === "overview" ? (
+            <>
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
             {overview.kpis.map((kpi) => (
               <StatKpiCard key={kpi.key} kpi={kpi} />
@@ -491,7 +507,10 @@ export function StatisticsPage() {
               </Card>
             </div>
           </div>
+            </>
+          ) : null}
 
+          {tab === "distributions" ? (
           <section>
             <div className="mb-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">Répartitions</p>
@@ -555,8 +574,10 @@ export function StatisticsPage() {
               />
             </div>
           </section>
+          ) : null}
 
-          {overview.budget ? (
+          {tab === "budget" ? (
+            overview.budget ? (
             <Card className="panel-sheen border-primary/20">
               <CardHeader>
                 <div>
@@ -603,6 +624,15 @@ export function StatisticsPage() {
                 </table>
               </CardContent>
             </Card>
+            ) : (
+              <Card>
+                <EmptyState
+                  icon={Wallet}
+                  title="Aucun exercice budgétaire"
+                  description="Créez un budget pour afficher sa répartition dans les statistiques."
+                />
+              </Card>
+            )
           ) : null}
         </>
       )}

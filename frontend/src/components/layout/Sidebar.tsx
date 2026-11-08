@@ -1,10 +1,17 @@
-import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/layout/BrandMark";
-import { navigation } from "@/components/layout/navigation";
+import {
+  adminNavItem,
+  homeNavItem,
+  isNavigationItemActive,
+  navigationSections,
+  type NavItem,
+} from "@/components/layout/navigation";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { cn, fullName } from "@/lib/utils";
 
@@ -18,7 +25,64 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { user, hasPermission } = useAuth();
   const location = useLocation();
-  const items = navigation.filter((item) => hasPermission(item.permission));
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const sections = navigationSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => hasPermission(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0);
+  const activeSectionKey =
+    sections.find((section) =>
+      section.items.some((item) => isNavigationItemActive(item, location.pathname)),
+    )?.key ?? null;
+
+  useEffect(() => {
+    if (!activeSectionKey) return;
+    setOpenSections((current) =>
+      current[activeSectionKey] ? current : { ...current, [activeSectionKey]: true },
+    );
+  }, [activeSectionKey]);
+
+  const isActive = (item: NavItem) => isNavigationItemActive(item, location.pathname);
+
+  const toggleSection = (key: string) => {
+    if (collapsed) {
+      onToggle();
+      setOpenSections((current) => ({ ...current, [key]: true }));
+      return;
+    }
+    setOpenSections((current) => ({ ...current, [key]: !current[key] }));
+  };
+
+  const renderItem = (item: NavItem) => {
+    const active = isActive(item);
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        onClick={onMobileClose}
+        title={collapsed ? item.label : undefined}
+        className={cn(
+          "group relative flex items-center gap-3 rounded-md border px-2.5 py-2 text-[13px] transition-colors",
+          collapsed && "justify-center px-0",
+          active
+            ? "border-primary/30 bg-primary/[0.17] text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent"
+            : "border-transparent text-muted hover:bg-white/[0.035] hover:text-foreground",
+        )}
+      >
+        <item.icon
+          className={cn("h-4 w-4 shrink-0", active ? "text-accent" : "")}
+          aria-hidden="true"
+        />
+        {!collapsed ? <span className="truncate">{item.label}</span> : null}
+        {!collapsed && active ? (
+          <span className="ml-auto h-1 w-1 rounded-full bg-accent/80" />
+        ) : null}
+      </NavLink>
+    );
+  };
 
   return (
     <>
@@ -62,37 +126,53 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
         </div>
 
         <nav className="relative z-10 flex-1 space-y-1 overflow-y-auto px-2.5 py-4">
-          {items.map((item) => {
-            const active = item.admin
-              ? location.pathname.startsWith("/admin")
-              : item.to === "/"
-                ? location.pathname === "/"
-                : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+          {hasPermission(homeNavItem.permission) ? renderItem(homeNavItem) : null}
+
+          {sections.map((section) => {
+            const open = !collapsed && Boolean(openSections[section.key]);
+            const sectionActive = section.items.some((item) => isActive(item));
             return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={onMobileClose}
-                title={collapsed ? item.label : undefined}
-                className={cn(
-                  "group relative flex items-center gap-3 rounded-md border px-2.5 py-2 text-[13px] transition-colors",
-                  collapsed && "justify-center px-0",
-                  active
-                    ? "border-primary/30 bg-primary/[0.17] text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent"
-                    : "border-transparent text-muted hover:bg-white/[0.035] hover:text-foreground",
-                )}
-              >
-                <item.icon
-                  className={cn("h-4 w-4 shrink-0", active ? "text-accent" : "")}
-                  aria-hidden="true"
-                />
-                {!collapsed ? <span className="truncate">{item.label}</span> : null}
-                {!collapsed && active ? (
-                  <span className="ml-auto h-1 w-1 rounded-full bg-accent/80" />
+              <div key={section.key} className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => toggleSection(section.key)}
+                  title={collapsed ? section.label : undefined}
+                  aria-expanded={collapsed ? undefined : open}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-md px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors",
+                    collapsed && "justify-center px-0 py-2",
+                    sectionActive
+                      ? "text-accent"
+                      : "text-muted-2 hover:bg-white/[0.03] hover:text-foreground",
+                  )}
+                >
+                  <section.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {!collapsed ? (
+                    <>
+                      <span className="truncate">{section.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          "ml-auto h-3.5 w-3.5 transition-transform",
+                          open && "rotate-180",
+                        )}
+                        aria-hidden="true"
+                      />
+                    </>
+                  ) : null}
+                </button>
+
+                {open ? (
+                  <div className="ml-4 mt-1 space-y-0.5 border-l border-border-soft/70 pl-2">
+                    {section.items.map((item) => renderItem(item))}
+                  </div>
                 ) : null}
-              </NavLink>
+              </div>
             );
           })}
+
+          {hasPermission(adminNavItem.permission) ? (
+            <div className="mt-2 border-t border-border-soft pt-2">{renderItem(adminNavItem)}</div>
+          ) : null}
         </nav>
 
         <div className="relative z-10 border-t border-border-soft p-3">

@@ -59,9 +59,14 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Refonte du thème avec une présence renforcée du bordeaux officiel `#772B2F` : dégradés,
   bordures, cartes, boutons, navigation active et barre supérieure.
 - Héro de bienvenue avec date, accès rapides et quatre indicateurs de vigilance.
-- État des 10 modules avec compteurs réels, alertes secondaires et liens directs.
+- État des 11 modules avec compteurs réels, alertes secondaires et liens directs.
 - Chiffres clés mis en avant, indicateurs complémentaires et graphiques hiérarchisés.
 - Blocs échéances à 90 jours, alertes prioritaires et activité récente.
+- Tableau de bord organisé en onglets **Cockpit**, **Analyses** et **Alertes & activité**.
+- Menu latéral regroupé en sections repliables : Pilotage, Support & parc, Infrastructure,
+  Gestion, Conformité. La section active s'ouvre automatiquement ; en mode replié, seules les
+  icônes de section restent visibles.
+- Pages Statistiques et Exports également découpées en onglets pour limiter le défilement.
 - Tri client au clic sur les en-têtes de tous les tableaux de données, avec détection des nombres,
   dates, montants, pourcentages et indicateur visuel du sens de tri.
 - Nouvel endpoint `GET /api/v1/dashboard/cockpit` alimenté par les données réelles.

@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { apiFetch } from "@/lib/api";
 import { cn, formatCurrency, formatDate, formatDateTime, formatNumber, formatRelative, humanize } from "@/lib/utils";
@@ -260,6 +261,7 @@ function DeadlineRow({ deadline }: { deadline: CockpitDeadline }) {
 
 export function DashboardPage() {
   const { user, hasPermission } = useAuth();
+  const [tab, setTab] = useState<"cockpit" | "analyses" | "veille">("cockpit");
   const [showAllCharts, setShowAllCharts] = useState(false);
 
   const summaryQuery = useQuery({
@@ -428,6 +430,18 @@ export function DashboardPage() {
         </div>
       </section>
 
+      <Tabs
+        items={[
+          { key: "cockpit", label: "Cockpit", icon: Sparkles },
+          { key: "analyses", label: "Analyses", icon: BarChart3 },
+          { key: "veille", label: "Alertes & activité", icon: ShieldAlert },
+        ]}
+        value={tab}
+        onChange={(value) => setTab(value as "cockpit" | "analyses" | "veille")}
+      />
+
+      {tab === "cockpit" ? (
+        <>
       <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -512,7 +526,10 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </section>
+        </>
+      ) : null}
 
+      {tab === "analyses" ? (
       <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -557,7 +574,9 @@ export function DashboardPage() {
           </Card>
         )}
       </section>
+      ) : null}
 
+      {tab === "veille" ? (
       <section className="grid gap-4 xl:grid-cols-3">
         <Card className="panel-sheen border-primary/20">
           <CardHeader>
@@ -677,6 +696,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </section>
+      ) : null}
     </div>
   );
 }
