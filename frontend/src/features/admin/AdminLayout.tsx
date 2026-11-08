@@ -1,4 +1,4 @@
-import { ArrowDownUp, Database, FileClock, Laptop, Plug, Settings, ShieldAlert, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowDownUp, Database, FileClock, Laptop, Plug, ServerCog, Settings, ShieldAlert, ShieldCheck, UsersRound } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { PageHeader } from "@/components/ui/page-header";
@@ -15,6 +15,7 @@ const tabs = [
   { to: "/admin/sources", label: "Sources de données", icon: Plug, permission: "admin.settings.read" },
   { to: "/admin/wapt", label: "WAPT", icon: Laptop, permission: "admin.settings.read" },
   { to: "/admin/import-export", label: "Import / Export", icon: ArrowDownUp, permission: "imports.preview" },
+  { to: "/admin/system", label: "Système", icon: ServerCog, permission: "admin.settings.read" },
   { to: "/admin/settings", label: "Paramètres", icon: Settings, permission: "admin.settings.read" },
 ];
 

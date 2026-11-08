@@ -185,6 +185,20 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   les notifications et tous les exports PDF.
 - Les modifications sont auditées ; le logo et les paramètres restent stockés localement.
 
+### Assistant d'installation, aide et diagnostic
+
+- **Assistant de première installation** accessible sur `/setup` tant qu'aucun administrateur
+  actif n'existe : structure, application, accroche, description, logo, couleur et compte
+  administrateur initial. Le compte est créé sans mot de passe par défaut et l'identité est
+  appliquée immédiatement.
+- **Centre d'aide intégré** accessible depuis le menu Aide et la barre supérieure : recherche,
+  articles par module, procédures d'exploitation, sauvegarde, mise à jour, dépannage et bonnes
+  pratiques. Les articles sont imprimables et liables.
+- **Page Administration → Système** : diagnostic de la base, des migrations, du stockage, du
+  SMTP, de WAPT, de LDAP, des sauvegardes et de la sécurité ; informations de version et
+  procédure de mise à jour ; téléchargement du rapport en JSON.
+- Aucun secret n'est exposé dans le diagnostic.
+
 ### Notifications et SMTP externe
 
 - Configuration SMTP dans **Administration → Paramètres** : serveur, port, identifiant, mot de
@@ -418,6 +432,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   `POST /imports/{id}/apply`
 - `GET /branding`, `GET /branding/logo`
 - `PUT /admin/branding`, `POST/DELETE /admin/branding/logo`
+- `GET /setup/status`, `POST /setup/initialize`
+- `GET /admin/diagnostics`, `GET /admin/about`
 - `GET/PUT /admin/settings/smtp`, `POST /admin/settings/smtp/test`
 - `GET/PUT /admin/wapt/config`, `POST /admin/wapt/test`, `POST /admin/wapt/sync`
 - `GET /admin/wapt/hosts`, `GET /admin/wapt/packages`,

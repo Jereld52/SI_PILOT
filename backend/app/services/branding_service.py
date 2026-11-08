@@ -147,7 +147,7 @@ def update_branding(
     return get_branding(db)
 
 
-def _prepare_logo(content: bytes) -> Image.Image:
+def prepare_logo(content: bytes) -> Image.Image:
     if not content:
         raise ValidationAppError("Le fichier du logo est vide.")
     if len(content) > LOGO_MAX_BYTES:
@@ -179,15 +179,7 @@ def _prepare_logo(content: bytes) -> Image.Image:
         raise ValidationAppError("Le logo ne peut pas être converti.") from exc
 
 
-def save_logo(
-    db: Session,
-    *,
-    content: bytes,
-    original_name: str,
-    actor: User,
-    request: Request | None = None,
-) -> BrandingRead:
-    image = _prepare_logo(content)
+def store_logo(image: Image.Image) -> tuple[str, str]:
     base = Path(settings.upload_dir).resolve()
     target_dir = base / "branding"
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -198,12 +190,24 @@ def save_logo(
         temporary.replace(target)
     finally:
         temporary.unlink(missing_ok=True)
-    version = utcnow().isoformat()
+    return "branding/logo.png", utcnow().isoformat()
+
+
+def save_logo(
+    db: Session,
+    *,
+    content: bytes,
+    original_name: str,
+    actor: User,
+    request: Request | None = None,
+) -> BrandingRead:
+    image = prepare_logo(content)
+    filename, version = store_logo(image)
     previous = settings_service.get_value(db, "app.logo_filename")
     settings_service.set_value(
         db,
         "app.logo_filename",
-        "branding/logo.png",
+        filename,
         category="general",
         description="Logo personnalisé de l'application",
     )

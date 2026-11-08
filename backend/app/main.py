@@ -31,6 +31,7 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/auth/login",
     "/api/v1/auth/forgot-password",
     "/api/v1/auth/reset-password",
+    "/api/v1/setup/initialize",
 }
 
 

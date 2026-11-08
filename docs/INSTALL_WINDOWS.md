@@ -1,6 +1,6 @@
 # Installation native Windows
 
-Cible : poste Windows 11 de l'établissement, exécution locale, sans dépendance à XAMPP.
+Cible : poste Windows 11 d'une structure, exécution locale, sans dépendance à XAMPP.
 XAMPP (Apache/PHP/MySQL) n'est pas utilisé : la stack est FastAPI + PostgreSQL + React.
 
 ## 1. Composants installés
@@ -37,7 +37,8 @@ Le script :
 7. crée le venv, installe les dépendances, applique Alembic et charge les référentiels ;
 8. installe les dépendances frontend et compile `frontend\dist`.
 
-Il ne crée pas de compte administrateur : utilisez la commande affichée à la fin.
+Il ne crée pas de compte administrateur : au premier démarrage, l'assistant web de première
+installation propose de créer le compte et de configurer l'identité de la structure.
 La clé `FIELD_ENCRYPTION_KEY` doit être sauvegardée séparément et conservée : sans elle, les
 codes PIN/PUK des lignes mobiles ne peuvent plus être déchiffrés.
 
@@ -66,6 +67,20 @@ port 8000 est déjà actif, il ouvre directement le navigateur. L'icône est
 
 Compile le frontend si nécessaire, active `SERVE_FRONTEND=true`, puis sert l'application
 complète sur <http://127.0.0.1:8000>. C'est le mode recommandé pour l'usage quotidien.
+
+### Assistant de première installation
+
+Au premier accès, si aucun administrateur n'existe, l'application redirige vers `/setup`.
+L'assistant demande le nom de la structure, le nom de l'application, l'accroche, la description,
+le logo, la couleur principale et le compte administrateur. Il crée ensuite le compte et
+applique l'identité sans redémarrage.
+
+Après l'installation, vérifier :
+
+1. la connexion avec le compte administrateur ;
+2. la page **Administration → Système** ;
+3. la configuration SMTP si les notifications e-mail sont utilisées ;
+4. la sauvegarde de la base et du répertoire de stockage.
 
 ### Arrêt
 

@@ -74,6 +74,12 @@ se configurent depuis l'administration.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - **Identité personnalisable** : nom de l'application, nom de la structure, accroche, description,
   adresse de contact, logo et couleur principale, appliqués à l'interface, aux e-mails et aux PDF.
+- **Assistant de première installation** : création du premier administrateur et de l'identité
+  depuis le navigateur, sans ligne de commande.
+- **Centre d'aide intégré** : guides par module, recherche, procédures d'exploitation, sauvegarde,
+  mise à jour et dépannage.
+- **Page Système** : diagnostic, versions, migrations, stockage, sauvegardes, contrôles de
+  sécurité et rapport JSON téléchargeable.
 - Recherche globale filtrée par permissions, couvrant agents, parc, téléphonie, infrastructure,
   stock, tickets et interventions, fournisseurs et licences, contrats, budgets, projets,
   cybersécurité, RGPD, réservations, calendrier et documentation.
@@ -118,19 +124,36 @@ Un raccourci **SI PILOT** est présent sur le bureau. Il exécute
 `scripts\windows\launch.ps1`, démarre PostgreSQL si nécessaire, lance l'application et ouvre
 le navigateur. Si l'application est déjà active, il ouvre simplement la page.
 
-### Compte initial
+### Première installation
 
-Le compte administrateur créé lors de l'installation est documenté dans
-`.runtime/initial-admin.txt` (fichier local ignoré par Git). **Changez ce mot de passe à la
-première connexion.** Le bandeau de l'application le rappelle.
+Au premier démarrage, si aucun administrateur n'existe, l'application ouvre automatiquement
+l'**assistant de première installation** sur `/setup`. Il permet de renseigner :
 
-Pour créer un autre administrateur :
+- le nom de la structure et le nom de l'application ;
+- l'accroche et la description ;
+- le logo et la couleur principale ;
+- le compte administrateur initial.
+
+À la fin, l'assistant connecte directement l'administrateur et applique l'identité à toute
+l'application. Aucun mot de passe par défaut n'est créé.
+
+Les autres comptes se créent ensuite dans **Administration → Utilisateurs**. En secours, la
+création d'un administrateur reste possible en ligne de commande :
 
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m app.cli create-admin `
   --email admin@forets-parcnational.fr --first-name Admin --last-name "SI PILOT" --generate
 ```
+
+### Centre d'aide
+
+Le menu **Aide** et l'icône d'aide de la barre supérieure ouvrent un centre de documentation
+intégré : prise en main, parc, support, infrastructure, gestion, conformité, administration,
+exploitation et dépannage. Les articles sont recherchables et imprimables.
+
+La page **Administration → Système** complète l'aide avec un diagnostic réel de l'application :
+base de données, migrations, stockage, SMTP, WAPT, LDAP, sauvegardes, sécurité et volumétrie.
 
 ### Identité et personnalisation
 
@@ -154,6 +177,7 @@ configurée.
 - **Docker** : voir [`docs/DOCKER.md`](docs/DOCKER.md).
 - **Sauvegarde / restauration** : voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 - **Sécurité** : voir [`docs/SECURITY.md`](docs/SECURITY.md).
+- **Centre d'aide** : voir [`docs/HELP.md`](docs/HELP.md).
 - **Architecture** : voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 Script d'installation reproductible :

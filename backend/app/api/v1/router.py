@@ -27,9 +27,11 @@ from app.api.v1 import (
     rgpd,
     search,
     security,
+    setup,
     statistics,
     stock,
     suppliers,
+    system,
     tickets,
     wapt,
 )
@@ -37,11 +39,13 @@ from app.api.v1 import (
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(branding.router)
+api_router.include_router(setup.router)
 api_router.include_router(auth.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(search.router)
 api_router.include_router(notifications.router)
 api_router.include_router(admin.router)
+api_router.include_router(system.router)
 api_router.include_router(audit.router)
 api_router.include_router(referentials.router)
 api_router.include_router(agents.router)

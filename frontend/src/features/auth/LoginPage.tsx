@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, ArrowRight, Database, LockKeyhole, Network, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -11,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
-import { ApiError } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
+import type { SetupStatus } from "@/types/api";
 
 const schema = z.object({
   email: z.string().email("Adresse e-mail invalide."),
@@ -32,6 +34,11 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const setupQuery = useQuery({
+    queryKey: ["setup-status"],
+    queryFn: () => apiFetch<SetupStatus>("/setup/status"),
+    staleTime: 0,
+  });
   const headline = [branding.tagline.replace(/\.$/, ""), branding.organization_name]
     .filter(Boolean)
     .join(" — ");
@@ -45,6 +52,7 @@ export function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
+  if (setupQuery.data?.needs_setup) return <Navigate to="/setup" replace />;
   if (user) return <Navigate to="/" replace />;
 
   const onSubmit = async (values: LoginValues) => {

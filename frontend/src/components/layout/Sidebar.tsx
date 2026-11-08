@@ -11,9 +11,11 @@ import {
   homeNavItem,
   isNavigationItemActive,
   navigationSections,
+  helpNavItem,
   type NavItem,
 } from "@/components/layout/navigation";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useBranding } from "@/features/branding/BrandingProvider";
 import { cn, fullName } from "@/lib/utils";
 
 interface SidebarProps {
@@ -25,6 +27,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { user, hasPermission } = useAuth();
+  const branding = useBranding();
   const location = useLocation();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
@@ -175,6 +178,8 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           {hasPermission(adminNavItem.permission) ? (
             <div className="mt-2 border-t border-border-soft pt-2">{renderItem(adminNavItem)}</div>
           ) : null}
+
+          <div className="mt-2 border-t border-border-soft pt-2">{renderItem(helpNavItem)}</div>
         </nav>
 
         <div className="relative z-10 border-t border-border-soft p-3">
@@ -192,7 +197,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
           <div className={cn("mt-3 flex items-center", collapsed ? "justify-center" : "justify-between")}>
             {!collapsed ? (
-              <p className="text-[10px] text-muted-2">v0.1.0 · Cockpit SI</p>
+              <p className="text-[10px] text-muted-2">v{branding.version} · {branding.app_name}</p>
             ) : null}
             <Button
               variant="ghost"

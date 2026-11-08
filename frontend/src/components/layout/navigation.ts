@@ -8,6 +8,7 @@ import {
   Download,
   FileText,
   FolderKanban,
+  CircleHelp,
   LayoutDashboard,
   LifeBuoy,
   MonitorSmartphone,
@@ -155,6 +156,13 @@ export const adminNavItem: NavItem = {
   admin: true,
 };
 
+export const helpNavItem: NavItem = {
+  label: "Aide",
+  to: "/aide",
+  icon: CircleHelp,
+  permission: "",
+};
+
 export const navigation: NavItem[] = [
   homeNavItem,
   calendarNavItem,
@@ -170,6 +178,7 @@ export function isNavigationItemActive(item: NavItem, pathname: string): boolean
 
 export function findNavItem(pathname: string): NavItem | undefined {
   if (pathname.startsWith("/admin")) return adminNavItem;
+  if (pathname.startsWith("/aide")) return helpNavItem;
   return (
     navigation
       .filter((item) => item.to !== "/")

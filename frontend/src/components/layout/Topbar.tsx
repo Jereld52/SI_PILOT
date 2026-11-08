@@ -1,5 +1,6 @@
 import {
   ChevronDown,
+  CircleHelp,
   KeyRound,
   LogOut,
   Menu,
@@ -75,6 +76,20 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
           </div>
 
           <div className="ml-auto flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => navigate("/aide")}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                  aria-label="Aide"
+                >
+                  <CircleHelp className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Aide</TooltipContent>
+            </Tooltip>
+
             {hasPermission("admin.settings.read") ? (
               <Tooltip>
                 <TooltipTrigger asChild>

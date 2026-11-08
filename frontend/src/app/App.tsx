@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -9,6 +9,10 @@ import { RequirePermission } from "@/features/auth/RequirePermission";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
 import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { modules } from "@/features/placeholders/modules";
+
+const SetupPage = lazy(() =>
+  import("@/features/setup/SetupPage").then((module) => ({ default: module.SetupPage })),
+);
 
 const AdminImportExportPage = lazy(() =>
   import("@/features/admin/AdminImportExportPage").then((module) => ({
@@ -34,6 +38,11 @@ const RolesPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("@/features/admin/SettingsPage").then((module) => ({
     default: module.SettingsPage,
+  })),
+);
+const AdminSystemPage = lazy(() =>
+  import("@/features/admin/AdminSystemPage").then((module) => ({
+    default: module.AdminSystemPage,
   })),
 );
 const UsersPage = lazy(() =>
@@ -82,6 +91,9 @@ const MobileLinesPage = lazy(() =>
   import("@/features/mobile/MobileLinesPage").then((module) => ({
     default: module.MobileLinesPage,
   })),
+);
+const HelpPage = lazy(() =>
+  import("@/features/help/HelpPage").then((module) => ({ default: module.HelpPage })),
 );
 const ReferentialsPage = lazy(() =>
   import("@/features/referentials/ReferentialsPage").then((module) => ({
@@ -151,6 +163,20 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/setup"
+        element={
+          <Suspense
+            fallback={
+              <div className="flex min-h-screen items-center justify-center px-4">
+                <div className="h-64 w-full max-w-xl animate-pulse rounded-xl bg-surface-2" />
+              </div>
+            }
+          >
+            <SetupPage />
+          </Suspense>
+        }
+      />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
@@ -226,6 +252,14 @@ export function App() {
               element={
                 <RequirePermission permission="admin.settings.read">
                   <SettingsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="system"
+              element={
+                <RequirePermission permission="admin.settings.read">
+                  <AdminSystemPage />
                 </RequirePermission>
               }
             />
@@ -400,6 +434,9 @@ export function App() {
               </RequirePermission>
             }
           />
+
+          <Route path="aide" element={<HelpPage />} />
+          <Route path="aide/:slug" element={<HelpPage />} />
 
           <Route path="imports" element={<Navigate to="/admin/import-export" replace />} />
 

@@ -203,6 +203,107 @@ export interface BrandingInfo {
   version: string;
 }
 
+export interface SetupStatus {
+  needs_setup: boolean;
+  has_admin: boolean;
+  database: string;
+  app_name: string;
+  organization_name: string;
+  version: string;
+}
+
+export interface SetupResult {
+  ok: boolean;
+  user_id: string;
+  email: string;
+  message: string;
+}
+
+export interface DiagnosticCheck {
+  key: string;
+  label: string;
+  status: "ok" | "warning" | "error" | "info";
+  detail: string;
+}
+
+export interface DiagnosticsData {
+  generated_at: string;
+  application: {
+    name: string;
+    organization_name: string;
+    version: string;
+    environment: string;
+    python: string;
+    platform: string;
+    started_at: string;
+    frontend_served: boolean;
+    frontend_dist: string;
+  };
+  database: {
+    status: string;
+    dialect: string;
+    size_bytes: number | null;
+    migration_current: string | null;
+    migration_head: string | null;
+    migration_up_to_date: boolean;
+  };
+  storage: {
+    path: string;
+    exists: boolean;
+    writable: boolean;
+    total_bytes: number | null;
+    free_bytes: number | null;
+    used_bytes: number | null;
+    uploads_bytes: number | null;
+  };
+  smtp: {
+    configured: boolean;
+    enabled: boolean;
+    from_email: string;
+    last_status: string | null;
+    last_sent_at: string | null;
+    last_error: string | null;
+  };
+  wapt: {
+    configured: boolean;
+    enabled: boolean;
+    base_url: string;
+    last_sync_at: string | null;
+  };
+  ldap: {
+    configured: boolean;
+    enabled: boolean;
+    url: string;
+    last_sync_at: string | null;
+  };
+  backup: {
+    directory: string;
+    count: number;
+    last_backup_at: string | null;
+    last_backup_name: string | null;
+    last_backup_size: number | null;
+  };
+  security: { checks: DiagnosticCheck[] };
+  counts: Record<string, number>;
+  warnings: string[];
+}
+
+export interface AboutData {
+  name: string;
+  organization_name: string;
+  version: string;
+  environment: string;
+  python: string;
+  platform: string;
+  started_at: string;
+  database_url: string;
+  upload_dir: string;
+  migration_current: string | null;
+  migration_head: string | null;
+  update_steps: string[];
+  documentation: Array<{ label: string; path: string }>;
+}
+
 export interface SessionInfo {
   id: string;
   ip: string | null;
