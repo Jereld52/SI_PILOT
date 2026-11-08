@@ -93,7 +93,7 @@ Pour créer un autre administrateur :
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m app.cli create-admin `
-  --email admin@pnfor.fr --first-name Admin --last-name "SI PNFor" --generate
+  --email admin@forets-parcnational.fr --first-name Admin --last-name "SI PNFor" --generate
 ```
 
 ## 3. Installation complète

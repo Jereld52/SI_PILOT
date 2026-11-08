@@ -26,7 +26,7 @@ def ensure_referentials(client, csrf, csrf_headers):
         assert response.status_code == 201, response.text
         location = response.json()
 
-    agents = client.get("/api/v1/agents", params={"q": "jean.test@pnfor.fr"}).json()
+    agents = client.get("/api/v1/agents", params={"q": "jean.test@forets-parcnational.fr"}).json()
     if agents["total"] == 0:
         response = client.post(
             "/api/v1/agents",
@@ -34,7 +34,7 @@ def ensure_referentials(client, csrf, csrf_headers):
             json={
                 "first_name": "Jean",
                 "last_name": "Test",
-                "email_pro": "jean.test@pnfor.fr",
+                "email_pro": "jean.test@forets-parcnational.fr",
                 "service_id": service["id"],
                 "location_id": location["id"],
                 "function_label": "Technicien",
@@ -101,7 +101,7 @@ def test_referentials_and_custom_asset_naming(base_data):
     assert response.status_code == 201, response.text
     asset = response.json()
     assert asset["asset_tag"].startswith("PNFOR-PC-")
-    assert asset["assigned_agent"]["email_pro"] == "jean.test@pnfor.fr"
+    assert asset["assigned_agent"]["email_pro"] == "jean.test@forets-parcnational.fr"
 
     history = client.get(f"/api/v1/assets/{asset['id']}/history")
     assert history.status_code == 200
@@ -113,7 +113,7 @@ def test_agent_csv_import(base_data):
     client = base_data["client"]
     headers = base_data["headers"]
     suffix = uuid4().hex[:8]
-    email = f"import.agent.{suffix}@pnfor.fr"
+    email = f"import.agent.{suffix}@forets-parcnational.fr"
     csv_content = (
         "nom;prenom;email_pro;telephone;service_code;fonction;site_code;login;date_arrivee;date_depart;statut;notes\n"
         f"Import;Agent;{email};0102030405;DSI;Technicien;SIEGE;import.{suffix};01/01/2026;;active;Test import\n"
@@ -145,7 +145,7 @@ def test_asset_csv_import_and_duplicate(base_data):
     serial = f"SN-IMP-{suffix}"
     csv_content = (
         "nom;numero_inventaire;categorie_code;marque;modele;numero_serie;mac;ip;nom_machine;os;version_os;date_achat;date_mise_en_service;fin_garantie;prix;agent_email;service_code;site_code;etat;commentaires\n"
-        f"Imprimante {suffix};;printer;HP;LaserJet;{serial};;;PRINT-{suffix};Windows;1;01/01/2025;15/01/2025;01/01/2028;250,00;jean.test@pnfor.fr;DSI;SIEGE;in_stock;Test import\n"
+        f"Imprimante {suffix};;printer;HP;LaserJet;{serial};;;PRINT-{suffix};Windows;1;01/01/2025;15/01/2025;01/01/2028;250,00;jean.test@forets-parcnational.fr;DSI;SIEGE;in_stock;Test import\n"
     )
     response = client.post(
         "/api/v1/imports/preview",
@@ -181,7 +181,7 @@ def test_asset_csv_import_and_duplicate(base_data):
 def test_technician_cannot_manage_referentials_or_import(admin_client, csrf_headers):
     client, csrf = admin_client
     suffix = uuid4().hex[:8]
-    email = f"tech.phase3.{suffix}@pnfor.fr"
+    email = f"tech.phase3.{suffix}@forets-parcnational.fr"
     roles = client.get("/api/v1/admin/roles").json()
     technician_role = next(role for role in roles if role["code"] == "technician")
     created = client.post(

@@ -82,7 +82,7 @@ ASSET_HEADERS = [
 AGENT_EXAMPLE = [
     "EXEMPLE",
     "A_Supprimer",
-    "exemple.agent@pnfor.fr",
+    "exemple.agent@forets-parcnational.fr",
     "0102030405",
     "DSI",
     "Technicien",
@@ -110,7 +110,7 @@ ASSET_EXAMPLE = [
     "15/01/2025",
     "01/01/2028",
     "850.00",
-    "exemple.agent@pnfor.fr",
+    "exemple.agent@forets-parcnational.fr",
     "DSI",
     "SIEGE",
     "good",
@@ -482,7 +482,7 @@ def _is_example(row: dict[str, str]) -> bool:
     reference = row.get("reference", "").replace(" ", "")
     return (
         name.startswith("EXEMPLE")
-        or email == "exemple.agent@pnfor.fr"
+        or email == "exemple.agent@forets-parcnational.fr"
         or serial == "SN-EXEMPLE"
         or reference == "0600000000"
     )

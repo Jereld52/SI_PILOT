@@ -4,7 +4,7 @@ from uuid import uuid4
 def test_admin_user_crud(admin_client, csrf_headers):
     client, csrf = admin_client
     suffix = uuid4().hex[:8]
-    email = f"test.{suffix}@pnfor.fr"
+    email = f"test.{suffix}@forets-parcnational.fr"
 
     response = client.post(
         "/api/v1/admin/users",

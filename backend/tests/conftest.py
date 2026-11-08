@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 TEST_DB = Path("test_si_pnfor.db")
-ADMIN_EMAIL = "admin.test@pnfor.fr"
+ADMIN_EMAIL = "admin.test@forets-parcnational.fr"
 ADMIN_PASSWORD = "AdminTest2026!"
 
 

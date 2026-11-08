@@ -141,7 +141,7 @@ export function LoginPage() {
                 type="email"
                 autoComplete="username"
                 autoFocus
-                placeholder="prenom.nom@pnfor.fr"
+                placeholder="prenom.nom@forets-parcnational.fr"
                 invalid={Boolean(errors.email)}
                 {...register("email")}
               />
