@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   Trash2,
 } from "lucide-react";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -143,6 +144,24 @@ export function SecurityPage() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [severityFilter, setSeverityFilter] = useState("");
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+    const requested = searchParams.get("tab");
+    const allowed: TabKey[] = [
+      "incidents",
+      "actions",
+      "vulnerabilities",
+      "backups",
+      "certificates",
+      "audits",
+    ];
+    if (requested && allowed.includes(requested as TabKey)) {
+      setTab(requested as TabKey);
+    }
+  }, [searchParams]);
 
   const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
   const [editingIncident, setEditingIncident] = useState<SecurityIncidentItem | null>(null);

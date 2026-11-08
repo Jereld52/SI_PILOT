@@ -14,7 +14,8 @@ import {
   ShieldAlert,
   UserCheck,
 } from "lucide-react";
-import { type ReactNode, useDeferredValue, useState } from "react";
+import { type ReactNode, useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -116,6 +117,17 @@ export function RgpdPage() {
   const [tab, setTab] = useState<TabKey>("traitements");
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+    const requested = searchParams.get("tab");
+    const allowed: TabKey[] = ["traitements", "collectes", "demandes", "droits", "violations"];
+    if (requested && allowed.includes(requested as TabKey)) {
+      setTab(requested as TabKey);
+    }
+  }, [searchParams]);
 
   const [processingOpen, setProcessingOpen] = useState(false);
   const [editingProcessing, setEditingProcessing] = useState<ProcessingActivityItem | null>(null);

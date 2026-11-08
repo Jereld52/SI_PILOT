@@ -34,8 +34,8 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -183,6 +183,22 @@ export function CalendarPage() {
   const [reservationDialogOpen, setReservationDialogOpen] = useState(false);
   const [reservationDefaultDate, setReservationDefaultDate] = useState<Date | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const requested = searchParams.get("tab");
+    if (requested === "calendar" || requested === "actions") {
+      setTab(requested);
+    }
+    const date = searchParams.get("date");
+    if (date) {
+      const parsed = new Date(date);
+      if (!Number.isNaN(parsed.getTime())) {
+        setCurrentDate(parsed);
+        setView("day");
+      }
+    }
+  }, [searchParams]);
 
   const rangeStart =
     view === "day"
@@ -260,7 +276,7 @@ export function CalendarPage() {
   const reservationEquipments = reservationEquipmentsQuery.data ?? [];
   const reservationAgents = reservationAgentsQuery.data?.items ?? [];
 
-  const displayItems: CalendarDisplayItem[] = [
+  const baseItems: CalendarDisplayItem[] = [
     ...events.map((event) => ({
       key: `event-${event.id}`,
       kind: "event" as const,
@@ -287,6 +303,18 @@ export function CalendarPage() {
       reservation,
     })),
   ].sort((left, right) => left.start.localeCompare(right.start));
+
+  const globalQuery = searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const displayItems = globalQuery
+    ? baseItems.filter((item) =>
+        `${item.title} ${item.subtitle}`.toLowerCase().includes(globalQuery),
+      )
+    : baseItems;
+  const visibleActions = globalQuery
+    ? actions.filter((action) =>
+        `${action.title} ${action.description ?? ""}`.toLowerCase().includes(globalQuery),
+      )
+    : actions;
 
   const refreshEvents = () => {
     void eventsQuery.refetch();
@@ -820,7 +848,7 @@ export function CalendarPage() {
                   <Skeleton key={index} className="h-12 rounded-lg" />
                 ))}
               </div>
-            ) : actions.length === 0 ? (
+            ) : visibleActions.length === 0 ? (
               <EmptyState
                 icon={CheckSquare}
                 title="Aucune action"
@@ -839,7 +867,7 @@ export function CalendarPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {actions.map((action) => (
+                  {visibleActions.map((action) => (
                     <TableRow key={action.id}>
                       <TableCell>
                         <p className="text-xs font-medium text-foreground">{action.title}</p>

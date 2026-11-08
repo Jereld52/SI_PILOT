@@ -3,13 +3,21 @@ from collections.abc import Iterable
 from urllib.parse import quote
 
 from app.core.permissions import has_permission
-from app.models.assets import Asset, Supplier
+from app.models.assets import Asset, License, Supplier
 from app.models.auth import User
+from app.models.budget import Budget
+from app.models.calendar import ActionItem, CalendarEvent
 from app.models.contracts import Contract
 from app.models.documents import Document
+from app.models.infrastructure import InfraEquipment
+from app.models.mobile import MobileLine
 from app.models.organization import Agent
 from app.models.projects import Project
-from app.models.tickets import Ticket
+from app.models.reservations import ReservableEquipment
+from app.models.rgpd import ProcessingActivity
+from app.models.security import Certificate, SecurityAudit, SecurityIncident, Vulnerability
+from app.models.stock import StockItem
+from app.models.tickets import Intervention, Ticket
 from app.schemas.search import SearchResponse, SearchResult
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -251,6 +259,351 @@ def global_search(
                 query=clean,
             )
 
+    if can("mobile_lines", "mobile_lines.read"):
+        mobile_rows = db.scalars(
+            select(MobileLine)
+            .where(
+                or_(
+                    MobileLine.line_number.ilike(pattern, escape="\\"),
+                    MobileLine.holder_name.ilike(pattern, escape="\\"),
+                    MobileLine.email.ilike(pattern, escape="\\"),
+                    MobileLine.role_label.ilike(pattern, escape="\\"),
+                    MobileLine.plan_name.ilike(pattern, escape="\\"),
+                    MobileLine.company_name.ilike(pattern, escape="\\"),
+                    MobileLine.contract_number.ilike(pattern, escape="\\"),
+                    MobileLine.imei_communicating.ilike(pattern, escape="\\"),
+                    MobileLine.imei_purchased.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(MobileLine.line_number)
+            .limit(limit)
+        ).all()
+        for line in mobile_rows:
+            _add(
+                results,
+                type_name="mobile_line",
+                id_value=line.id,
+                title=line.holder_name or line.line_number,
+                subtitle=f"{line.line_number} · {line.plan_name or line.status}",
+                link=_search_link("/telephonie", line.line_number),
+                query=clean,
+            )
+
+    if can("infrastructure", "infrastructure.read"):
+        infra_rows = db.scalars(
+            select(InfraEquipment)
+            .where(
+                or_(
+                    InfraEquipment.name.ilike(pattern, escape="\\"),
+                    InfraEquipment.ip_address.ilike(pattern, escape="\\"),
+                    InfraEquipment.mac_address.ilike(pattern, escape="\\"),
+                    InfraEquipment.role.ilike(pattern, escape="\\"),
+                    InfraEquipment.os_name.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(InfraEquipment.name)
+            .limit(limit)
+        ).all()
+        for equipment in infra_rows:
+            _add(
+                results,
+                type_name="infrastructure",
+                id_value=equipment.id,
+                title=equipment.name,
+                subtitle=f"{equipment.ip_address or 'IP non renseignée'} · {equipment.type}",
+                link=_search_link("/infrastructure", equipment.name),
+                query=clean,
+            )
+
+    if can("stock", "stock.read"):
+        stock_rows = db.scalars(
+            select(StockItem)
+            .where(
+                or_(
+                    StockItem.name.ilike(pattern, escape="\\"),
+                    StockItem.reference.ilike(pattern, escape="\\"),
+                    StockItem.brand.ilike(pattern, escape="\\"),
+                    StockItem.model.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(StockItem.name)
+            .limit(limit)
+        ).all()
+        for item in stock_rows:
+            _add(
+                results,
+                type_name="stock_item",
+                id_value=item.id,
+                title=item.name,
+                subtitle=f"{item.reference} · {item.quantity} {item.unit}",
+                link=_search_link("/stock", item.reference),
+                query=clean,
+            )
+
+    if can("licenses", "licenses.read"):
+        license_rows = db.scalars(
+            select(License)
+            .where(
+                or_(
+                    License.name.ilike(pattern, escape="\\"),
+                    License.vendor.ilike(pattern, escape="\\"),
+                    License.license_type.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(License.name)
+            .limit(limit)
+        ).all()
+        for license_row in license_rows:
+            _add(
+                results,
+                type_name="license",
+                id_value=license_row.id,
+                title=license_row.name,
+                subtitle=license_row.vendor or license_row.license_type,
+                link=_search_link("/fournisseurs", license_row.name) + "&tab=licenses",
+                query=clean,
+            )
+
+    if can("security_incidents", "security.read"):
+        incident_rows = db.scalars(
+            select(SecurityIncident)
+            .where(
+                or_(
+                    SecurityIncident.reference.ilike(pattern, escape="\\"),
+                    SecurityIncident.title.ilike(pattern, escape="\\"),
+                    SecurityIncident.description.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(SecurityIncident.detected_at.desc())
+            .limit(limit)
+        ).all()
+        for incident in incident_rows:
+            _add(
+                results,
+                type_name="security_incident",
+                id_value=incident.id,
+                title=incident.title,
+                subtitle=f"{incident.reference} · {incident.severity}",
+                link=_search_link("/cybersecurite", incident.reference) + "&tab=incidents",
+                query=clean,
+            )
+
+    if can("vulnerabilities", "security.read"):
+        vulnerability_rows = db.scalars(
+            select(Vulnerability)
+            .where(
+                or_(
+                    Vulnerability.title.ilike(pattern, escape="\\"),
+                    Vulnerability.cve_id.ilike(pattern, escape="\\"),
+                    Vulnerability.remediation.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(Vulnerability.detected_at.desc().nulls_last())
+            .limit(limit)
+        ).all()
+        for vulnerability in vulnerability_rows:
+            _add(
+                results,
+                type_name="vulnerability",
+                id_value=vulnerability.id,
+                title=vulnerability.title,
+                subtitle=f"{vulnerability.cve_id or 'Sans CVE'} · {vulnerability.severity}",
+                link=_search_link(
+                    "/cybersecurite", vulnerability.cve_id or vulnerability.title
+                )
+                + "&tab=vulnerabilities",
+                query=clean,
+            )
+
+    if can("certificates", "security.read"):
+        certificate_rows = db.scalars(
+            select(Certificate)
+            .where(
+                or_(
+                    Certificate.common_name.ilike(pattern, escape="\\"),
+                    Certificate.issuer.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(Certificate.valid_to)
+            .limit(limit)
+        ).all()
+        for certificate in certificate_rows:
+            _add(
+                results,
+                type_name="certificate",
+                id_value=certificate.id,
+                title=certificate.common_name,
+                subtitle=f"{certificate.issuer or 'Émetteur inconnu'} · {certificate.valid_to.isoformat()}",
+                link=_search_link("/cybersecurite", certificate.common_name)
+                + "&tab=certificates",
+                query=clean,
+            )
+
+    if can("security_audits", "security.read"):
+        audit_rows = db.scalars(
+            select(SecurityAudit)
+            .where(
+                or_(
+                    SecurityAudit.title.ilike(pattern, escape="\\"),
+                    SecurityAudit.auditor.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(SecurityAudit.planned_at.desc().nulls_last())
+            .limit(limit)
+        ).all()
+        for audit in audit_rows:
+            _add(
+                results,
+                type_name="security_audit",
+                id_value=audit.id,
+                title=audit.title,
+                subtitle=audit.auditor or audit.type,
+                link=_search_link("/cybersecurite", audit.title) + "&tab=audits",
+                query=clean,
+            )
+
+    if can("rgpd_processing", "rgpd.read"):
+        processing_rows = db.scalars(
+            select(ProcessingActivity)
+            .where(
+                or_(
+                    ProcessingActivity.reference.ilike(pattern, escape="\\"),
+                    ProcessingActivity.name.ilike(pattern, escape="\\"),
+                    ProcessingActivity.purpose.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(ProcessingActivity.name)
+            .limit(limit)
+        ).all()
+        for activity in processing_rows:
+            _add(
+                results,
+                type_name="rgpd_processing",
+                id_value=activity.id,
+                title=activity.name,
+                subtitle=activity.reference,
+                link=_search_link("/rgpd", activity.reference) + "&tab=traitements",
+                query=clean,
+            )
+
+    if can("reservation_equipments", "reservations.read"):
+        reservation_rows = db.scalars(
+            select(ReservableEquipment)
+            .where(
+                or_(
+                    ReservableEquipment.name.ilike(pattern, escape="\\"),
+                    ReservableEquipment.description.ilike(pattern, escape="\\"),
+                    ReservableEquipment.notes.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(ReservableEquipment.sort_order, ReservableEquipment.name)
+            .limit(limit)
+        ).all()
+        for reservable in reservation_rows:
+            _add(
+                results,
+                type_name="reservation_equipment",
+                id_value=reservable.id,
+                title=reservable.name,
+                subtitle=f"Matériel réservable · {reservable.category}",
+                link=_search_link("/reservations", reservable.name) + "&tab=equipments",
+                query=clean,
+            )
+
+    if can("interventions", "interventions.read"):
+        intervention_rows = db.scalars(
+            select(Intervention)
+            .where(
+                or_(
+                    Intervention.reference.ilike(pattern, escape="\\"),
+                    Intervention.title.ilike(pattern, escape="\\"),
+                    Intervention.description.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(Intervention.scheduled_at.desc().nulls_last())
+            .limit(limit)
+        ).all()
+        for intervention in intervention_rows:
+            _add(
+                results,
+                type_name="intervention",
+                id_value=intervention.id,
+                title=intervention.title,
+                subtitle=f"{intervention.reference} · {intervention.status}",
+                link=_search_link("/demandes", intervention.reference) + "&tab=interventions",
+                query=clean,
+            )
+
+    if can("calendar_events", "calendar.read"):
+        event_rows = db.scalars(
+            select(CalendarEvent)
+            .where(
+                or_(
+                    CalendarEvent.title.ilike(pattern, escape="\\"),
+                    CalendarEvent.description.ilike(pattern, escape="\\"),
+                    CalendarEvent.location.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(CalendarEvent.start_at.desc())
+            .limit(limit)
+        ).all()
+        for event in event_rows:
+            _add(
+                results,
+                type_name="calendar_event",
+                id_value=event.id,
+                title=event.title,
+                subtitle=f"{event.start_at:%d/%m/%Y %H:%M} · {event.event_type}",
+                link=_search_link("/calendrier", event.title)
+                + f"&date={quote(event.start_at.isoformat())}",
+                query=clean,
+            )
+
+    if can("calendar_actions", "calendar.read"):
+        action_rows = db.scalars(
+            select(ActionItem)
+            .where(
+                or_(
+                    ActionItem.title.ilike(pattern, escape="\\"),
+                    ActionItem.description.ilike(pattern, escape="\\"),
+                )
+            )
+            .order_by(ActionItem.due_date.asc().nulls_last())
+            .limit(limit)
+        ).all()
+        for action in action_rows:
+            _add(
+                results,
+                type_name="calendar_action",
+                id_value=action.id,
+                title=action.title,
+                subtitle=f"Action · {action.status}",
+                link=_search_link("/calendrier", action.title) + "&tab=actions",
+                query=clean,
+            )
+
+    if can("budgets", "budget.read"):
+        budget_conditions: list = [Budget.name.ilike(pattern, escape="\\")]
+        if clean.isdigit():
+            budget_conditions.append(Budget.year == int(clean))
+        budget_rows = db.scalars(
+            select(Budget)
+            .where(or_(*budget_conditions))
+            .order_by(Budget.year.desc())
+            .limit(limit)
+        ).all()
+        for budget in budget_rows:
+            _add(
+                results,
+                type_name="budget",
+                id_value=budget.id,
+                title=f"Budget {budget.year}",
+                subtitle=budget.name,
+                link=f"/budget?year={budget.year}",
+                query=clean,
+            )
+
     results.sort(key=lambda item: (-item.score, item.title.lower()))
+
     elapsed = int((time.perf_counter() - started) * 1000)
     return SearchResponse(query=clean, results=results, total=len(results), took_ms=elapsed)

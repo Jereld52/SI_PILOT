@@ -10,6 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,12 @@ export function StockPage() {
   useEffect(() => {
     setLowOnly(false);
   }, [categoryFilter]);
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const itemsQuery = useQuery({
     queryKey: ["stock", "items", deferredSearch, categoryFilter, lowOnly, includeArchived],

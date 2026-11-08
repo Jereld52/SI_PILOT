@@ -10,6 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +139,7 @@ export function BudgetPage() {
   const lines = budget?.lines ?? [];
   const commitments = budget?.commitments ?? [];
   const invoices = budget?.invoices ?? [];
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (!budgets.length) {
@@ -148,6 +150,13 @@ export function BudgetPage() {
       setSelectedId(budgets[0].id);
     }
   }, [budgets, selectedId]);
+
+  useEffect(() => {
+    const year = searchParams.get("year");
+    if (!year) return;
+    const target = budgets.find((item) => String(item.year) === year);
+    if (target) setSelectedId(target.id);
+  }, [searchParams, budgets]);
 
   const refresh = () => {
     void detailQuery.refetch();

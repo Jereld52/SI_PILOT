@@ -9,6 +9,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { ImportDialog } from "@/features/imports/ImportDialog";
 import { MobileLineDetailDialog } from "@/features/mobile/MobileLineDetailDialog";
@@ -54,6 +55,12 @@ export function MobileLinesPage() {
   useEffect(() => {
     setPage(1);
   }, [deferredSearch, status, plan, secondary]);
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const metaQuery = useQuery({
     queryKey: ["mobile-lines", "meta"],

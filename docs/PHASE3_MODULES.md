@@ -71,6 +71,16 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   dates, montants, pourcentages et indicateur visuel du sens de tri.
 - Nouvel endpoint `GET /api/v1/dashboard/cockpit` alimenté par les données réelles.
 
+## Recherche globale
+
+- Recherche unifiée dans tous les modules accessibles : utilisateurs, agents, parc, lignes
+  mobiles, infrastructure, stock, tickets, interventions, fournisseurs, licences, contrats,
+  budgets, projets, incidents et vulnérabilités, certificats et audits, RGPD, matériel
+  réservable, événements et actions du calendrier, documentation.
+- Chaque résultat renvoie vers la page correspondante avec le filtre prérempli ; les onglets
+  concernés sont ouverts automatiquement quand nécessaire.
+- Les résultats restent filtrés par les permissions de l'utilisateur.
+
 ## Parc informatique enrichi
 
 - Les données source WAPT sont conservées dans `assets.external_data_json`.

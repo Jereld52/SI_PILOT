@@ -19,7 +19,8 @@ import {
   Plus,
   RefreshCw,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ export function ReservationsPage() {
 
   const [tab, setTab] = useState<TabKey>("planning");
   const [weekOffset, setWeekOffset] = useState(0);
+  const [searchParams] = useSearchParams();
   const [reservationOpen, setReservationOpen] = useState(false);
   const [editingReservation, setEditingReservation] =
     useState<EquipmentReservationItem | null>(null);
@@ -103,6 +105,22 @@ export function ReservationsPage() {
   const reservations = reservationsQuery.data ?? [];
   const agents = agentsQuery.data?.items ?? [];
   const locations = locationsQuery.data ?? [];
+  const equipmentQuery = searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const filteredEquipments = equipmentQuery
+    ? equipments.filter((equipment) =>
+        [equipment.name, equipment.category, equipment.description ?? ""]
+          .join(" ")
+          .toLowerCase()
+          .includes(equipmentQuery),
+      )
+    : equipments;
+
+  useEffect(() => {
+    const requested = searchParams.get("tab");
+    if (requested === "planning" || requested === "equipments") {
+      setTab(requested);
+    }
+  }, [searchParams]);
 
   const refresh = () => {
     void reservationsQuery.refetch();
@@ -208,7 +226,7 @@ export function ReservationsPage() {
                   <Skeleton key={index} className="h-14 rounded-lg" />
                 ))}
               </div>
-            ) : equipments.length === 0 ? (
+            ) : filteredEquipments.length === 0 ? (
               <EmptyState
                 icon={CalendarCheck}
                 title="Aucun matériel réservable"
@@ -244,7 +262,7 @@ export function ReservationsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {equipments.map((equipment) => (
+                    {filteredEquipments.map((equipment) => (
                       <tr key={equipment.id} className="border-b border-border-soft/60 last:border-0">
                         <td className="px-3 py-2 align-top">
                           <p className="text-[11px] font-medium text-foreground">{equipment.name}</p>
@@ -355,7 +373,7 @@ export function ReservationsPage() {
                   <Skeleton key={index} className="h-12 rounded-lg" />
                 ))}
               </div>
-            ) : equipments.length === 0 ? (
+            ) : filteredEquipments.length === 0 ? (
               <EmptyState
                 icon={Package}
                 title="Aucun matériel"

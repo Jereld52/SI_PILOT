@@ -83,6 +83,13 @@ export function SuppliersPage() {
     if (query) setSearch(query);
   }, [searchParams]);
 
+  useEffect(() => {
+    const requested = searchParams.get("tab");
+    if (requested === "licenses" || requested === "suppliers") {
+      setTab(requested);
+    }
+  }, [searchParams]);
+
   const suppliersQuery = useQuery({
     queryKey: ["suppliers", deferredSearch],
     queryFn: () => apiFetch<SupplierItem[]>(`/suppliers${buildQuery({ q: deferredSearch })}`),

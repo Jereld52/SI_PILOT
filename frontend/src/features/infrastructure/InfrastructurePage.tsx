@@ -14,8 +14,8 @@ import {
   ShieldCheck,
   Trash2,
 } from "lucide-react";
-import { useDeferredValue, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDeferredValue, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +133,12 @@ export function InfrastructurePage() {
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [authorizingId, setAuthorizingId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const equipmentsQuery = useQuery({
     queryKey: ["infrastructure", "equipments", deferredSearch, typeFilter, statusFilter],

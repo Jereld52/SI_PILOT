@@ -65,7 +65,9 @@ le RGPD, la documentation et les échéances.
 - Page **Exports sur mesure** : choix du jeu de données, des colonnes, des filtres (statut, type,
   site, période) et du format XLSX/PDF, pour produire un fichier ciblé.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
-- Recherche globale filtrée par permissions.
+- Recherche globale filtrée par permissions, couvrant agents, parc, téléphonie, infrastructure,
+  stock, tickets et interventions, fournisseurs et licences, contrats, budgets, projets,
+  cybersécurité, RGPD, réservations, calendrier et documentation.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Menu latéral regroupé en sections repliables (Pilotage, Support & parc, Infrastructure, Gestion,
   Conformité) pour réduire la hauteur et le nombre d'entrées visibles.

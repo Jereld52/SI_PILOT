@@ -47,3 +47,26 @@ def test_search_links_target_existing_pages(admin_client, csrf_headers):
 
     for result in results:
         assert not result["link"].startswith("/parc/")
+
+    line_number = f"06{suffix[:8]}"
+    mobile = client.post(
+        "/api/v1/mobile-lines",
+        headers=csrf_headers(csrf),
+        json={
+            "line_number": line_number,
+            "holder_name": f"Mobile Recherche {suffix}",
+            "status": "Actif",
+        },
+    )
+    assert mobile.status_code == 201, mobile.text
+    found_mobile = client.get(
+        "/api/v1/search", params={"q": mobile.json()["holder_name"]}
+    )
+    assert found_mobile.status_code == 200
+    mobile_match = next(
+        item for item in found_mobile.json()["results"] if item["type"] == "mobile_line"
+    )
+    assert mobile_match["link"].startswith("/telephonie?q=")
+
+    empty = client.get("/api/v1/search", params={"q": "zzzz-introuvable-xyz"})
+    assert empty.status_code == 200, empty.text

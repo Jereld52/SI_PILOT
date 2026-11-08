@@ -118,6 +118,10 @@ export function TicketsPage() {
   useEffect(() => {
     const query = searchParams.get("q");
     if (query) setSearch(query);
+    const requested = searchParams.get("tab");
+    if (requested === "tickets" || requested === "interventions") {
+      setTab(requested);
+    }
   }, [searchParams]);
 
   const metaQuery = useQuery({

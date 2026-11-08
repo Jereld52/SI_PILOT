@@ -1,14 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  BadgeCheck,
   BookOpen,
+  Bug,
   Building2,
+  CalendarClock,
+  CalendarDays,
+  CheckSquare,
   FileText,
   FolderKanban,
+  KeyRound,
   LifeBuoy,
   MonitorSmartphone,
+  Package,
+  Scale,
   Search,
+  Server,
+  ShieldAlert,
+  Smartphone,
   UserRound,
   Users,
+  Wallet,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -28,6 +41,20 @@ const typeIcons: Record<string, LucideIcon> = {
   project: FolderKanban,
   document: BookOpen,
   supplier: Building2,
+  mobile_line: Smartphone,
+  infrastructure: Server,
+  stock_item: Package,
+  license: KeyRound,
+  security_incident: ShieldAlert,
+  vulnerability: Bug,
+  certificate: BadgeCheck,
+  security_audit: ShieldAlert,
+  rgpd_processing: Scale,
+  reservation_equipment: CalendarClock,
+  intervention: Wrench,
+  calendar_event: CalendarDays,
+  calendar_action: CheckSquare,
+  budget: Wallet,
 };
 
 export function GlobalSearch() {
@@ -111,7 +138,7 @@ export function GlobalSearch() {
               Recherche…
             </div>
           ) : data && data.results.length > 0 ? (
-            <div className="space-y-0.5">
+            <div className="max-h-[420px] space-y-0.5 overflow-y-auto">
               {data.results.map((result) => {
                 const Icon = typeIcons[result.type] ?? Search;
                 return (
