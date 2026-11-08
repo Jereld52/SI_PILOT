@@ -10,10 +10,14 @@ from app.core.errors import PermissionDeniedError
 from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.exports import assets as assets_export
+from app.exports import infrastructure as infrastructure_export
 from app.exports import mobile as mobile_export
 from app.exports import statistics as statistics_export
 from app.exports import tickets as tickets_export
+from app.models.assets import Asset, AssetAssignment
 from app.models.auth import User
+from app.models.infrastructure import InfraDependency, InfraEquipment, MonitoringCheck
+from app.models.organization import Agent, Location, Service
 from app.models.tickets import Ticket
 from app.services import assets_service, mobile_service, statistics_service
 from app.services.audit_service import write_audit
@@ -36,7 +40,34 @@ def export_assets(
     if not has_permission(actor, "assets.read"):
         raise PermissionDeniedError("Vous ne pouvez pas exporter le parc.")
     assets = assets_service.list_assets(db, include_archived=False)
-    content = assets_export.assets_xlsx(assets) if format == "xlsx" else assets_export.assets_pdf(assets)
+    assignment_rows = db.execute(
+        select(AssetAssignment, Asset, Agent, Service, Location)
+        .join(Asset, AssetAssignment.asset_id == Asset.id)
+        .outerjoin(Agent, AssetAssignment.agent_id == Agent.id)
+        .outerjoin(Service, AssetAssignment.service_id == Service.id)
+        .outerjoin(Location, AssetAssignment.location_id == Location.id)
+        .order_by(Asset.asset_tag, AssetAssignment.started_at)
+    ).all()
+    assignments = [
+        {
+            "asset_tag": asset.asset_tag,
+            "asset_name": asset.name,
+            "agent_name": f"{agent.first_name} {agent.last_name}" if agent else "",
+            "service_name": service.name if service else "",
+            "location_name": location.name if location else "",
+            "started_at": assignment.started_at.isoformat()
+            if assignment.started_at
+            else "",
+            "ended_at": assignment.ended_at.isoformat() if assignment.ended_at else "",
+            "reason": assignment.reason or "",
+        }
+        for assignment, asset, agent, service, location in assignment_rows
+    ]
+    content = (
+        assets_export.assets_xlsx(assets, assignments=assignments)
+        if format == "xlsx"
+        else assets_export.assets_pdf(assets)
+    )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         if format == "xlsx"
@@ -216,4 +247,67 @@ def export_mobile_lines(
         content=content,
         media_type=media_type,
         headers={"Content-Disposition": f'attachment; filename="{_filename("lignes-mobiles", format)}"'},
+    )
+
+
+@router.get("/infrastructure")
+def export_infrastructure(
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "infrastructure.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter l'infrastructure.")
+    equipments = list(
+        db.scalars(
+            select(InfraEquipment).order_by(InfraEquipment.type, InfraEquipment.name)
+        ).all()
+    )
+    dependencies = list(
+        db.scalars(
+            select(InfraDependency).order_by(
+                InfraDependency.dependency_type, InfraDependency.source_id
+            )
+        ).all()
+    )
+    checks = list(
+        db.scalars(
+            select(MonitoringCheck).order_by(MonitoringCheck.check_type)
+        ).all()
+    )
+    content = (
+        infrastructure_export.infrastructure_xlsx(equipments, dependencies, checks)
+        if format == "xlsx"
+        else infrastructure_export.infrastructure_pdf(equipments)
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="infrastructure_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label=f"infrastructure.{format}",
+        after={
+            "count": len(equipments),
+            "dependencies": len(dependencies),
+            "checks": len(checks),
+            "format": format,
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{_filename("infrastructure", format)}"'
+            )
+        },
     )

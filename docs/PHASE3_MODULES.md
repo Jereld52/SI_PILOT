@@ -41,8 +41,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Imports fichiers : agents, équipements, lignes mobiles, fournisseurs, licences et infrastructure,
   avec prévisualisation, détection des doublons, rapport d'erreurs, application auditée, modèles
   téléchargeables et historique.
-- Exports disponibles : parc informatique, lignes mobiles, tickets par période (jour/semaine/mois/
-  année) et statistiques consolidées, en XLSX ou PDF.
+- Exports disponibles : parc informatique, lignes mobiles, infrastructure, tickets par période
+  (jour/semaine/mois/année) et statistiques consolidées, en XLSX ou PDF.
 - **Administration → Sources de données** regroupe les connexions d'enrichissement.
 - **LDAP/LDAPS** : URL, base de recherche, compte de service, filtre utilisateurs et vérification TLS.
   Le mot de passe du compte de service est chiffré avec `FIELD_ENCRYPTION_KEY` et n'est jamais
@@ -77,12 +77,23 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   authentification ; aucun accès anonyme n'est possible.
 - Le QR peut être régénéré : l'ancien lien ne pointe alors plus vers la fiche.
 
-## Exports
+## Exports détaillés
 
 - `GET /api/v1/exports/assets?format=xlsx|pdf`
+  - XLSX : feuille **Parc détaillé** avec toutes les colonnes de la fiche (identité, matériel,
+    réseau, système, affectation, achat, garantie, état, WAPT dynamique et champs externes),
+    feuille **Affectations** avec l'historique agent/service/site et feuille **Synthèse**.
+  - PDF : synthèse lisible des équipements.
 - `GET /api/v1/exports/mobile-lines?format=xlsx|pdf`
+  - XLSX : feuille **Lignes mobiles détaillées** avec tous les champs non secrets (titulaire,
+    contrat, dates, terminal, IMEI, forfait, options, identifiants) et un indicateur de présence
+    des codes PIN/PUK, plus une feuille **Synthèse**.
+  - PDF : synthèse des lignes.
+- `GET /api/v1/exports/infrastructure?format=xlsx|pdf`
+  - XLSX : feuilles **Équipements**, **Dépendances**, **Supervision** et **Synthèse**.
+  - PDF : synthèse des équipements d'infrastructure.
 - Les exports sont audités (nombre de lignes et format).
-- Les secrets mobiles (PIN/PUK) ne sont jamais inclus.
+- Les secrets mobiles (PIN/PUK) ne sont jamais inclus dans les exports.
 
 ## Fournisseurs, licences et stock
 
@@ -232,6 +243,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /stock/overview`, `GET/POST /stock/items`, `GET/PATCH/DELETE /stock/items/{id}`,
   `GET/POST /stock/items/{id}/movements`
 - `GET /statistics/overview?start=&end=&granularity=day|week|month|year`
+- `GET /exports/assets?format=xlsx|pdf`
+- `GET /exports/mobile-lines?format=xlsx|pdf`
+- `GET /exports/infrastructure?format=xlsx|pdf`
 - `GET /exports/tickets?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET /exports/statistics?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
@@ -243,9 +257,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       47 passed
+pytest -q       50 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 133 source files
+mypy app        Success: no issues found in 134 source files
 npm run build   TypeScript + Vite OK
 ```
 
@@ -254,7 +268,8 @@ d'une demande, les interventions et les principaux objets RGPD.
 
 ## Limites connues
 
-- Les exports portent sur le parc et les lignes mobiles ; les exports tickets/RGPD restent à ajouter.
+- Les exports couvrent le parc, les lignes mobiles, l'infrastructure, les tickets et les
+  statistiques ; les exports RGPD restent à ajouter.
 - Les pièces jointes des tickets et des contrats ne sont pas encore exposées.
 - Le registre RGPD ne gère pas encore les modèles de registre par service.
 - Le budget ne gère pas encore les marchés publics ni les subventions.

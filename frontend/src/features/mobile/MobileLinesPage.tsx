@@ -100,13 +100,13 @@ export function MobileLinesPage() {
                     onSelect={() => window.open("/api/v1/exports/mobile-lines?format=xlsx", "_blank")}
                   >
                     <FileSpreadsheet className="h-3.5 w-3.5" />
-                    Excel (XLSX)
+                    Excel détaillé (XLSX)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => window.open("/api/v1/exports/mobile-lines?format=pdf", "_blank")}
                   >
                     <FileText className="h-3.5 w-3.5" />
-                    PDF
+                    Synthèse PDF
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

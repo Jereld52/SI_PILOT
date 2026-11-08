@@ -1,4 +1,5 @@
 import io
+from collections import Counter
 from datetime import datetime
 
 from openpyxl import Workbook
@@ -18,20 +19,52 @@ HEADERS = [
     "Titulaire",
     "Fonction",
     "E-mail",
+    "SIREN",
+    "Société",
     "Statut",
-    "Forfait",
-    "Terminal",
-    "IMEI",
-    "Date de mise en service",
+    "N° contrat",
+    "N° titulaire",
+    "N° CF",
+    "Nom CF",
+    "Mise en service",
     "Fin d'engagement",
+    "Date de facturation",
+    "Date de portabilité",
+    "RIO",
+    "QR code SIM",
+    "EID",
+    "N° CSIM",
+    "Codes PIN/PUK disponibles",
+    "Liste",
+    "Forfait",
+    "Terminal communicant",
+    "Terminal acheté",
+    "IMEI communicant",
+    "IMEI acheté",
     "Hors-forfait",
     "Format SIM",
-    "Ligne principale",
-    "Type d'offre",
-    "N° contrat",
-    "N° CF",
     "Identifiant VPN",
+    "Numéro privé",
+    "Changement terminal",
+    "Changement forfait",
+    "Ligne secondaire",
+    "Ligne principale",
+    "Master access ID",
+    "Type d'offre",
+    "Company ID",
+    "Notes",
+    "Créée le",
+    "Modifiée le",
 ]
+
+WIDTHS = [
+    16, 10, 28, 28, 32, 14, 26, 12, 18, 16, 16, 24, 16, 16, 16, 16, 14,
+    24, 24, 18, 18, 18, 38, 28, 28, 20, 20, 12, 12, 18, 16, 16, 16, 12,
+    16, 18, 14, 16, 40, 20, 20,
+]
+
+HEADER_FILL = PatternFill("solid", fgColor="772B2F")
+HEADER_FONT = Font(color="F3EFE2", bold=True)
 
 
 def _row(line: MobileLine) -> list:
@@ -41,40 +74,92 @@ def _row(line: MobileLine) -> list:
         line.holder_name or "",
         line.role_label or "",
         line.email or "",
+        line.siren or "",
+        line.company_name or "",
         line.status,
-        line.plan_name or "",
-        line.terminal_communicating or line.terminal_purchased or "",
-        line.imei_communicating or line.imei_purchased or "",
+        line.contract_number or "",
+        line.titulaire_number or "",
+        line.cf_number or "",
+        line.cf_name or "",
         line.activation_date.isoformat() if line.activation_date else "",
         line.commitment_end_date.isoformat() if line.commitment_end_date else "",
+        line.billing_date.isoformat() if line.billing_date else "",
+        line.portability_date.isoformat() if line.portability_date else "",
+        line.rio or "",
+        line.qr_code or "",
+        line.eid or "",
+        line.csim_number or "",
+        "Oui" if line.has_secrets else "Non",
+        line.list_name or "",
+        line.plan_name or "",
+        line.terminal_communicating or "",
+        line.terminal_purchased or "",
+        line.imei_communicating or "",
+        line.imei_purchased or "",
         float(line.out_of_bundle) if line.out_of_bundle is not None else "",
         line.sim_format or "",
-        line.main_line_number or "",
-        line.offer_type or "",
-        line.contract_number or "",
-        line.cf_number or "",
         line.vpn_identifier or "",
+        line.private_number or "",
+        line.terminal_change_date.isoformat() if line.terminal_change_date else "",
+        line.plan_change_date.isoformat() if line.plan_change_date else "",
+        "Oui" if line.is_secondary_line else "Non",
+        line.main_line_number or "",
+        line.master_access_id or "",
+        line.offer_type or "",
+        line.company_id or "",
+        line.notes or "",
+        line.created_at.isoformat() if line.created_at else "",
+        line.updated_at.isoformat() if line.updated_at else "",
     ]
+
+
+def _append_sheet(
+    workbook: Workbook,
+    title: str,
+    headers: list[str],
+    rows: list[list],
+    widths: list[int] | None = None,
+) -> None:
+    sheet = workbook.create_sheet(title)
+    sheet.append(headers)
+    for cell in sheet[1]:
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(vertical="center")
+    for row in rows:
+        sheet.append(row)
+    sheet.freeze_panes = "A2"
+    sheet.auto_filter.ref = sheet.dimensions
+    for index, header in enumerate(headers, start=1):
+        width = widths[index - 1] if widths and index <= len(widths) else min(
+            40, max(12, len(str(header)) + 4)
+        )
+        sheet.column_dimensions[get_column_letter(index)].width = width
 
 
 def mobile_lines_xlsx(lines: list[MobileLine]) -> bytes:
     workbook = Workbook()
-    sheet = workbook.active
-    sheet.title = "Lignes mobiles"
-    sheet.append(HEADERS)
-    header_fill = PatternFill("solid", fgColor="772B2F")
-    header_font = Font(color="F3EFE2", bold=True)
-    for cell in sheet[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(vertical="center")
-    for line in lines:
-        sheet.append(_row(line))
-    sheet.freeze_panes = "A2"
-    sheet.auto_filter.ref = sheet.dimensions
-    widths = [16, 10, 28, 28, 32, 12, 38, 30, 20, 18, 18, 12, 12, 18, 14, 16, 16, 18]
-    for index, width in enumerate(widths, start=1):
-        sheet.column_dimensions[get_column_letter(index)].width = width
+    workbook.remove(workbook.active)
+    _append_sheet(
+        workbook,
+        "Lignes mobiles détaillées",
+        HEADERS,
+        [_row(line) for line in lines],
+        WIDTHS,
+    )
+    status_counts = Counter(line.status for line in lines)
+    plan_counts = Counter(line.plan_name or "Non renseigné" for line in lines)
+    _append_sheet(
+        workbook,
+        "Synthèse",
+        ["Répartition", "Libellé", "Nombre"],
+        [
+            *[["Statut", label, value] for label, value in status_counts.most_common()],
+            *[["Forfait", label, value] for label, value in plan_counts.most_common()],
+            ["Total", "Lignes", len(lines)],
+            ["Secrets", "Lignes avec PIN/PUK disponibles", sum(1 for line in lines if line.has_secrets)],
+        ],
+    )
     buffer = io.BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()
@@ -85,18 +170,28 @@ def mobile_lines_pdf(lines: list[MobileLine]) -> bytes:
     document = SimpleDocTemplate(
         buffer,
         pagesize=landscape(A4),
-        leftMargin=10 * mm,
-        rightMargin=10 * mm,
-        topMargin=10 * mm,
-        bottomMargin=10 * mm,
-        title="Lignes mobiles",
+        leftMargin=8 * mm,
+        rightMargin=8 * mm,
+        topMargin=8 * mm,
+        bottomMargin=8 * mm,
+        title="Lignes mobiles détaillées",
     )
     styles = getSampleStyleSheet()
     title = Paragraph(
-        f"Lignes mobiles — {len(lines)} ligne(s) — {datetime.now().strftime('%d/%m/%Y')}",
+        f"Lignes mobiles détaillées — {len(lines)} ligne(s) — {datetime.now().strftime('%d/%m/%Y')}",
         styles["Title"],
     )
-    headers = ["Ligne", "Titulaire", "Fonction", "Statut", "Forfait", "Terminal", "Fin engagement"]
+    headers = [
+        "Ligne",
+        "Titulaire",
+        "Fonction",
+        "Statut",
+        "Forfait",
+        "Terminal",
+        "IMEI",
+        "Fin engagement",
+        "Contrat",
+    ]
     rows = [headers]
     for line in lines:
         rows.append(
@@ -107,10 +202,26 @@ def mobile_lines_pdf(lines: list[MobileLine]) -> bytes:
                 line.status,
                 line.plan_name or "",
                 line.terminal_communicating or line.terminal_purchased or "",
+                line.imei_communicating or line.imei_purchased or "",
                 line.commitment_end_date.isoformat() if line.commitment_end_date else "",
+                line.contract_number or "",
             ]
         )
-    table = Table(rows, repeatRows=1, colWidths=[28 * mm, 48 * mm, 42 * mm, 22 * mm, 55 * mm, 48 * mm, 30 * mm])
+    table = Table(
+        rows,
+        repeatRows=1,
+        colWidths=[
+            24 * mm,
+            42 * mm,
+            36 * mm,
+            20 * mm,
+            42 * mm,
+            38 * mm,
+            28 * mm,
+            24 * mm,
+            24 * mm,
+        ],
+    )
     table.setStyle(
         TableStyle(
             [

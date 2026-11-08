@@ -136,7 +136,7 @@ const exportCards = [
   {
     key: "assets",
     label: "Parc informatique",
-    description: "Inventaire complet, affectations, garanties et informations WAPT.",
+    description: "Toutes les colonnes des fiches, WAPT, affectations et synthèse.",
     icon: MonitorSmartphone,
     base: "/api/v1/exports/assets",
     tone: "border-primary/35 bg-primary/10 text-primary-strong",
@@ -145,10 +145,19 @@ const exportCards = [
   {
     key: "mobile",
     label: "Lignes mobiles",
-    description: "Titulaires, forfaits, terminaux et engagements. Sans PIN/PUK.",
+    description: "Tous les champs non secrets, présence PIN/PUK et synthèse.",
     icon: Smartphone,
     base: "/api/v1/exports/mobile-lines",
     tone: "border-success/30 bg-success/10 text-success",
+    granular: false,
+  },
+  {
+    key: "infrastructure",
+    label: "Infrastructure",
+    description: "Équipements, dépendances et supervision. Détail complet en Excel.",
+    icon: Server,
+    base: "/api/v1/exports/infrastructure",
+    tone: "border-danger/30 bg-danger/10 text-danger",
     granular: false,
   },
   {

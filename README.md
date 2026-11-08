@@ -41,7 +41,7 @@ le RGPD, la documentation et les échéances.
 - Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser.
 - Administration → **Import / Export** : imports CSV/XLSX pour agents, parc, mobiles, fournisseurs,
   licences et infrastructure, avec prévisualisation, rapport et historique ; exports XLSX/PDF du
-  parc, des lignes mobiles, des tickets et des statistiques.
+  parc, des lignes mobiles, de l'infrastructure, des tickets et des statistiques.
 - Administration → **Sources de données** : connexion Active Directory en LDAP/LDAPS (configuration
   chiffrée, test, prévisualisation, synchronisation des agents) et enrichissement depuis Remote
   Desktop Manager par export CSV, sans jamais importer les secrets.
@@ -52,13 +52,15 @@ le RGPD, la documentation et les échéances.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, sécurité,
   projets, téléphonie et documentation, avec export XLSX/PDF.
 - RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
-- Exports XLSX et PDF du parc et des lignes mobiles.
+- Exports détaillés XLSX et PDF du parc, des lignes mobiles et de l'infrastructure : toutes les
+  colonnes des fiches, WAPT dynamique, historique des affectations, dépendances et supervision.
+  Les PIN/PUK restent exclus des exports.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
-- Cockpit d'accueil : état des 10 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 47 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
+- Tests backend : 50 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

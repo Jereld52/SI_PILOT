@@ -3,6 +3,9 @@ import {
   Activity,
   Archive,
   Cable,
+  Download,
+  FileSpreadsheet,
+  FileText,
   Pencil,
   Plus,
   Radar,
@@ -18,6 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
@@ -250,6 +259,34 @@ export function InfrastructurePage() {
         description="Serveurs, VM, équipements réseau, dépendances et supervision autorisée."
         actions={
           <>
+            {hasPermission("exports.run") ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm">
+                    <Download className="h-3.5 w-3.5" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      window.open("/api/v1/exports/infrastructure?format=xlsx", "_blank")
+                    }
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Excel détaillé (XLSX)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      window.open("/api/v1/exports/infrastructure?format=pdf", "_blank")
+                    }
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Synthèse PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
             {tab === "equipments" && canCreate ? (
               <Button
                 size="sm"
