@@ -108,6 +108,34 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #3d5146;
   }
+
+  th[data-sortable="true"] {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  th[data-sortable="true"]:hover {
+    color: var(--color-foreground);
+  }
+
+  th[data-sortable="true"]::after {
+    margin-left: 0.35rem;
+    content: "↕";
+    font-size: 0.58rem;
+    opacity: 0.3;
+  }
+
+  th[data-sortable="true"][aria-sort="ascending"]::after {
+    content: "↑";
+    color: var(--color-accent);
+    opacity: 1;
+  }
+
+  th[data-sortable="true"][aria-sort="descending"]::after {
+    content: "↓";
+    color: var(--color-accent);
+    opacity: 1;
+  }
 }
 
 @keyframes fade-in {

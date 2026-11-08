@@ -62,6 +62,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - État des 10 modules avec compteurs réels, alertes secondaires et liens directs.
 - Chiffres clés mis en avant, indicateurs complémentaires et graphiques hiérarchisés.
 - Blocs échéances à 90 jours, alertes prioritaires et activité récente.
+- Tri client au clic sur les en-têtes de tous les tableaux de données, avec détection des nombres,
+  dates, montants, pourcentages et indicateur visuel du sens de tri.
 - Nouvel endpoint `GET /api/v1/dashboard/cockpit` alimenté par les données réelles.
 
 ## Parc informatique enrichi

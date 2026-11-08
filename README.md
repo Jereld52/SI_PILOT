@@ -56,6 +56,7 @@ le RGPD, la documentation et les échéances.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
+- Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 10 modules, chiffres clés, échéances, alertes, activité et graphiques.
 - Tests backend : 47 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
