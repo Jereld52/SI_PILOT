@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useDeferredValue, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -105,11 +106,13 @@ const dependencyTypeLabels: Record<string, string> = {
 };
 
 export function InfrastructurePage() {
+  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("infrastructure.create");
   const canUpdate = hasPermission("infrastructure.update");
   const canDelete = hasPermission("infrastructure.delete");
   const canAuthorize = hasPermission("infrastructure.monitoring.authorize");
+  const canTopology = hasPermission("infrastructure.topology");
 
   const [tab, setTab] = useState<TabKey>("equipments");
   const [search, setSearch] = useState("");
@@ -259,6 +262,12 @@ export function InfrastructurePage() {
         description="Serveurs, VM, équipements réseau, dépendances et supervision autorisée."
         actions={
           <>
+            {canTopology ? (
+              <Button variant="secondary" size="sm" onClick={() => navigate("/supervision")}>
+                <Radar className="h-3.5 w-3.5" />
+                Carte de supervision
+              </Button>
+            ) : null}
             {hasPermission("exports.run") ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

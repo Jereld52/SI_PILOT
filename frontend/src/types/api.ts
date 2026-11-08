@@ -1108,6 +1108,28 @@ export interface MonitoringResultItem {
   message: string | null;
 }
 
+export interface InfraMapSummary {
+  equipments_total: number;
+  running: number;
+  maintenance: number;
+  offline: number;
+  retired: number;
+  critical: number;
+  placed: number;
+  unplaced: number;
+  checks_total: number;
+  checks_enabled: number;
+  last_check_at: string | null;
+}
+
+export interface InfraMapData {
+  equipments: InfraEquipmentItem[];
+  dependencies: InfraDependencyItem[];
+  checks: MonitoringCheckItem[];
+  locations: LocationItem[];
+  summary: InfraMapSummary;
+}
+
 export interface SecurityIncidentItem {
   id: string;
   reference: string;

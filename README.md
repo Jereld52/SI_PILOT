@@ -35,6 +35,8 @@ le RGPD, la documentation et les échéances.
 - Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
+- Supervision globale : carte visuelle cliquable, équipements positionnables par glisser-déposer,
+  dépendances, filtres, criticité et état des contrôles.
 - Cybersécurité : incidents, actions, vulnérabilités, sauvegardes, certificats et audits.
 - Projets : jalons, tâches, risques, décisions et avancement calculé.
 - Documentation : métadonnées, tags, versions et téléversement/téléchargement de fichiers.
@@ -62,7 +64,7 @@ le RGPD, la documentation et les échéances.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 52 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 53 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

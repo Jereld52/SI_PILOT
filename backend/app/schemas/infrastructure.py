@@ -139,3 +139,25 @@ class MonitoringResultRead(ORMModel):
     status: str
     latency_ms: int | None = None
     message: str | None = None
+
+
+class InfraMapSummary(BaseModel):
+    equipments_total: int
+    running: int
+    maintenance: int
+    offline: int
+    retired: int
+    critical: int
+    placed: int
+    unplaced: int
+    checks_total: int
+    checks_enabled: int
+    last_check_at: datetime | None = None
+
+
+class InfraMapRead(BaseModel):
+    equipments: list[InfraEquipmentRead]
+    dependencies: list[InfraDependencyRead]
+    checks: list[MonitoringCheckRead]
+    locations: list[LocationRef]
+    summary: InfraMapSummary

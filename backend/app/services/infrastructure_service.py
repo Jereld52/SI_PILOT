@@ -19,12 +19,15 @@ from app.schemas.infrastructure import (
     InfraEquipmentCreate,
     InfraEquipmentRead,
     InfraEquipmentUpdate,
+    InfraMapRead,
+    InfraMapSummary,
     MonitoringCheckCreate,
     MonitoringCheckRead,
     MonitoringCheckUpdate,
     MonitoringResultCreate,
     MonitoringResultRead,
 )
+from app.schemas.referentials import LocationRef
 from app.services.audit_service import write_audit
 from fastapi import Request
 from sqlalchemy import or_, select
@@ -455,3 +458,47 @@ def add_result(
     db.commit()
     db.refresh(result)
     return MonitoringResultRead.model_validate(result)
+
+
+def map_overview(db: Session) -> InfraMapRead:
+    equipments = list(
+        db.scalars(select(InfraEquipment).order_by(InfraEquipment.name)).all()
+    )
+    dependencies = list(
+        db.scalars(
+            select(InfraDependency).order_by(
+                InfraDependency.dependency_type, InfraDependency.source_id
+            )
+        ).all()
+    )
+    checks = list(
+        db.scalars(select(MonitoringCheck).order_by(MonitoringCheck.check_type)).all()
+    )
+    locations = list(db.scalars(select(Location).order_by(Location.name)).all())
+    last_checks = [row.last_check_at for row in equipments if row.last_check_at]
+    summary = InfraMapSummary(
+        equipments_total=len(equipments),
+        running=sum(1 for row in equipments if row.status == "active"),
+        maintenance=sum(1 for row in equipments if row.status == "maintenance"),
+        offline=sum(1 for row in equipments if row.status == "offline"),
+        retired=sum(1 for row in equipments if row.status == "retired"),
+        critical=sum(1 for row in equipments if row.criticality == "critical"),
+        placed=sum(
+            1 for row in equipments if row.map_x is not None and row.map_y is not None
+        ),
+        unplaced=sum(
+            1 for row in equipments if row.map_x is None or row.map_y is None
+        ),
+        checks_total=len(checks),
+        checks_enabled=sum(1 for row in checks if row.is_enabled),
+        last_check_at=max(last_checks) if last_checks else None,
+    )
+    return InfraMapRead(
+        equipments=[InfraEquipmentRead.model_validate(row) for row in equipments],
+        dependencies=[
+            InfraDependencyRead.model_validate(row) for row in dependencies
+        ],
+        checks=[MonitoringCheckRead.model_validate(row) for row in checks],
+        locations=[LocationRef.model_validate(row) for row in locations],
+        summary=summary,
+    )

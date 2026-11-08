@@ -29,6 +29,7 @@ import { RgpdPage } from "@/features/rgpd/RgpdPage";
 import { SecurityPage } from "@/features/security/SecurityPage";
 import { StatisticsPage } from "@/features/statistics/StatisticsPage";
 import { StockPage } from "@/features/stock/StockPage";
+import { SupervisionPage } from "@/features/supervision/SupervisionPage";
 import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
 import { TicketsPage } from "@/features/tickets/TicketsPage";
 
@@ -40,6 +41,7 @@ const implementedModules = new Set([
   "contrats",
   "budget",
   "infrastructure",
+  "supervision",
   "cybersecurite",
   "projets",
   "documentation",
@@ -226,6 +228,15 @@ export function App() {
             element={
               <RequirePermission permission="infrastructure.read">
                 <InfrastructurePage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="supervision"
+            element={
+              <RequirePermission permission="infrastructure.topology">
+                <SupervisionPage />
               </RequirePermission>
             }
           />

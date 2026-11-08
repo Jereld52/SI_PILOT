@@ -12,6 +12,7 @@ from app.schemas.infrastructure import (
     InfraEquipmentCreate,
     InfraEquipmentRead,
     InfraEquipmentUpdate,
+    InfraMapRead,
     MonitoringCheckCreate,
     MonitoringCheckRead,
     MonitoringCheckUpdate,
@@ -35,6 +36,14 @@ def list_equipments(
     return infrastructure_service.list_equipments(
         db, q=q, type=type, status=status, criticality=criticality
     )
+
+
+@router.get("/map", response_model=InfraMapRead)
+def map_overview(
+    _: User = Depends(require_permission("infrastructure.topology")),
+    db: Session = Depends(get_db),
+):
+    return infrastructure_service.map_overview(db)
 
 
 @router.post("/equipments", response_model=InfraEquipmentRead, status_code=201)

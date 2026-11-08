@@ -159,6 +159,24 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   l'application ; un contrôle doit être explicitement autorisé avant activation.
 - Historique des résultats de supervision et dernière vérification par équipement.
 
+### Supervision globale
+
+- Carte visuelle interactive des équipements d'infrastructure, accessible depuis le menu
+  **Supervision** et depuis la page Infrastructure.
+- Chaque équipement est représenté par un nœud cliquable : nom, IP, type, état, criticité.
+  Un clic ouvre le détail (rôle, site, système, responsable, contrôles, dépendances).
+- Couleurs d'état : actif, maintenance, hors ligne, retiré. Les équipements critiques sont
+  signalés par une bordure renforcée.
+- Liens de dépendance dessinés entre les équipements placés, avec mise en évidence des liens
+  du nœud sélectionné.
+- Mode placement : glisser-déposer des nœuds, positions enregistrées en base et auditées.
+- Placement automatique en grille des équipements non placés.
+- Retrait d'un équipement de la carte sans suppression de sa fiche.
+- Filtres par recherche, type, état, criticité et site.
+- Indicateurs : total, en service, maintenance, hors ligne, critiques, contrôles actifs et
+  dernier contrôle.
+- Aucune sonde réseau n'est exécutée : la carte reflète l'état déclaré et les contrôles autorisés.
+
 ## Cybersécurité
 
 - Incidents : référence `INC-AAAA-NNNN`, gravité, catégorie, détection, responsable, mesures,
@@ -238,6 +256,7 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `POST /budgets/{id}/commitments`, `PATCH/DELETE /budget-commitments/{id}`
 - `POST /budgets/{id}/invoices`, `PATCH/DELETE /budget-invoices/{id}`
 - `GET/POST /infrastructure/equipments`, `GET/PATCH/DELETE /infrastructure/equipments/{id}`
+- `GET /infrastructure/map`
 - `GET/POST /infrastructure/dependencies`, `DELETE /infrastructure/dependencies/{id}`
 - `GET/POST /infrastructure/checks`, `PATCH/DELETE /infrastructure/checks/{id}`,
   `POST /infrastructure/checks/{id}/authorize`, `GET/POST /infrastructure/checks/{id}/results`
@@ -273,7 +292,7 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       52 passed
+pytest -q       53 passed
 ruff check      All checks passed
 mypy app        Success: no issues found in 135 source files
 npm run build   TypeScript + Vite OK
@@ -290,7 +309,8 @@ d'une demande, les interventions et les principaux objets RGPD.
 - Le registre RGPD ne gère pas encore les modèles de registre par service.
 - Le budget ne gère pas encore les marchés publics ni les subventions.
 - La supervision prépare les contrôles mais n'exécute aucune sonde réseau active.
-- La cartographie est une liste de dépendances, sans rendu graphique interactif.
+- La cartographie est une carte libre positionnée manuellement, sans fond cartographique
+  géographique ni coordonnées GPS.
 - La documentation ne gère pas encore l'indexation plein texte ni les ACL par rôle/utilisateur
   au-delà des permissions globales.
 - Le calendrier n'agrège pas encore automatiquement les échéances des autres modules.
