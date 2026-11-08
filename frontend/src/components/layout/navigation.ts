@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Smartphone,
   Truck,
+  Upload,
   Users,
   Wallet,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export const navigation: NavItem[] = [
   { label: "RGPD", to: "/rgpd", icon: Scale, permission: "rgpd.read" },
   { label: "Documentation", to: "/documentation", icon: BookOpen, permission: "documents.read" },
   { label: "Calendrier", to: "/calendrier", icon: CalendarDays, permission: "calendar.read" },
+  { label: "Imports", to: "/imports", icon: Upload, permission: "imports.preview" },
   {
     label: "Administration",
     to: "/admin/users",

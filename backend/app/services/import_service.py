@@ -16,9 +16,10 @@ from app.core.config import settings
 from app.core.crypto import encrypt_secret
 from app.core.errors import ConflictError, NotFoundError, ValidationAppError
 from app.db.base import utcnow
-from app.models.assets import Asset, AssetCategory
+from app.models.assets import Asset, AssetCategory, License, Supplier
 from app.models.auth import User
 from app.models.imports import ImportJob, ImportRow
+from app.models.infrastructure import InfraEquipment
 from app.models.mobile import MobileLine
 from app.models.organization import Agent, Location, Service
 from app.schemas.agents import AgentCreate
@@ -29,7 +30,10 @@ from app.schemas.imports import (
     ImportPreviewResponse,
     ImportRowPreview,
 )
+from app.schemas.infrastructure import InfraEquipmentCreate
+from app.schemas.licenses import LicenseCreate
 from app.schemas.mobile import MobileLineCreate
+from app.schemas.suppliers import SupplierCreate
 from app.services import agents_service, assets_service, mobile_service
 from app.services.audit_service import write_audit
 from fastapi import Request
@@ -113,6 +117,110 @@ ASSET_EXAMPLE = [
     "Ligne d'exemple à supprimer",
 ]
 
+SUPPLIER_HEADERS = [
+    "nom",
+    "type",
+    "siret",
+    "contact",
+    "email",
+    "telephone",
+    "adresse",
+    "site_web",
+    "notes",
+    "actif",
+]
+
+SUPPLIER_EXAMPLE = [
+    "EXEMPLE FOURNISSEUR",
+    "Matériel",
+    "12345678900000",
+    "Contact Exemple",
+    "contact@exemple.fr",
+    "0102030405",
+    "1 rue de l'Exemple",
+    "https://exemple.fr",
+    "Ligne d'exemple à supprimer",
+    "oui",
+]
+
+LICENSE_HEADERS = [
+    "nom",
+    "editeur",
+    "type",
+    "sieges",
+    "sieges_utilises",
+    "date_debut",
+    "date_fin",
+    "cout_annuel",
+    "notes",
+    "actif",
+]
+
+LICENSE_EXAMPLE = [
+    "EXEMPLE LICENCE",
+    "Éditeur Exemple",
+    "abonnement",
+    "10",
+    "4",
+    "01/01/2026",
+    "31/12/2026",
+    "1200.00",
+    "Ligne d'exemple à supprimer",
+    "oui",
+]
+
+INFRA_HEADERS = [
+    "nom",
+    "type",
+    "adresse_ip",
+    "adresse_mac",
+    "role",
+    "site_code",
+    "systeme",
+    "version",
+    "criticite",
+    "statut",
+    "numero_inventaire",
+    "notes",
+]
+
+INFRA_EXAMPLE = [
+    "EXEMPLE-SRV",
+    "server",
+    "192.0.2.20",
+    "00:11:22:33:44:66",
+    "Contrôleur de domaine",
+    "SIEGE",
+    "Windows Server 2022",
+    "21H2",
+    "high",
+    "active",
+    "",
+    "Ligne d'exemple à supprimer",
+]
+
+RDM_HEADERS = [
+    "nom",
+    "hote",
+    "adresse_ip",
+    "adresse_mac",
+    "systeme",
+    "groupe",
+    "description",
+    "type",
+]
+
+RDM_EXAMPLE = [
+    "EXEMPLE-RDM",
+    "srv-exemple.pnfor.fr",
+    "192.0.2.30",
+    "",
+    "Windows Server 2022",
+    "Serveurs/Production",
+    "Ligne d'exemple à supprimer",
+    "server",
+]
+
 MOBILE_TEMPLATE_HEADERS = [
     "Référence",
     "Civilité",
@@ -192,6 +300,18 @@ def template_csv(entity_type: str) -> str:
         writer.writerow(ASSET_EXAMPLE)
     elif entity_type == "mobile_lines":
         writer.writerow(MOBILE_TEMPLATE_HEADERS)
+    elif entity_type == "suppliers":
+        writer.writerow(SUPPLIER_HEADERS)
+        writer.writerow(SUPPLIER_EXAMPLE)
+    elif entity_type == "licenses":
+        writer.writerow(LICENSE_HEADERS)
+        writer.writerow(LICENSE_EXAMPLE)
+    elif entity_type == "infrastructure":
+        writer.writerow(INFRA_HEADERS)
+        writer.writerow(INFRA_EXAMPLE)
+    elif entity_type == "rdm":
+        writer.writerow(RDM_HEADERS)
+        writer.writerow(RDM_EXAMPLE)
     else:
         raise ValidationAppError("Type d'import inconnu.")
     return "\ufeff" + buffer.getvalue()
@@ -294,6 +414,15 @@ def _require_headers(headers: list[str], entity_type: str, *, wapt: bool = False
         required = ["nom", "prenom", "email_pro"]
     elif entity_type == "mobile_lines":
         required = ["reference"]
+    elif entity_type == "suppliers" or entity_type == "licenses":
+        required = ["nom"]
+    elif entity_type in {"infrastructure", "rdm"}:
+        if not any(header in headers for header in ("nom", "name", "host", "hote")):
+            raise ValidationAppError(
+                "Colonnes obligatoires manquantes.",
+                fields=[{"field": "headers", "message": "nom / name / host"}],
+            )
+        return
     elif wapt:
         required = ["machine"]
     else:
@@ -333,6 +462,12 @@ def _parse_decimal(value: str | None, field: str, errors: list[str]) -> Decimal 
 
 def _raw_row(row: dict[str, str], entity_type: str) -> dict[str, str]:
     excluded = {"pin_1", "pin_2", "puk_1", "puk_2"} if entity_type == "mobile_lines" else set()
+    if entity_type == "rdm":
+        excluded |= {
+            key
+            for key in row
+            if any(token in key for token in ("password", "credential", "secret", "mot_de_passe"))
+        }
     return {
         key: value
         for key, value in row.items()
@@ -378,6 +513,26 @@ def _preload(db: Session) -> dict:
         "external_ids": {asset.external_id for asset in assets if asset.external_id},
         "mobile_lines": {
             line.line_number for line in db.scalars(select(MobileLine)).all()
+        },
+        "suppliers": {
+            supplier.name.lower() for supplier in db.scalars(select(Supplier)).all()
+        },
+        "licenses": {
+            (license_row.name.lower(), (license_row.vendor or "").lower())
+            for license_row in db.scalars(select(License)).all()
+        },
+        "infrastructure": {
+            equipment.name.lower()
+            for equipment in db.scalars(select(InfraEquipment)).all()
+        },
+        "infra_ips": {
+            equipment.ip_address
+            for equipment in db.scalars(select(InfraEquipment)).all()
+            if equipment.ip_address
+        },
+        "assets_by_tag": {asset.asset_tag.lower(): asset for asset in assets},
+        "assets_by_hostname": {
+            asset.hostname.lower(): asset for asset in assets if asset.hostname
         },
     }
 
@@ -637,6 +792,196 @@ def _normalize_asset(
     return normalized, errors, duplicates
 
 
+def _parse_int(
+    value: str | None, field: str, errors: list[str], *, minimum: int = 0
+) -> int | None:
+    if not value:
+        return None
+    try:
+        number = int(str(value).strip())
+    except ValueError:
+        errors.append(f"Nombre invalide pour {field} : {value}")
+        return None
+    if number < minimum:
+        errors.append(f"{field} doit être supérieur ou égal à {minimum}.")
+        return None
+    return number
+
+
+def _parse_bool(value: str | None, default: bool = True) -> bool:
+    if value is None or not str(value).strip():
+        return default
+    return str(value).strip().lower() in {"1", "oui", "yes", "true", "actif", "active"}
+
+
+def _normalize_supplier(
+    row: dict[str, str], maps: dict, seen: dict
+) -> tuple[dict, list[str], list[str]]:
+    errors: list[str] = []
+    duplicates: list[str] = []
+    name = _pick(row, "nom", "name", "fournisseur")
+    if not name:
+        errors.append("Le nom du fournisseur est obligatoire.")
+    key = name.lower()
+    if name and (key in maps["suppliers"] or key in seen["suppliers"]):
+        duplicates.append(f"Fournisseur déjà présent : {name}")
+    if not errors and not duplicates:
+        seen["suppliers"].add(key)
+    normalized = {
+        "_label": name or "Fournisseur",
+        "name": name,
+        "type": _pick(row, "type") or None,
+        "siret": _pick(row, "siret") or None,
+        "contact_name": _pick(row, "contact", "contact_name") or None,
+        "email": _pick(row, "email", "mail") or None,
+        "phone": _pick(row, "telephone", "phone", "tel") or None,
+        "address": _pick(row, "adresse", "address") or None,
+        "website": _pick(row, "site_web", "website", "url") or None,
+        "notes": _pick(row, "notes", "commentaires") or None,
+        "is_active": _parse_bool(_pick(row, "actif", "active")),
+    }
+    return normalized, errors, duplicates
+
+
+def _normalize_license(
+    row: dict[str, str], maps: dict, seen: dict
+) -> tuple[dict, list[str], list[str]]:
+    errors: list[str] = []
+    duplicates: list[str] = []
+    name = _pick(row, "nom", "name", "licence")
+    vendor = _pick(row, "editeur", "vendor", "fournisseur")
+    if not name:
+        errors.append("Le nom de la licence est obligatoire.")
+    key = (name.lower(), vendor.lower())
+    if name and (key in maps["licenses"] or key in seen["licenses"]):
+        duplicates.append(f"Licence déjà présente : {name}")
+    if not errors and not duplicates:
+        seen["licenses"].add(key)
+    seats = _parse_int(_pick(row, "sieges", "seats"), "sièges", errors)
+    seats_used = _parse_int(
+        _pick(row, "sieges_utilises", "seats_used"), "sièges utilisés", errors
+    )
+    normalized = {
+        "_label": name or "Licence",
+        "name": name,
+        "vendor": vendor or None,
+        "license_type": _pick(row, "type", "license_type") or None,
+        "seats": seats,
+        "seats_used": seats_used,
+        "start_date": _parse_date(_pick(row, "date_debut", "start_date"), "date de début", errors),
+        "end_date": _parse_date(_pick(row, "date_fin", "end_date"), "date de fin", errors),
+        "annual_cost": _parse_decimal(
+            _pick(row, "cout_annuel", "annual_cost", "prix"), "coût annuel", errors
+        ),
+        "notes": _pick(row, "notes", "commentaires") or None,
+        "is_active": _parse_bool(_pick(row, "actif", "active")),
+    }
+    if seats is not None and seats_used is not None and seats_used > seats:
+        errors.append("Les sièges utilisés dépassent le nombre de sièges.")
+    return normalized, errors, duplicates
+
+
+def _rdm_type(row: dict[str, str], name: str) -> str:
+    text = f"{_pick(row, 'type')} {_pick(row, 'groupe', 'group', 'dossier')} {name}".lower()
+    if "switch" in text:
+        return "switch"
+    if "routeur" in text or "router" in text:
+        return "router"
+    if "firewall" in text or "pare-feu" in text:
+        return "firewall"
+    if "nas" in text or "stockage" in text:
+        return "nas"
+    if "wifi" in text or "wi-fi" in text or "access point" in text or "point d'acces" in text:
+        return "access_point"
+    if "onduleur" in text or "ups" in text:
+        return "ups"
+    if "vm" in text or "virtuel" in text or "virtual" in text:
+        return "vm"
+    if "serveur" in text or "server" in text:
+        return "server"
+    return "server"
+
+
+def _normalize_infrastructure(
+    row: dict[str, str], maps: dict, seen: dict, *, rdm: bool = False
+) -> tuple[dict, list[str], list[str]]:
+    errors: list[str] = []
+    duplicates: list[str] = []
+    name = _pick(row, "nom", "name", "host", "hote")
+    if not name:
+        errors.append("Le nom de l'équipement est obligatoire.")
+    ip_address = _parse_ip(_pick(row, "adresse_ip", "ip", "ip_address"))
+    key = name.lower()
+    if name and (key in maps["infrastructure"] or key in seen["infrastructure"]):
+        duplicates.append(f"Équipement d'infrastructure déjà présent : {name}")
+    if ip_address and (ip_address in maps["infra_ips"] or ip_address in seen["infra_ips"]):
+        duplicates.append(f"Adresse IP déjà utilisée : {ip_address}")
+    if not errors and not duplicates:
+        seen["infrastructure"].add(key)
+        if ip_address:
+            seen["infra_ips"].add(ip_address)
+
+    type_value = _rdm_type(row, name) if rdm else (_pick(row, "type") or "server").lower()
+    if type_value not in {
+        "server",
+        "vm",
+        "switch",
+        "router",
+        "firewall",
+        "nas",
+        "access_point",
+        "ups",
+        "other",
+    }:
+        type_value = "other"
+    status_value = _pick(row, "statut", "status").lower()
+    status_map = {
+        "actif": "active",
+        "active": "active",
+        "maintenance": "maintenance",
+        "hors ligne": "offline",
+        "offline": "offline",
+        "retire": "retired",
+        "retiré": "retired",
+        "retired": "retired",
+    }
+    criticality_value = _pick(row, "criticite", "criticality").lower()
+    criticality_map = {
+        "faible": "low",
+        "low": "low",
+        "moyenne": "medium",
+        "medium": "medium",
+        "elevee": "high",
+        "élevée": "high",
+        "high": "high",
+        "critique": "critical",
+        "critical": "critical",
+    }
+    asset_tag = _pick(row, "numero_inventaire", "asset_tag", "tag")
+    asset = maps["assets_by_tag"].get(asset_tag.lower()) if asset_tag else None
+    if asset is None:
+        asset = maps["assets_by_hostname"].get(name.lower()) or maps[
+            "assets_by_hostname"
+        ].get(_pick(row, "hote", "host").lower())
+    location = maps["locations"].get((_pick(row, "site_code") or "").lower())
+    normalized = {
+        "_label": name or "Équipement",
+        "name": name,
+        "type": type_value,
+        "ip_address": ip_address,
+        "mac_address": _pick(row, "adresse_mac", "mac", "mac_address") or None,
+        "role": _pick(row, "role", "groupe", "group", "dossier", "folder") or None,
+        "location_id": str(location.id) if location else None,
+        "os_name": _pick(row, "systeme", "os", "systeme_d_exploitation") or None,
+        "os_version": _pick(row, "version", "version_os") or None,
+        "criticality": criticality_map.get(criticality_value, "medium"),
+        "status": status_map.get(status_value, "active"),
+        "config_notes": _pick(row, "notes", "description", "commentaire") or None,
+        "asset_id": str(asset.id) if asset else None,
+    }
+    return normalized, errors, duplicates
+
+
 def _new_seen() -> dict:
     return {
         "emails": set(),
@@ -648,6 +993,10 @@ def _new_seen() -> dict:
         "hostnames": set(),
         "external_ids": set(),
         "mobile_lines": set(),
+        "suppliers": set(),
+        "licenses": set(),
+        "infrastructure": set(),
+        "infra_ips": set(),
     }
 
 
@@ -795,7 +1144,15 @@ def preview_import(
     actor: User,
     request: Request | None = None,
 ) -> ImportPreviewResponse:
-    if entity_type not in {"agents", "assets", "mobile_lines"}:
+    if entity_type not in {
+        "agents",
+        "assets",
+        "mobile_lines",
+        "suppliers",
+        "licenses",
+        "infrastructure",
+        "rdm",
+    }:
         raise ValidationAppError("Type d'import inconnu.")
     lower_name = filename.lower()
     is_xlsx = lower_name.endswith((".xlsx", ".xlsm"))
@@ -822,7 +1179,7 @@ def preview_import(
     )
     db.add(job)
     db.flush()
-    if entity_type != "mobile_lines":
+    if entity_type not in {"mobile_lines", "rdm"}:
         import_dir = Path(settings.upload_dir) / "imports"
         import_dir.mkdir(parents=True, exist_ok=True)
         storage_key = f"imports/{job.id}.csv"
@@ -867,6 +1224,14 @@ def preview_import(
                 normalized, errors, duplicates = _normalize_agent(row, maps, seen)
             elif entity_type == "mobile_lines":
                 normalized, errors, duplicates = _normalize_mobile_line(row, maps, seen)
+            elif entity_type == "suppliers":
+                normalized, errors, duplicates = _normalize_supplier(row, maps, seen)
+            elif entity_type == "licenses":
+                normalized, errors, duplicates = _normalize_license(row, maps, seen)
+            elif entity_type in {"infrastructure", "rdm"}:
+                normalized, errors, duplicates = _normalize_infrastructure(
+                    row, maps, seen, rdm=entity_type == "rdm"
+                )
             elif wapt:
                 normalized, errors, duplicates = _normalize_wapt_asset(row, maps, seen)
             else:
@@ -949,7 +1314,15 @@ def preview_import(
     )
     if wapt:
         message = "Format WAPT détecté. " + message
-    detected_format = "wapt" if wapt else ("xlsx" if is_xlsx else "standard")
+    if entity_type == "rdm":
+        message = "Export Remote Desktop Manager détecté. " + message
+    detected_format = (
+        "wapt"
+        if wapt
+        else "rdm"
+        if entity_type == "rdm"
+        else ("xlsx" if is_xlsx else "standard")
+    )
     return ImportPreviewResponse(
         job=ImportJobRead.model_validate(job),
         rows=previews[:200],
@@ -1022,6 +1395,55 @@ def apply_import(
                         secrets_encrypted=secrets,
                     )
                     created_id = mobile.id
+                elif job.entity_type == "suppliers":
+                    supplier_payload = SupplierCreate.model_validate(data)
+                    supplier = Supplier(**supplier_payload.model_dump())
+                    db.add(supplier)
+                    db.flush()
+                    created_id = supplier.id
+                    write_audit(
+                        db,
+                        module="suppliers",
+                        action="supplier_imported",
+                        actor=actor,
+                        entity_type="supplier",
+                        entity_id=str(supplier.id),
+                        entity_label=supplier.name,
+                        request=request,
+                    )
+                elif job.entity_type == "licenses":
+                    license_payload = LicenseCreate.model_validate(data)
+                    license_row = License(**license_payload.model_dump())
+                    db.add(license_row)
+                    db.flush()
+                    created_id = license_row.id
+                    write_audit(
+                        db,
+                        module="licenses",
+                        action="license_imported",
+                        actor=actor,
+                        entity_type="license",
+                        entity_id=str(license_row.id),
+                        entity_label=license_row.name,
+                        request=request,
+                    )
+                elif job.entity_type in {"infrastructure", "rdm"}:
+                    infra_payload = InfraEquipmentCreate.model_validate(data)
+                    equipment = InfraEquipment(**infra_payload.model_dump())
+                    db.add(equipment)
+                    db.flush()
+                    created_id = equipment.id
+                    write_audit(
+                        db,
+                        module="infrastructure",
+                        action="infra_equipment_imported",
+                        actor=actor,
+                        entity_type="infra_equipment",
+                        entity_id=str(equipment.id),
+                        entity_label=equipment.name,
+                        after={"source": job.entity_type},
+                        request=request,
+                    )
                 else:
                     raise ValidationAppError("Type d'import inconnu.")
             row.status = "created"

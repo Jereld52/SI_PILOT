@@ -383,6 +383,55 @@ export interface ImportApplyResponse {
   message: string;
 }
 
+export interface LdapConfig {
+  enabled: boolean;
+  url: string;
+  base_dn: string;
+  bind_dn: string;
+  user_filter: string;
+  tls_verify: boolean;
+  bind_password_set: boolean;
+}
+
+export interface LdapTestResponse {
+  success: boolean;
+  message: string;
+  server_vendor: string | null;
+  server_version: string | null;
+  user_count: number | null;
+}
+
+export interface LdapUserPreview {
+  status: string;
+  label: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  login: string | null;
+  department: string | null;
+  service_name: string | null;
+  agent_id: string | null;
+  errors: string[];
+}
+
+export interface LdapPreviewResponse {
+  total: number;
+  to_create: number;
+  to_update: number;
+  skipped: number;
+  errors: number;
+  message: string;
+  rows: LdapUserPreview[];
+}
+
+export interface LdapSyncResponse {
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+  message: string;
+}
+
 export interface MobileLineItem {
   id: string;
   line_number: string;

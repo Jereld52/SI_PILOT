@@ -121,6 +121,19 @@ DEFAULT_SETTINGS = (
     ("sylvia.enabled", False, "sylvia", False, "Activation de l'intégration SylvIA"),
     ("sylvia.base_url", "", "sylvia", False, "URL de base Open WebUI / Ollama"),
     ("sylvia.model", "", "sylvia", False, "Modèle utilisé par SylvIA"),
+    ("ldap.enabled", False, "ldap", False, "Activer la synchronisation Active Directory"),
+    ("ldap.url", "", "ldap", False, "URL du serveur LDAP (ldap:// ou ldaps://)"),
+    ("ldap.base_dn", "", "ldap", False, "Base de recherche des utilisateurs"),
+    ("ldap.bind_dn", "", "ldap", False, "Compte de service utilisé pour la lecture"),
+    ("ldap.bind_password_encrypted", "", "ldap", True, "Mot de passe du compte de service, chiffré"),
+    (
+        "ldap.user_filter",
+        "(&(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))",
+        "ldap",
+        False,
+        "Filtre LDAP des utilisateurs actifs",
+    ),
+    ("ldap.tls_verify", True, "ldap", False, "Vérifier le certificat TLS du serveur LDAP"),
 )
 
 CHECKLIST_TEMPLATES = (

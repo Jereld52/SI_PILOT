@@ -6,7 +6,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import require_permission
-from app.core.errors import ConflictError, NotFoundError
+from app.core.errors import ConflictError, NotFoundError, ValidationAppError
 from app.core.pagination import PageParams, page_params, paginate
 from app.core.security import hash_password
 from app.db.session import get_db
@@ -302,7 +302,7 @@ def list_settings(
         result.append(
             SettingRead(
                 key=setting.key,
-                value=value,
+                value="********" if setting.is_secret and value else value,
                 category=setting.category,
                 is_secret=setting.is_secret,
                 description=setting.description,
@@ -323,6 +323,10 @@ def update_setting(
     setting = db.get(Setting, key)
     if setting is None:
         raise NotFoundError("Paramètre introuvable.")
+    if setting.is_secret:
+        raise ValidationAppError(
+            "Ce paramètre contient un secret : utilisez l'écran dédié pour le modifier."
+        )
     before = setting.value_json
     setting.value_json = json.dumps(payload.value, ensure_ascii=False)
     write_audit(

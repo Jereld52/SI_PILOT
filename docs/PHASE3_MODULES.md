@@ -2,6 +2,23 @@
 
 Cette tranche complète les modules métier livrés après le socle et l'inventaire initial.
 
+## Module d'import, Active Directory et RDM
+
+- Écran **Imports** avec quatre espaces : fichiers, Active Directory, Remote Desktop Manager et
+  historique.
+- Import CSV/XLSX des agents, équipements, lignes mobiles, fournisseurs, licences et infrastructure.
+- Prévisualisation systématique, détection des doublons, rapport d'erreurs et application auditée.
+- Modèles téléchargeables pour chaque type d'import.
+- **LDAP/LDAPS** : URL, base de recherche, compte de service, filtre utilisateurs et vérification TLS.
+  Le mot de passe du compte de service est chiffré avec `FIELD_ENCRYPTION_KEY` et n'est jamais
+  renvoyé par l'API.
+- Test de connexion, prévisualisation des utilisateurs, création et mise à jour des agents par
+  correspondance e-mail ou identifiant. Le filtre par défaut exclut les comptes désactivés.
+- **Remote Desktop Manager** : import CSV des serveurs, VM et équipements réseau (nom, hôte, IP,
+  MAC, OS, groupe, description). Les identifiants, mots de passe et secrets RDM sont explicitement
+  exclus et le fichier brut n'est pas conservé.
+- Rattachement automatique aux équipements du parc par numéro d'inventaire ou nom machine.
+
 ## Cockpit d'accueil et identité visuelle
 
 - Refonte du thème avec une présence renforcée du bordeaux officiel `#772B2F` : dégradés,
@@ -175,15 +192,18 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/POST /documents`, `GET/PATCH/DELETE /documents/{id}`, `GET /documents/meta`
 - `GET/POST /documents/{id}/versions`, `GET /documents/versions/{id}/download`
 - `GET /dashboard/cockpit`
+- `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
+- `GET /imports`, `GET /imports/templates/{type}`, `POST /imports/preview`,
+  `POST /imports/{id}/apply`
 - `GET /calendar/overview`, `GET/POST /calendar/events`, `GET/PATCH/DELETE /calendar/events/{id}`
 - `GET/POST /calendar/actions`, `GET/PATCH/DELETE /calendar/actions/{id}`
 
 ## Vérifications
 
 ```text
-pytest -q       43 passed
+pytest -q       45 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 122 source files
+mypy app        Success: no issues found in 125 source files
 npm run build   TypeScript + Vite OK
 ```
 

@@ -16,6 +16,7 @@ from app.api.v1 import (
     imports,
     infrastructure,
     interventions,
+    ldap,
     licenses,
     mobile,
     notifications,
@@ -56,3 +57,4 @@ api_router.include_router(security.router)
 api_router.include_router(projects.router)
 api_router.include_router(documents.router)
 api_router.include_router(calendar.router)
+api_router.include_router(ldap.router)

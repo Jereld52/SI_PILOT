@@ -20,7 +20,14 @@ import type { ImportApplyResponse, ImportPreviewResponse, ImportRowPreview } fro
 interface ImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entityType: "agents" | "assets" | "mobile_lines";
+  entityType:
+    | "agents"
+    | "assets"
+    | "mobile_lines"
+    | "suppliers"
+    | "licenses"
+    | "infrastructure"
+    | "rdm";
   entityLabel: string;
   onImported: () => void;
 }
@@ -127,7 +134,9 @@ export function ImportDialog({
                   ? "CSV standard ou export WAPT PC-PNfor.csv reconnu automatiquement. 2 000 lignes maximum."
                   : entityType === "mobile_lines"
                     ? "CSV, XLSX ou XLSM. Les colonnes PIN, PUK, CSIM et EID ne sont pas importées."
-                    : "Séparateur point-virgule, encodage UTF-8, 2 000 lignes maximum."}
+                    : entityType === "rdm"
+                      ? "Export CSV Remote Desktop Manager. Les identifiants et mots de passe ne sont jamais importés."
+                      : "Séparateur point-virgule ou virgule, encodage UTF-8, 2 000 lignes maximum."}
               </p>
             </div>
             <a
@@ -192,6 +201,8 @@ export function ImportDialog({
               <div className="flex flex-wrap items-center gap-2">
                 {preview.detected_format === "wapt" ? (
                   <Badge tone="accent">Format WAPT</Badge>
+                ) : preview.detected_format === "rdm" ? (
+                  <Badge tone="accent">Export RDM</Badge>
                 ) : preview.detected_format === "xlsx" ? (
                   <Badge tone="info">Classeur XLSX</Badge>
                 ) : null}

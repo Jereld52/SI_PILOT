@@ -16,6 +16,7 @@ import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { ContractsPage } from "@/features/contracts/ContractsPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { DocumentsPage } from "@/features/documents/DocumentsPage";
+import { ImportsPage } from "@/features/imports/ImportsPage";
 import { InfrastructurePage } from "@/features/infrastructure/InfrastructurePage";
 import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
@@ -224,6 +225,15 @@ export function App() {
             element={
               <RequirePermission permission="calendar.read">
                 <CalendarPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="imports"
+            element={
+              <RequirePermission permission="imports.preview">
+                <ImportsPage />
               </RequirePermission>
             }
           />
