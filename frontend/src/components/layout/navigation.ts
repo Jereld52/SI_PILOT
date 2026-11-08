@@ -4,6 +4,7 @@ import {
   BookOpen,
   Briefcase,
   CalendarCheck,
+  CalendarDays,
   Download,
   FileText,
   FolderKanban,
@@ -42,6 +43,13 @@ export const homeNavItem: NavItem = {
   to: "/",
   icon: LayoutDashboard,
   permission: "dashboard.read",
+};
+
+export const calendarNavItem: NavItem = {
+  label: "Calendrier",
+  to: "/calendrier",
+  icon: CalendarDays,
+  permission: "calendar.read",
 };
 
 export const navigationSections: NavSection[] = [
@@ -149,6 +157,7 @@ export const adminNavItem: NavItem = {
 
 export const navigation: NavItem[] = [
   homeNavItem,
+  calendarNavItem,
   ...navigationSections.flatMap((section) => section.items),
   adminNavItem,
 ];

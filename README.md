@@ -74,6 +74,8 @@ le RGPD, la documentation et les échéances.
   calendrier complet.
 - Calendrier avec vues **jour, semaine, mois et année**, et affichage des réservations de
   matériel avec le nom du demandeur.
+- Raccourci **Calendrier** placé directement sous **Vue générale** dans le menu, avec création
+  d'un événement ou d'une réservation de matériel depuis le calendrier.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
 - Tests backend : 60 tests passants (`pytest`), `ruff` et `mypy` sans erreur.

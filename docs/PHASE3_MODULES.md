@@ -250,6 +250,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Les réservations de matériel sont intégrées au calendrier avec le matériel, le créneau, le
   demandeur, le motif et le statut. Un clic ouvre le détail et permet de rejoindre le module
   Réservations.
+- Depuis le calendrier, création directe d'un événement ou d'une réservation de matériel.
+- Le calendrier dispose d'un raccourci dédié dans le menu, juste sous **Vue générale**.
 - Le tableau de bord affiche également les réservations de la semaine dans l'onglet **Semaine**.
 - Types : maintenance, intervention, échéance, renouvellement, audit, projet, réunion, action.
 - Événements avec lieu, responsable, priorité, statut et description.

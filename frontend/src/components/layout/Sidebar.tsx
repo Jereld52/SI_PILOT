@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/layout/BrandMark";
 import {
   adminNavItem,
+  calendarNavItem,
   homeNavItem,
   isNavigationItemActive,
   navigationSections,
@@ -127,6 +128,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
         <nav className="relative z-10 flex-1 space-y-1 overflow-y-auto px-2.5 py-4">
           {hasPermission(homeNavItem.permission) ? renderItem(homeNavItem) : null}
+          {hasPermission(calendarNavItem.permission) ? renderItem(calendarNavItem) : null}
 
           {sections.map((section) => {
             const open = !collapsed && Boolean(openSections[section.key]);

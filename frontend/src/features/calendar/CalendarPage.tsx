@@ -69,13 +69,17 @@ import {
   CalendarActionDialog,
   CalendarEventDialog,
 } from "@/features/calendar/CalendarDialogs";
+import { EquipmentReservationDialog } from "@/features/reservations/ReservationDialogs";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { cn, formatDateTime, formatNumber, fullName } from "@/lib/utils";
 import type {
+  AgentItem,
   CalendarActionItem,
   CalendarEventItem,
   CalendarOverview,
   EquipmentReservationItem,
+  Page,
+  ReservableEquipmentItem,
   TicketUserRef,
 } from "@/types/api";
 
@@ -161,6 +165,7 @@ export function CalendarPage() {
   const canCreateAction = hasPermission("actions.create");
   const canUpdateAction = hasPermission("actions.update");
   const canReadReservations = hasPermission("reservations.read");
+  const canCreateReservation = hasPermission("reservations.create");
 
   const [tab, setTab] = useState<TabKey>("calendar");
   const [view, setView] = useState<CalendarView>("month");
@@ -175,6 +180,8 @@ export function CalendarPage() {
   const [deleteActionTarget, setDeleteActionTarget] = useState<CalendarActionItem | null>(null);
   const [selectedReservation, setSelectedReservation] =
     useState<EquipmentReservationItem | null>(null);
+  const [reservationDialogOpen, setReservationDialogOpen] = useState(false);
+  const [reservationDefaultDate, setReservationDefaultDate] = useState<Date | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const rangeStart =
@@ -232,12 +239,26 @@ export function CalendarPage() {
     queryFn: () => apiFetch<TicketUserRef[]>("/tickets/assignees"),
     staleTime: 60_000,
   });
+  const reservationEquipmentsQuery = useQuery({
+    queryKey: ["reservations", "calendar", "equipments"],
+    queryFn: () => apiFetch<ReservableEquipmentItem[]>("/reservations/equipments"),
+    enabled: canCreateReservation,
+    staleTime: 60_000,
+  });
+  const reservationAgentsQuery = useQuery({
+    queryKey: ["agents", "calendar", "reservations"],
+    queryFn: () => apiFetch<Page<AgentItem>>("/agents?page=1&page_size=100&status=active"),
+    enabled: canCreateReservation,
+    staleTime: 60_000,
+  });
 
   const events = eventsQuery.data ?? [];
   const reservations = reservationsQuery.data ?? [];
   const actions = actionsQuery.data ?? [];
   const overview = overviewQuery.data;
   const users = usersQuery.data ?? [];
+  const reservationEquipments = reservationEquipmentsQuery.data ?? [];
+  const reservationAgents = reservationAgentsQuery.data?.items ?? [];
 
   const displayItems: CalendarDisplayItem[] = [
     ...events.map((event) => ({
@@ -281,6 +302,11 @@ export function CalendarPage() {
     setEditingEvent(null);
     setDefaultDate(date);
     setEventDialogOpen(true);
+  };
+
+  const openCreateReservation = (date: Date | null) => {
+    setReservationDefaultDate(date);
+    setReservationDialogOpen(true);
   };
 
   const openItem = (item: CalendarDisplayItem) => {
@@ -500,12 +526,25 @@ export function CalendarPage() {
           <p className="text-sm font-semibold capitalize text-foreground">
             {format(currentDate, "EEEE d MMMM yyyy", { locale: fr })}
           </p>
-          {canCreateEvent ? (
-            <Button variant="secondary" size="sm" onClick={() => openCreateEvent(currentDate)}>
-              <Plus className="h-3.5 w-3.5" />
-              Événement
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {canCreateReservation ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={reservationEquipments.length === 0}
+                onClick={() => openCreateReservation(currentDate)}
+              >
+                <CalendarClock className="h-3.5 w-3.5" />
+                Réserver
+              </Button>
+            ) : null}
+            {canCreateEvent ? (
+              <Button variant="secondary" size="sm" onClick={() => openCreateEvent(currentDate)}>
+                <Plus className="h-3.5 w-3.5" />
+                Événement
+              </Button>
+            ) : null}
+          </div>
         </div>
         {dayItems.length === 0 ? (
           <EmptyState
@@ -626,6 +665,17 @@ export function CalendarPage() {
         description="Vues jour, semaine, mois et année. Les réservations de matériel apparaissent avec le nom du demandeur."
         actions={
           <>
+            {tab === "calendar" && canCreateReservation ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={reservationEquipments.length === 0}
+                onClick={() => openCreateReservation(null)}
+              >
+                <CalendarClock className="h-3.5 w-3.5" />
+                Réserver du matériel
+              </Button>
+            ) : null}
             {tab === "calendar" && canCreateEvent ? (
               <Button size="sm" onClick={() => openCreateEvent(null)}>
                 <Plus className="h-3.5 w-3.5" />
@@ -859,6 +909,16 @@ export function CalendarPage() {
         </Card>
       ) : null}
 
+      <EquipmentReservationDialog
+        open={reservationDialogOpen}
+        onOpenChange={setReservationDialogOpen}
+        reservation={null}
+        defaultEquipmentId={null}
+        defaultDate={reservationDefaultDate}
+        equipments={reservationEquipments}
+        agents={reservationAgents}
+        onSaved={refreshEvents}
+      />
       <CalendarEventDialog
         open={eventDialogOpen}
         onOpenChange={setEventDialogOpen}
