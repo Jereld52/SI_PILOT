@@ -293,6 +293,12 @@ export function InfrastructurePage() {
                     <FileText className="h-3.5 w-3.5" />
                     Synthèse PDF
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/exports?dataset=infrastructure", "_self")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export sur mesure…
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}

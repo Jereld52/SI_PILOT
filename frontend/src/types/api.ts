@@ -1130,6 +1130,19 @@ export interface InfraMapData {
   summary: InfraMapSummary;
 }
 
+export interface CustomExportColumn {
+  key: string;
+  label: string;
+  default: boolean;
+}
+
+export interface CustomExportDataset {
+  key: string;
+  label: string;
+  description: string;
+  columns: CustomExportColumn[];
+}
+
 export interface SecurityIncidentItem {
   id: string;
   reference: string;

@@ -106,6 +106,22 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Les exports sont audités (nombre de lignes et format).
 - Les secrets mobiles (PIN/PUK) ne sont jamais inclus dans les exports.
 
+### Exports sur mesure
+
+- Page **Exports** dédiée à la composition d'un export ciblé.
+- Jeux de données proposés selon les permissions : parc, lignes mobiles, infrastructure, stock,
+  fournisseurs, licences, contrats, projets, incidents de sécurité, registre RGPD et tickets.
+- Sélection libre des colonnes, avec colonnes conseillées par défaut, recherche dans les colonnes,
+  tout sélectionner et revenir à la sélection par défaut.
+- Filtres contextuels : recherche plein texte, statut, type ou catégorie, site, période pour les
+  tickets.
+- Sortie **XLSX** avec exactement les colonnes choisies, ou **PDF détaillé** sous forme de tableau
+  paginé et lisible.
+- Les exports rapides existants restent disponibles sur la même page.
+- Chaque export est audité avec le jeu de données, le nombre de colonnes, de lignes et le format.
+- Les contrôles de permission du module source sont appliqués : un utilisateur ne peut exporter
+  que les jeux de données auxquels il a accès.
+
 ## Fournisseurs, licences et stock
 
 - Fournisseurs : coordonnées, SIRET, contact principal, contacts secondaires, actif/inactif,
@@ -281,6 +297,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET /exports/rgpd?format=xlsx|pdf`
 - `GET /exports/rgpd/rights-requests/{id}?format=xlsx|pdf`
 - `GET /exports/rgpd/agents/{id}?format=xlsx|pdf`
+- `GET /exports/custom/catalog`
+- `GET /exports/custom?dataset=&columns=&format=&q=&status=&type=&location_id=&start=&end=`
 - `GET /exports/tickets?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET /exports/statistics?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
@@ -292,9 +310,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       53 passed
+pytest -q       57 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 135 source files
+mypy app        Success: no issues found in 136 source files
 npm run build   TypeScript + Vite OK
 ```
 

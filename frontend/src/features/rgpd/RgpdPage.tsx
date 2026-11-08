@@ -284,6 +284,12 @@ export function RgpdPage() {
                     <FileText className="h-3.5 w-3.5" />
                     Synthèse du registre (PDF)
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/exports?dataset=rgpd_processing", "_self")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export sur mesure…
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}

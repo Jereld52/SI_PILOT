@@ -59,12 +59,14 @@ le RGPD, la documentation et les échéances.
 - Exports détaillés XLSX et PDF du parc, des lignes mobiles et de l'infrastructure : toutes les
   colonnes des fiches, WAPT dynamique, historique des affectations, dépendances et supervision.
   Les PIN/PUK restent exclus des exports.
+- Page **Exports sur mesure** : choix du jeu de données, des colonnes, des filtres (statut, type,
+  site, période) et du format XLSX/PDF, pour produire un fichier ciblé.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Tri des colonnes au clic sur tous les tableaux de données, avec indicateur de sens.
 - Cockpit d'accueil : état des 11 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 53 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 57 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

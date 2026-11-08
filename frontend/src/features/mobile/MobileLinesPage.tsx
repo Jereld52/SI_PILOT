@@ -108,6 +108,12 @@ export function MobileLinesPage() {
                     <FileText className="h-3.5 w-3.5" />
                     Synthèse PDF
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/exports?dataset=mobile_lines", "_self")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export sur mesure…
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}

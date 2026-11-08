@@ -7,10 +7,11 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
-from app.core.errors import NotFoundError, PermissionDeniedError
+from app.core.errors import NotFoundError, PermissionDeniedError, ValidationAppError
 from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.exports import assets as assets_export
+from app.exports import custom as custom_export
 from app.exports import infrastructure as infrastructure_export
 from app.exports import mobile as mobile_export
 from app.exports import rgpd as rgpd_export
@@ -574,6 +575,86 @@ def export_agent_personal_data(
         headers={
             "Content-Disposition": (
                 f'attachment; filename="{_filename("rgpd-donnees-agent", format)}"'
+            )
+        },
+    )
+
+
+@router.get("/custom/catalog")
+def custom_export_catalog(
+    actor: User = Depends(require_permission("exports.run")),
+) -> list[dict]:
+    return custom_export.catalog(actor)
+
+
+@router.get("/custom")
+def export_custom(
+    request: Request,
+    dataset: str = Query(..., max_length=60),
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    columns: str | None = Query(None, max_length=4000),
+    q: str | None = Query(None, max_length=120),
+    status: str | None = Query(None, max_length=60),
+    type_: str | None = Query(None, alias="type", max_length=60),
+    location_id: UUID | None = None,
+    start: date | None = None,
+    end: date | None = None,
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    spec = custom_export.DATASETS.get(dataset)
+    if spec is None:
+        raise ValidationAppError("Jeu de données d'export inconnu.")
+    if not has_permission(actor, spec.permission):
+        raise PermissionDeniedError(
+            "Vous ne pouvez pas exporter ce jeu de données."
+        )
+    requested = [key.strip() for key in (columns or "").split(",") if key.strip()]
+    selected = custom_export.select_columns(spec, requested)
+    rows = custom_export.load_rows(
+        db,
+        dataset,
+        q=q,
+        status=status,
+        type_=type_,
+        location_id=location_id,
+        start=start,
+        end=end,
+    )
+    title = spec.label
+    content = (
+        custom_export.custom_xlsx(title, selected, rows)
+        if format == "xlsx"
+        else custom_export.custom_pdf(title, selected, rows)
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="custom_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label=f"custom.{dataset}.{format}",
+        after={
+            "dataset": dataset,
+            "columns": len(selected),
+            "rows": len(rows),
+            "format": format,
+            "filtered": bool(q or status or type_ or location_id or start or end),
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{_filename("export-" + dataset, format)}"'
             )
         },
     )

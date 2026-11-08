@@ -270,6 +270,12 @@ export function AssetsPage() {
                     <FileText className="h-3.5 w-3.5" />
                     Synthèse PDF
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => window.open("/exports?dataset=assets", "_self")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export sur mesure…
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}

@@ -18,6 +18,7 @@ import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { ContractsPage } from "@/features/contracts/ContractsPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { DocumentsPage } from "@/features/documents/DocumentsPage";
+import { ExportsPage } from "@/features/exports/ExportsPage";
 import { InfrastructurePage } from "@/features/infrastructure/InfrastructurePage";
 import { MobileLinesPage } from "@/features/mobile/MobileLinesPage";
 import { ModulePlaceholder } from "@/features/placeholders/ModulePlaceholder";
@@ -157,6 +158,15 @@ export function App() {
             element={
               <RequirePermission permission="statistics.read">
                 <StatisticsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="exports"
+            element={
+              <RequirePermission permission="exports.run">
+                <ExportsPage />
               </RequirePermission>
             }
           />

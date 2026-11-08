@@ -416,6 +416,21 @@ export function AdminImportExportPage() {
             </div>
           </Card>
 
+          <div className="rounded-lg border border-primary/25 bg-primary/10 px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium text-primary-strong">Export sur mesure</p>
+                <p className="mt-0.5 text-[11px] text-muted">
+                  Choisissez le jeu de données, les colonnes et les filtres pour un XLSX ou un PDF ciblé.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => window.open("/exports", "_self")}>
+                <Download className="h-3.5 w-3.5" />
+                Composer un export
+              </Button>
+            </div>
+          </div>
+
           <div className="grid gap-3 md:grid-cols-2">
             {exportCards.map((item) => (
               <Card key={item.key} className="panel-sheen border-primary/20 p-4">
