@@ -29,7 +29,9 @@ le RGPD, la documentation et les échéances.
   et données source complètes ; fiche détaillée et QR code par équipement.
 - Téléphonie mobile : inventaire des 82 lignes, titulaires, forfaits et terminaux ; PIN/PUK
   chiffrés avec accès contrôlé et audité.
-- Fournisseurs, licences, sièges, coûts annuels et mouvements de stock.
+- Fournisseurs, licences, sièges et coûts annuels.
+- **Stock IT** dédié : claviers, souris, écrans, casques, stations d'accueil, câbles et
+  consommables, avec quantités, seuils d'alerte, valeur, mouvements et historique.
 - Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
@@ -55,7 +57,7 @@ le RGPD, la documentation et les échéances.
 - Recherche globale filtrée par permissions.
 - Interface React/TypeScript responsive, identité bordeaux renforcée, navigation rétractable.
 - Cockpit d'accueil : état des 10 modules, chiffres clés, échéances, alertes, activité et graphiques.
-- Tests backend : 46 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
+- Tests backend : 47 tests passants (`pytest`), `ruff` et `mypy` sans erreur.
 - Déploiement Docker prévu (dev et production) et scripts Windows natifs.
 
 ## 2. Démarrage rapide (Windows, installation déjà réalisée)

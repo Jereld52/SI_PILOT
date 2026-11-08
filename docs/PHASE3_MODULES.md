@@ -18,6 +18,23 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Nouvelle permission `statistics.read` pour les rôles administrateur, responsable informatique,
   technicien et lecteur.
 
+## Stock IT
+
+- Module dédié aux accessoires et consommables : claviers, souris, écrans, casques, stations
+  d'accueil, webcams, câbles, adaptateurs, toners, papier, batteries et divers.
+- Fiche article : référence interne automatique `STK-AAAA-NNNN`, catégorie, marque, modèle,
+  fournisseur, emplacement, unité, quantité, seuil d'alerte, prix unitaire et notes.
+- Quantité mise à jour uniquement par mouvements :
+  - entrée en stock ;
+  - sortie avec bénéficiaire facultatif ;
+  - ajustement d'inventaire avec quantité constatée.
+- Refus automatique d'une sortie supérieure au stock disponible.
+- Alertes visuelles sous le seuil et articles épuisés.
+- Vue d'ensemble : nombre d'articles, unités, valeur estimée, alertes et articles à réapprovisionner.
+- Historique complet des mouvements avec quantité après mouvement, motif, référence et opérateur.
+- Archivage sans suppression de l'historique.
+- Le module est également remonté dans le cockpit du tableau de bord.
+
 ## Module d'import, Active Directory et RDM
 
 - **Administration → Import / Export** regroupe les imports et les exports de pilotage.
@@ -210,6 +227,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/POST /documents`, `GET/PATCH/DELETE /documents/{id}`, `GET /documents/meta`
 - `GET/POST /documents/{id}/versions`, `GET /documents/versions/{id}/download`
 - `GET /dashboard/cockpit`
+- `GET /stock/overview`, `GET/POST /stock/items`, `GET/PATCH/DELETE /stock/items/{id}`,
+  `GET/POST /stock/items/{id}/movements`
 - `GET /statistics/overview?start=&end=&granularity=day|week|month|year`
 - `GET /exports/tickets?format=xlsx|pdf&start=&end=&granularity=...`
 - `GET /exports/statistics?format=xlsx|pdf&start=&end=&granularity=...`
@@ -222,9 +241,9 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 ## Vérifications
 
 ```text
-pytest -q       46 passed
+pytest -q       47 passed
 ruff check      All checks passed
-mypy app        Success: no issues found in 131 source files
+mypy app        Success: no issues found in 133 source files
 npm run build   TypeScript + Vite OK
 ```
 

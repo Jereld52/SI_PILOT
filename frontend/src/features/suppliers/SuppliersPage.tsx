@@ -59,7 +59,7 @@ export function SuppliersPage() {
   const canManageLicenses = hasPermission("licenses.manage");
   const canManageStock = hasPermission("stock.manage");
 
-  const defaultTab: TabKey = canSuppliers ? "suppliers" : canLicenses ? "licenses" : "stock";
+  const defaultTab: TabKey = canSuppliers ? "suppliers" : "licenses";
   const [tab, setTab] = useState<TabKey>(defaultTab);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -142,7 +142,6 @@ export function SuppliersPage() {
   const tabs: { key: TabKey; label: string; icon: typeof Building2; visible: boolean }[] = [
     { key: "suppliers", label: "Fournisseurs", icon: Truck, visible: canSuppliers },
     { key: "licenses", label: "Licences", icon: KeyRound, visible: canLicenses },
-    { key: "stock", label: "Stock", icon: Package, visible: canStock },
   ];
 
   const refreshSuppliers = () => void suppliersQuery.refetch();
@@ -158,7 +157,7 @@ export function SuppliersPage() {
       <PageHeader
         eyebrow="Achats et ressources"
         title="Fournisseurs, licences et stock"
-        description="Référentiel des prestataires, suivi des licences logicielles et mouvements de matériel."
+        description="Référentiel des prestataires et suivi des licences logicielles, sièges et échéances."
         actions={
           <>
             {tab === "suppliers" && canManageSuppliers ? (

@@ -83,6 +83,7 @@ from app.models.security import (
     Vulnerability,
 )
 from app.models.setting import Setting
+from app.models.stock import StockItem
 from app.models.sylvia import SylviaProposal, SylviaRun
 from app.models.tickets import (
     Intervention,
@@ -166,6 +167,7 @@ __all__ = [
     "SecurityIncidentAsset",
     "Service",
     "Setting",
+    "StockItem",
     "StockMovement",
     "Supplier",
     "SupplierContact",

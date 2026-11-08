@@ -14,6 +14,7 @@ import {
   FolderKanban,
   LifeBuoy,
   MonitorSmartphone,
+  Package,
   RefreshCw,
   Scale,
   ShieldAlert,
@@ -74,6 +75,7 @@ const moduleIcons: Record<string, LucideIcon> = {
   rgpd: Scale,
   documents: BookOpen,
   calendar: CalendarDays,
+  stock: Package,
   mobile: Smartphone,
 };
 
@@ -435,9 +437,9 @@ export function DashboardPage() {
           <p className="text-[11px] text-muted-2">Accès direct aux domaines qui demandent votre attention.</p>
         </div>
         {cockpitQuery.isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, index) => (
-              <Skeleton key={index} className="h-[168px] rounded-xl" />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {Array.from({ length: 11 }).map((_, index) => (
+              <Skeleton key={index} className="h-[168px] rounded-lg" />
             ))}
           </div>
         ) : cockpitQuery.isError ? (
@@ -448,7 +450,7 @@ export function DashboardPage() {
             />
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {modules.map((module) => (
               <ModuleCard key={module.key} module={module} />
             ))}

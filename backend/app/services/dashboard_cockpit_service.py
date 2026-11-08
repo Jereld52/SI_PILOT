@@ -12,6 +12,7 @@ from app.models.mobile import MobileLine
 from app.models.projects import Project
 from app.models.rgpd import DataBreach, DpoRequest, ProcessingActivity, RightsRequest
 from app.models.security import Certificate, SecurityIncident, Vulnerability
+from app.models.stock import StockItem
 from app.models.tickets import Intervention, Ticket, TicketStatus
 from app.schemas.dashboard import CockpitDeadline, CockpitModule, DashboardCockpit
 from sqlalchemy import func, select
@@ -184,6 +185,12 @@ def get_cockpit(db: Session) -> DashboardCockpit:
         MobileLine,
         func.lower(MobileLine.status).in_(("actif", "active", "in_service")),
     )
+    stock_items = list(
+        db.scalars(select(StockItem).where(StockItem.status == "active")).all()
+    )
+    stock_units = sum(item.quantity for item in stock_items)
+    stock_low = sum(1 for item in stock_items if item.is_low)
+    stock_out = sum(1 for item in stock_items if item.is_out)
 
     modules = [
         CockpitModule(
@@ -284,6 +291,17 @@ def get_cockpit(db: Session) -> DashboardCockpit:
             secondary_label="actions en retard",
             hint=f"{open_actions} action(s) ouverte(s)",
             tone="danger" if overdue_actions else "primary",
+        ),
+        CockpitModule(
+            key="stock",
+            label="Stock IT",
+            href="/stock",
+            primary=stock_units,
+            primary_label="unités en stock",
+            secondary=stock_low,
+            secondary_label="sous le seuil",
+            hint=f"{len(stock_items)} article(s) · {stock_out} épuisé(s)",
+            tone="danger" if stock_out else "warning" if stock_low else "success",
         ),
         CockpitModule(
             key="mobile",

@@ -4,7 +4,7 @@ import json
 import secrets
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import (
@@ -23,6 +23,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin, UUIDMixin
 from app.models.auth import User
 from app.models.organization import Agent, Location, Service
+
+if TYPE_CHECKING:
+    from app.models.stock import StockItem
 
 
 class AssetCategory(Base, UUIDMixin, TimestampMixin):
@@ -223,18 +226,27 @@ class StockMovement(Base, UUIDMixin):
     asset_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("assets.id", ondelete="SET NULL"), index=True
     )
+    stock_item_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("stock_items.id", ondelete="SET NULL"), index=True
+    )
     category_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("asset_categories.id", ondelete="SET NULL")
     )
     direction: Mapped[str] = mapped_column(String(20), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    quantity_after: Mapped[int | None] = mapped_column(Integer)
+    recipient_agent_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("agents.id", ondelete="SET NULL"), index=True
+    )
     reason: Mapped[str | None] = mapped_column(String(255))
     reference: Mapped[str | None] = mapped_column(String(120))
     moved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
     asset: Mapped[Asset | None] = relationship(lazy="joined")
+    stock_item: Mapped[StockItem | None] = relationship(lazy="joined")
     category: Mapped[AssetCategory | None] = relationship(lazy="joined")
+    recipient_agent: Mapped[Agent | None] = relationship(lazy="joined")
     created_by: Mapped[User | None] = relationship(lazy="joined")
 
     @property

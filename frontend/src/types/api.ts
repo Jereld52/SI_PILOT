@@ -618,6 +618,66 @@ export interface StockSummaryItem {
   total: number;
 }
 
+export interface StockItemItem {
+  id: string;
+  reference: string;
+  name: string;
+  category: string;
+  brand: string | null;
+  model: string | null;
+  supplier_id: string | null;
+  supplier: { id: string; name: string } | null;
+  location_id: string | null;
+  location: LocationItem | null;
+  unit: string;
+  quantity: number;
+  min_quantity: number;
+  unit_price: number | null;
+  stock_value: number;
+  is_low: boolean;
+  is_out: boolean;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockItemMovementItem {
+  id: string;
+  stock_item_id: string | null;
+  direction: string;
+  quantity: number;
+  quantity_after: number | null;
+  recipient_agent_id: string | null;
+  recipient_agent: AgentRef | null;
+  reason: string | null;
+  reference: string | null;
+  moved_at: string;
+  created_by_id: string | null;
+  created_by_label: string | null;
+}
+
+export interface StockItemDetailItem extends StockItemItem {
+  movements: StockItemMovementItem[];
+}
+
+export interface StockCategorySummary {
+  category: string;
+  items: number;
+  units: number;
+  value: number;
+}
+
+export interface StockOverview {
+  total_items: number;
+  total_units: number;
+  total_value: number;
+  low_stock_count: number;
+  out_of_stock_count: number;
+  categories: StockCategorySummary[];
+  low_stock_items: StockItemItem[];
+}
+
 export interface TicketCategoryItem {
   id: string;
   code: string;

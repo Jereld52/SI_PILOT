@@ -28,6 +28,7 @@ import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { RgpdPage } from "@/features/rgpd/RgpdPage";
 import { SecurityPage } from "@/features/security/SecurityPage";
 import { StatisticsPage } from "@/features/statistics/StatisticsPage";
+import { StockPage } from "@/features/stock/StockPage";
 import { SuppliersPage } from "@/features/suppliers/SuppliersPage";
 import { TicketsPage } from "@/features/tickets/TicketsPage";
 
@@ -172,6 +173,15 @@ export function App() {
             element={
               <RequirePermission permission="suppliers.read">
                 <SuppliersPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="stock"
+            element={
+              <RequirePermission permission="stock.read">
+                <StockPage />
               </RequirePermission>
             }
           />
