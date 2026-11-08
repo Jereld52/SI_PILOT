@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import { App } from "@/app/App";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/features/auth/AuthProvider";
+import { BrandingProvider } from "@/features/branding/BrandingProvider";
 import "@/index.css";
 
 const queryClient = new QueryClient({
@@ -24,12 +25,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <TooltipProvider delayDuration={250}>
-            <App />
-            <Toaster theme="dark" position="top-right" richColors closeButton />
-          </TooltipProvider>
-        </AuthProvider>
+        <BrandingProvider>
+          <AuthProvider>
+            <TooltipProvider delayDuration={250}>
+              <App />
+              <Toaster theme="dark" position="top-right" richColors closeButton />
+            </TooltipProvider>
+          </AuthProvider>
+        </BrandingProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,

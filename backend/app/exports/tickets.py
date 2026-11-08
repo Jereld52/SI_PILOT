@@ -11,7 +11,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import Spacer, TableStyle
 
-from app.exports.pdf_utils import create_document, heading, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, heading, make_table, meta_line
 from app.models.tickets import Ticket
 from app.services.periods import Granularity, StatPeriod, period_key
 
@@ -213,6 +213,7 @@ def tickets_pdf(
     *,
     start: date,
     end: date,
+    branding: PdfBranding | None = None,
 ) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
@@ -222,6 +223,7 @@ def tickets_pdf(
             f"Du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')} · "
             f"granularité {granularity}"
         ),
+        branding=branding,
     )
     story: list = [meta_line(count=len(tickets), label="ticket(s)")]
 

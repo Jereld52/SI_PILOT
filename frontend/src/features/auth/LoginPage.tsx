@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useBranding } from "@/features/branding/BrandingProvider";
 import { ApiError } from "@/lib/api";
 
 const schema = z.object({
@@ -27,9 +28,13 @@ const pillars = [
 
 export function LoginPage() {
   const { user, login } = useAuth();
+  const branding = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const headline = [branding.tagline.replace(/\.$/, ""), branding.organization_name]
+    .filter(Boolean)
+    .join(" — ");
 
   const {
     register,
@@ -67,9 +72,9 @@ export function LoginPage() {
         <div className="relative">
           <div className="inline-flex overflow-hidden rounded-2xl border border-brand-cream/30 bg-white p-3 shadow-2xl shadow-black/30">
             <img
-              src="/logoweb.png"
-              alt="République française — Parc national de forêts"
-              className="h-auto w-[320px] max-w-[68vw] object-contain"
+              src={branding.logo_url}
+              alt={branding.organization_name || branding.app_name}
+              className="h-auto max-h-[120px] w-[320px] max-w-[68vw] object-contain"
             />
           </div>
           <div className="mt-6 flex h-1 w-28 overflow-hidden rounded-full" aria-hidden="true">
@@ -79,14 +84,13 @@ export function LoginPage() {
             <span className="flex-1 bg-warning" />
           </div>
           <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-accent">
-            SI PNFor PILOTE
+            {branding.app_name}
           </p>
           <p className="mt-3 max-w-xl text-balance text-3xl font-semibold leading-tight tracking-tight text-foreground xl:text-4xl">
-            Le cockpit du système d'information du Parc national de forêts.
+            {headline}.
           </p>
           <p className="mt-4 max-w-lg text-sm leading-6 text-muted">
-            Centralisez le parc, les demandes, les contrats, le budget, les projets et la sécurité.
-            Une vision fiable, actualisée et exploitable au quotidien.
+            {branding.description}
           </p>
         </div>
 
@@ -120,7 +124,7 @@ export function LoginPage() {
           </p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Connexion</h1>
           <p className="mt-1 text-sm text-muted">
-            Identifiez-vous avec votre compte SI PNFor PILOTE.
+            Identifiez-vous avec votre compte {branding.app_name}.
           </p>
 
           <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -141,7 +145,7 @@ export function LoginPage() {
                 type="email"
                 autoComplete="username"
                 autoFocus
-                placeholder="prenom.nom@forets-parcnational.fr"
+                placeholder="prenom.nom@exemple.fr"
                 invalid={Boolean(errors.email)}
                 {...register("email")}
               />
@@ -174,10 +178,19 @@ export function LoginPage() {
             <p className="mt-1">
               Les comptes sont créés par un administrateur. Toute connexion est journalisée.
             </p>
+            {branding.support_email ? (
+              <p className="mt-2">
+                Support :{" "}
+                <a className="text-accent hover:underline" href={`mailto:${branding.support_email}`}>
+                  {branding.support_email}
+                </a>
+              </p>
+            ) : null}
           </div>
 
           <p className="mt-8 text-center text-[10px] text-muted-2">
-            SI PNFor PILOTE · version 0.1.0 · Parc national de forêts
+            {branding.app_name} · version {branding.version}
+            {branding.organization_name ? ` · ${branding.organization_name}` : ""}
           </p>
         </div>
       </section>

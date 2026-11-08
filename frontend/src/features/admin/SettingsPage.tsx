@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { BrandingSettingsCard } from "@/features/admin/BrandingSettingsCard";
 import { SmtpSettingsCard } from "@/features/admin/SmtpSettingsCard";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -27,6 +28,17 @@ const categoryLabels: Record<string, string> = {
 };
 
 const categoryOrder = ["general", "dashboard", "alerts", "security", "notifications", "sylvia"];
+
+const BRANDING_KEYS = new Set([
+  "app.name",
+  "app.organization",
+  "app.tagline",
+  "app.description",
+  "app.support_email",
+  "app.primary_color",
+  "app.logo_filename",
+  "app.logo_version",
+]);
 
 function toInputValue(value: unknown): string {
   if (Array.isArray(value)) return value.join(", ");
@@ -82,7 +94,11 @@ export function SettingsPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, SettingItem[]>();
     (settingsQuery.data ?? []).forEach((setting) => {
-      if (setting.key.startsWith("smtp.") || setting.key === "notifications.email_enabled") {
+      if (
+        BRANDING_KEYS.has(setting.key) ||
+        setting.key.startsWith("smtp.") ||
+        setting.key === "notifications.email_enabled"
+      ) {
         return;
       }
       const list = map.get(setting.category) ?? [];
@@ -133,6 +149,8 @@ export function SettingsPage() {
           {!canManage ? " Votre rôle permet la consultation uniquement." : ""}
         </p>
       </div>
+
+      <BrandingSettingsCard canManage={canManage} />
 
       <SmtpSettingsCard canManage={canManage} />
 

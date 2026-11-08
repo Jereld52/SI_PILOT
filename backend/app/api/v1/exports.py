@@ -30,7 +30,13 @@ from app.models.rgpd import (
     RightsRequest,
 )
 from app.models.tickets import Ticket
-from app.services import assets_service, mobile_service, rgpd_service, statistics_service
+from app.services import (
+    assets_service,
+    branding_service,
+    mobile_service,
+    rgpd_service,
+    statistics_service,
+)
 from app.services.audit_service import write_audit
 from app.services.periods import Granularity, build_periods, default_range
 
@@ -77,7 +83,9 @@ def export_assets(
     content = (
         assets_export.assets_xlsx(assets, assignments=assignments)
         if format == "xlsx"
-        else assets_export.assets_pdf(assets)
+        else assets_export.assets_pdf(
+            assets, branding=branding_service.get_pdf_branding(db)
+        )
     )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -138,7 +146,12 @@ def export_tickets(
         )
         if format == "xlsx"
         else tickets_export.tickets_pdf(
-            tickets, periods, granularity, start=start, end=end
+            tickets,
+            periods,
+            granularity,
+            start=start,
+            end=end,
+            branding=branding_service.get_pdf_branding(db),
         )
     )
     media_type = (
@@ -192,7 +205,9 @@ def export_statistics(
     content = (
         statistics_export.statistics_xlsx(overview)
         if format == "xlsx"
-        else statistics_export.statistics_pdf(overview)
+        else statistics_export.statistics_pdf(
+            overview, branding=branding_service.get_pdf_branding(db)
+        )
     )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -237,7 +252,13 @@ def export_mobile_lines(
     if not has_permission(actor, "mobile_lines.read"):
         raise PermissionDeniedError("Vous ne pouvez pas exporter les lignes mobiles.")
     lines = mobile_service.list_mobile_lines(db)
-    content = mobile_export.mobile_lines_xlsx(lines) if format == "xlsx" else mobile_export.mobile_lines_pdf(lines)
+    content = (
+        mobile_export.mobile_lines_xlsx(lines)
+        if format == "xlsx"
+        else mobile_export.mobile_lines_pdf(
+            lines, branding=branding_service.get_pdf_branding(db)
+        )
+    )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         if format == "xlsx"
@@ -290,7 +311,9 @@ def export_infrastructure(
     content = (
         infrastructure_export.infrastructure_xlsx(equipments, dependencies, checks)
         if format == "xlsx"
-        else infrastructure_export.infrastructure_pdf(equipments)
+        else infrastructure_export.infrastructure_pdf(
+            equipments, branding=branding_service.get_pdf_branding(db)
+        )
     )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -381,7 +404,12 @@ def export_rgpd(
         )
         if format == "xlsx"
         else rgpd_export.rgpd_pdf(
-            activities, collections, dpo_requests, rights_requests, breaches
+            activities,
+            collections,
+            dpo_requests,
+            rights_requests,
+            breaches,
+            branding=branding_service.get_pdf_branding(db),
         )
     )
     media_type = (
@@ -442,7 +470,12 @@ def export_rights_request_dossier(
     content = (
         rgpd_export.rights_dossier_xlsx(rights_request, activity, collections)
         if format == "xlsx"
-        else rgpd_export.rights_dossier_pdf(rights_request, activity, collections)
+        else rgpd_export.rights_dossier_pdf(
+            rights_request,
+            activity,
+            collections,
+            branding=branding_service.get_pdf_branding(db),
+        )
     )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -541,7 +574,14 @@ def export_agent_personal_data(
         )
         if format == "xlsx"
         else rgpd_export.agent_pdf(
-            agent, accounts, assets, assignments, stock_movements, tickets, mobile_lines
+            agent,
+            accounts,
+            assets,
+            assignments,
+            stock_movements,
+            tickets,
+            mobile_lines,
+            branding=branding_service.get_pdf_branding(db),
         )
     )
     media_type = (
@@ -625,7 +665,12 @@ def export_custom(
     content = (
         custom_export.custom_xlsx(title, selected, rows)
         if format == "xlsx"
-        else custom_export.custom_pdf(title, selected, rows)
+        else custom_export.custom_pdf(
+            title,
+            selected,
+            rows,
+            branding=branding_service.get_pdf_branding(db),
+        )
     )
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

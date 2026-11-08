@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "SI PNFor PILOTE"
+    app_name: str = "SI PILOT"
     app_env: Literal["development", "test", "production"] = "development"
     app_version: str = "0.1.0"
     debug: bool = False

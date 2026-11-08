@@ -190,6 +190,19 @@ export interface SettingItem {
   updated_at: string;
 }
 
+export interface BrandingInfo {
+  app_name: string;
+  organization_name: string;
+  tagline: string;
+  description: string;
+  support_email: string | null;
+  primary_color: string;
+  logo_url: string;
+  logo_custom: boolean;
+  logo_updated_at: string | null;
+  version: string;
+}
+
 export interface SessionInfo {
   id: string;
   ip: string | null;

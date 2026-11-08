@@ -6,7 +6,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib.units import mm
 
-from app.exports.pdf_utils import create_document, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, make_table, meta_line
 from app.models.mobile import MobileLine
 
 HEADERS = [
@@ -161,12 +161,16 @@ def mobile_lines_xlsx(lines: list[MobileLine]) -> bytes:
     return buffer.getvalue()
 
 
-def mobile_lines_pdf(lines: list[MobileLine]) -> bytes:
+def mobile_lines_pdf(
+    lines: list[MobileLine],
+    branding: PdfBranding | None = None,
+) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
         buffer,
         title="Lignes mobiles détaillées",
         subtitle=f"{len(lines)} ligne(s)",
+        branding=branding,
     )
     headers = [
         "Ligne",

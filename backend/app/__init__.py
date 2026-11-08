@@ -1,1 +1,1 @@
-"""SI PNFor PILOTE - backend applicatif."""
+"""SI PILOT - backend applicatif."""

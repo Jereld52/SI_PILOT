@@ -13,4 +13,4 @@ def test_ready(client):
 def test_version(client):
     response = client.get("/api/v1/version")
     assert response.status_code == 200
-    assert response.json()["name"] == "SI PNFor PILOTE"
+    assert response.json()["name"] == "SI PILOT"

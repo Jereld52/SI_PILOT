@@ -118,7 +118,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="Cockpit de pilotage du système d'information du Parc national de forêts.",
+        description="Cockpit de pilotage du système d'information, personnalisable par structure.",
         docs_url="/api/docs",
         redoc_url=None,
         openapi_url="/api/openapi.json",

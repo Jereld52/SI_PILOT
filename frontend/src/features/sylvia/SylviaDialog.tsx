@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useBranding } from "@/features/branding/BrandingProvider";
 
 interface SylviaDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ const capabilities = [
 
 export function SylviaDialog({ open, onOpenChange }: SylviaDialogProps) {
   const { hasPermission } = useAuth();
+  const branding = useBranding();
   const navigate = useNavigate();
 
   return (
@@ -43,8 +45,9 @@ export function SylviaDialog({ open, onOpenChange }: SylviaDialogProps) {
             <Badge tone="warning">Non configurée</Badge>
           </DialogTitle>
           <DialogDescription>
-            L'assistant IA institutionnel du Parc national de forêts. L'intégration est prévue en
-            Phase 5 et restera facultative : SI PNFor PILOTE fonctionne intégralement sans elle.
+            L'assistant IA facultatif de {branding.organization_name || "votre structure"}.
+            L'intégration est prévue en Phase 5 et restera facultative : {branding.app_name}{" "}
+            fonctionne intégralement sans elle.
           </DialogDescription>
         </DialogHeader>
 
@@ -55,8 +58,8 @@ export function SylviaDialog({ open, onOpenChange }: SylviaDialogProps) {
               <div>
                 <p className="text-xs font-medium text-foreground">Cible technique</p>
                 <p className="mt-1 text-[11px] leading-5 text-muted">
-                  Ollama et Open WebUI sur le DGX Spark, derrière un reverse proxy Nginx. L'URL,
-                  le modèle et la clé seront configurables depuis l'administration.
+                  Ollama et Open WebUI sur un serveur local dédié, derrière un reverse proxy Nginx.
+                  L'URL, le modèle et la clé seront configurables depuis l'administration.
                 </p>
               </div>
             </div>

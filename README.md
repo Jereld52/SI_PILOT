@@ -1,16 +1,17 @@
-# SI PNFor PILOTE
+# SI PILOT
 
-**Cockpit de pilotage du système d'information du Parc national de forêts.**
+**Cockpit de pilotage du système d'information, personnalisable pour chaque structure.**
 
 Application métier autonome pour centraliser le parc informatique, les agents, les demandes,
 les interventions, l'infrastructure, la cybersécurité, les contrats, le budget, les projets,
-le RGPD, la documentation et les échéances.
+le RGPD, la documentation et les échéances. L'identité visuelle et le nom de la structure
+se configurent depuis l'administration.
 
-> **État actuel : Phase 3 — parc enrichi, téléphonie, fournisseurs, licences, stock,
-> demandes IT, interventions et RGPD livrés.**
-> Les modules restants (infrastructure, cybersécurité, contrats, budget, projets, documentation,
-> calendrier, SylvIA) sont annoncés dans la navigation avec leur phase de développement.
-> Aucune donnée fictive n'alimente les indicateurs.
+> **État actuel : socle et modules métier livrés.**
+> Parc, agents, téléphonie, fournisseurs, licences, stock, tickets, interventions, contrats,
+> budget, infrastructure, supervision, cybersécurité, projets, documentation, RGPD, réservations,
+> exports et administration sont opérationnels. Les automatisations planifiées et l'intégration
+> SylvIA restent à venir.
 
 ---
 
@@ -66,11 +67,13 @@ le RGPD, la documentation et les échéances.
   personnelles détenues sur un agent, avec audit. Les PIN/PUK restent exclus.
 - Exports détaillés XLSX et PDF du parc, des lignes mobiles et de l'infrastructure : toutes les
   colonnes des fiches, WAPT dynamique, historique des affectations, dépendances et supervision.
-  Les PDF portent le logo du Parc national de forêts, un titre, un en-tête et une pagination.
+  Les PDF portent le logo de la structure, un titre, un en-tête et une pagination.
   Les PIN/PUK restent exclus des exports.
 - Page **Exports sur mesure** : choix du jeu de données, des colonnes, des filtres (statut, type,
   site, période) et du format XLSX/PDF, pour produire un fichier ciblé.
 - Administration : utilisateurs, rôles et permissions, journal d'audit, paramètres.
+- **Identité personnalisable** : nom de l'application, nom de la structure, accroche, description,
+  adresse de contact, logo et couleur principale, appliqués à l'interface, aux e-mails et aux PDF.
 - Recherche globale filtrée par permissions, couvrant agents, parc, téléphonie, infrastructure,
   stock, tickets et interventions, fournisseurs et licences, contrats, budgets, projets,
   cybersécurité, RGPD, réservations, calendrier et documentation.
@@ -111,7 +114,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows\start-app.ps1 -OpenBr
 
 ### Raccourci bureau
 
-Un raccourci **SI PNFor PILOTE** est présent sur le bureau. Il exécute
+Un raccourci **SI PILOT** est présent sur le bureau. Il exécute
 `scripts\windows\launch.ps1`, démarre PostgreSQL si nécessaire, lance l'application et ouvre
 le navigateur. Si l'application est déjà active, il ouvre simplement la page.
 
@@ -126,8 +129,24 @@ Pour créer un autre administrateur :
 ```powershell
 cd backend
 .\.venv\Scripts\python.exe -m app.cli create-admin `
-  --email admin@forets-parcnational.fr --first-name Admin --last-name "SI PNFor" --generate
+  --email admin@forets-parcnational.fr --first-name Admin --last-name "SI PILOT" --generate
 ```
+
+### Identité et personnalisation
+
+L'identité de l'application se règle dans **Administration → Paramètres → Identité de
+l'application** lorsque l'on dispose de la permission `admin.settings.manage` :
+
+- nom de l'application et nom de la structure ;
+- accroche et description affichées sur l'écran de connexion ;
+- adresse de contact ;
+- logo (PNG, JPEG ou WEBP, 4 Mo maximum) ;
+- couleur principale utilisée par l'interface et les exports PDF.
+
+Les valeurs sont stockées en base, appliquées sans redémarrage et chaque modification est
+auditée. Le logo est conservé localement dans le répertoire de stockage de l'application.
+Les exports PDF, les e-mails et les notifications reprennent automatiquement l'identité
+configurée.
 
 ## 3. Installation complète
 
@@ -220,5 +239,6 @@ Détail : [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## 10. Licence et propriété
 
-Logiciel interne au Parc national de forêts. Aucune dépendance à ASTRA, ENKI ou à des
-environnements personnels. Les composants open source conservent leurs licences respectives.
+Logiciel conçu pour le Parc national de forêts et personnalisable pour d'autres structures.
+Aucune dépendance à ASTRA, ENKI ou à des environnements personnels. Les composants open source
+conservent leurs licences respectives.

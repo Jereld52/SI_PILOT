@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 
-from app.exports.pdf_utils import create_document, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, make_table, meta_line
 from app.models.assets import Asset, AssetAssignment, StockMovement
 from app.models.mobile import MobileLine
 from app.models.organization import Agent, AgentAccount
@@ -375,6 +375,7 @@ def rgpd_pdf(
     dpo_requests: list[DpoRequest],
     rights_requests: list[RightsRequest],
     breaches: list[DataBreach],
+    branding: PdfBranding | None = None,
 ) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
@@ -385,6 +386,7 @@ def rgpd_pdf(
             f"{len(dpo_requests)} demande(s) DPO · {len(rights_requests)} droit(s) · "
             f"{len(breaches)} violation(s)"
         ),
+        branding=branding,
     )
     rows: list[list[Any]] = [
         ["Référence", "Traitement", "Base légale", "Conservation", "Statut", "Prochaine revue"]
@@ -528,6 +530,7 @@ def rights_dossier_pdf(
     request: RightsRequest,
     activity: ProcessingActivity | None,
     collections: list[DataCollection],
+    branding: PdfBranding | None = None,
 ) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
@@ -538,6 +541,7 @@ def rights_dossier_pdf(
             f"{request.requester_name or 'Demandeur non précisé'} · {_status(request.status)}"
         ),
         pagesize=A4,
+        branding=branding,
     )
     rows: list[list[Any]] = [["Champ", "Valeur"]]
     for label, value in (
@@ -772,6 +776,7 @@ def agent_pdf(
     stock_movements: list[StockMovement],
     tickets: list[Ticket],
     mobile_lines: list[MobileLine],
+    branding: PdfBranding | None = None,
 ) -> bytes:
     buffer = io.BytesIO()
     full_name = f"{agent.first_name} {agent.last_name}".strip()
@@ -782,6 +787,7 @@ def agent_pdf(
             f"{agent.email_pro} · "
             f"{agent.service.name if agent.service else 'Service non précisé'}"
         ),
+        branding=branding,
         pagesize=A4,
     )
     rows: list[list[Any]] = [["Champ", "Valeur"]]

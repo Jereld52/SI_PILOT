@@ -39,6 +39,6 @@ if ($OpenBrowser) {
 }
 
 Set-Location (Join-Path $Root "backend")
-Write-Host "SI PNFor PILOTE : http://127.0.0.1:8000"
+Write-Host "SI PILOT : http://127.0.0.1:8000"
 Write-Host "Documentation API : http://127.0.0.1:8000/api/docs"
 & .\.venv\Scripts\uvicorn.exe app.main:app --host 127.0.0.1 --port 8000

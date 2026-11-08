@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import smtplib
 from dataclasses import dataclass
 from email.message import EmailMessage
@@ -11,21 +10,15 @@ from app.core.errors import ValidationAppError
 from app.db.base import utcnow
 from app.models.auth import User
 from app.models.automation import EmailOutbox
-from app.models.setting import Setting
 from app.schemas.mail import SmtpSettingsRead, SmtpSettingsUpdate
+from app.services import branding_service, settings_service
 from app.services.audit_service import write_audit
 from fastapi import Request
 from sqlalchemy.orm import Session
 
 
 def _value(db: Session, key: str, default: object = "") -> object:
-    setting = db.get(Setting, key)
-    if setting is None or setting.value_json is None:
-        return default
-    try:
-        return json.loads(setting.value_json)
-    except json.JSONDecodeError:
-        return setting.value_json
+    return settings_service.get_value(db, key, default)
 
 
 def _set_value(
@@ -37,17 +30,14 @@ def _set_value(
     is_secret: bool = False,
     description: str | None = None,
 ) -> None:
-    setting = db.get(Setting, key)
-    if setting is None:
-        setting = Setting(
-            key=key,
-            category=category,
-            is_secret=is_secret,
-            description=description,
-        )
-        db.add(setting)
-    setting.value_json = json.dumps(value, ensure_ascii=False)
-    setting.is_secret = is_secret
+    settings_service.set_value(
+        db,
+        key,
+        value,
+        category=category,
+        is_secret=is_secret,
+        description=description,
+    )
 
 
 @dataclass(frozen=True)
@@ -70,13 +60,14 @@ class SmtpConfig:
 def get_config(db: Session) -> SmtpConfig:
     encrypted = str(_value(db, "smtp.password_encrypted", "") or "")
     password = decrypt_secret(encrypted) if encrypted else ""
+    default_from_name = branding_service.get_branding(db).app_name
     return SmtpConfig(
         host=str(_value(db, "smtp.host", "") or ""),
         port=int(str(_value(db, "smtp.port", 587) or 587)),
         username=str(_value(db, "smtp.username", "") or ""),
         password=password or "",
         from_email=str(_value(db, "smtp.from_email", "") or ""),
-        from_name=str(_value(db, "smtp.from_name", "SI PNFor PILOTE") or "SI PNFor PILOTE"),
+        from_name=str(_value(db, "smtp.from_name", default_from_name) or default_from_name),
         use_tls=bool(_value(db, "smtp.use_tls", True)),
         use_ssl=bool(_value(db, "smtp.use_ssl", False)),
         enabled=bool(_value(db, "notifications.email_enabled", False)),
@@ -225,9 +216,9 @@ def send_test_email(
         )
     outbox = EmailOutbox(
         to_email=to_email,
-        subject="Test de configuration SMTP — SI PNFor PILOTE",
+        subject=f"Test de configuration SMTP — {config.from_name}",
         body=(
-            "Cet e-mail confirme que la configuration SMTP de SI PNFor PILOTE "
+            f"Cet e-mail confirme que la configuration SMTP de {config.from_name} "
             "est opérationnelle."
         ),
         status="pending",

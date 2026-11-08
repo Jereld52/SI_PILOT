@@ -1,4 +1,25 @@
-# Charte graphique
+# Charte graphique et personnalisation
+
+## Identité configurable
+
+L'identité de l'application est définie en base et se règle depuis
+**Administration → Paramètres → Identité de l'application** :
+
+- nom de l'application (`app.name`, par défaut `SI PILOT`) ;
+- nom de la structure (`app.organization`) ;
+- accroche et description de l'écran de connexion ;
+- adresse de contact ;
+- logo personnalisé (`app.logo_filename`) ;
+- couleur principale (`app.primary_color`).
+
+Le logo est téléversé au format PNG, JPEG ou WEBP (4 Mo maximum), puis réencodé en PNG et
+stocké dans le répertoire de stockage local. Il est utilisé dans la sidebar, l'écran de
+connexion, le favicon, les e-mails et l'en-tête des exports PDF. Sans logo personnalisé,
+l'application utilise le lockup officiel fourni avec l'installation.
+
+La couleur principale est appliquée aux variables CSS de l'interface et à l'en-tête des PDF.
+Les nuances `primary-deep`, `primary-bright` et `primary-strong` sont calculées automatiquement
+pour conserver un contraste lisible.
 
 ## Logo
 

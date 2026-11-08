@@ -7,10 +7,12 @@ import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ChangePasswordDialog } from "@/features/auth/ChangePasswordDialog";
+import { useBranding } from "@/features/branding/BrandingProvider";
 import { cn } from "@/lib/utils";
 
 export function AppLayout() {
   const { user } = useAuth();
+  const branding = useBranding();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return window.localStorage.getItem("pnfor.sidebar.collapsed") === "1";
@@ -81,7 +83,10 @@ export function AppLayout() {
         </main>
 
         <footer className="mx-auto flex w-full max-w-[1560px] flex-col gap-1 border-t border-border-soft/60 px-4 pb-5 pt-3 text-[9px] uppercase tracking-wide text-muted-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>SI PNFor PILOTE · Parc national de forêts</span>
+          <span>
+            {branding.app_name}
+            {branding.organization_name ? ` · ${branding.organization_name}` : ""}
+          </span>
           <span>Données hébergées localement · accès journalisé</span>
         </footer>
       </div>

@@ -6,6 +6,7 @@ from app.api.v1 import (
     assets,
     audit,
     auth,
+    branding,
     budget,
     calendar,
     contracts,
@@ -35,6 +36,7 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 api_router.include_router(health.router)
+api_router.include_router(branding.router)
 api_router.include_router(auth.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(search.router)

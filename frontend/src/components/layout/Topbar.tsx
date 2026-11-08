@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useBranding } from "@/features/branding/BrandingProvider";
 import { SylviaDialog } from "@/features/sylvia/SylviaDialog";
 import { fullName } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ interface TopbarProps {
 
 export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
   const { user, hasPermission, logout } = useAuth();
+  const branding = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
   const [sylviaOpen, setSylviaOpen] = useState(false);
@@ -61,7 +63,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
           </Button>
 
           <div className="hidden min-w-0 md:block">
-            <p className="text-[9px] uppercase tracking-[0.18em] text-muted-2">SI PNFor PILOTE</p>
+            <p className="text-[9px] uppercase tracking-[0.18em] text-muted-2">{branding.app_name}</p>
             <p className="truncate text-[13px] font-medium text-foreground">
               <span className="mr-2 inline-block h-1 w-1 rounded-full bg-primary-bright align-middle" />
               {current?.label ?? "Vue générale"}

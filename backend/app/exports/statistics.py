@@ -9,7 +9,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import Spacer, TableStyle
 
-from app.exports.pdf_utils import create_document, heading, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, heading, make_table, meta_line
 from app.schemas.statistics import StatisticsOverview, StatsPoint
 
 HEADER_FILL = PatternFill("solid", fgColor="772B2F")
@@ -134,7 +134,10 @@ def _table_style() -> TableStyle:
     )
 
 
-def statistics_pdf(overview: StatisticsOverview) -> bytes:
+def statistics_pdf(
+    overview: StatisticsOverview,
+    branding: PdfBranding | None = None,
+) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
         buffer,
@@ -143,6 +146,7 @@ def statistics_pdf(overview: StatisticsOverview) -> bytes:
             f"Du {overview.start.strftime('%d/%m/%Y')} au "
             f"{overview.end.strftime('%d/%m/%Y')} · granularité {overview.granularity}"
         ),
+        branding=branding,
     )
     story: list = [meta_line(count=len(overview.kpis), label="indicateur(s)")]
     kpi_rows = [["Indicateur", "Valeur", "Précision"]] + [

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useBranding } from "@/features/branding/BrandingProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { SmtpSettings } from "@/types/api";
 
@@ -17,12 +18,13 @@ interface SmtpSettingsCardProps {
 }
 
 export function SmtpSettingsCard({ canManage }: SmtpSettingsCardProps) {
+  const branding = useBranding();
   const [host, setHost] = useState("");
   const [port, setPort] = useState("587");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [fromEmail, setFromEmail] = useState("");
-  const [fromName, setFromName] = useState("SI PNFor PILOTE");
+  const [fromName, setFromName] = useState(branding.app_name);
   const [useTls, setUseTls] = useState(true);
   const [useSsl, setUseSsl] = useState(false);
   const [enabled, setEnabled] = useState(false);
@@ -166,7 +168,7 @@ export function SmtpSettingsCard({ canManage }: SmtpSettingsCardProps) {
               type="email"
               value={fromEmail}
               onChange={(event) => setFromEmail(event.target.value)}
-              placeholder="informatique@forets-parcnational.fr"
+              placeholder="informatique@exemple.fr"
               disabled={!canManage}
             />
           </div>
@@ -222,7 +224,7 @@ export function SmtpSettingsCard({ canManage }: SmtpSettingsCardProps) {
                   type="email"
                   value={testEmail}
                   onChange={(event) => setTestEmail(event.target.value)}
-                  placeholder="vous@forets-parcnational.fr"
+                  placeholder="vous@exemple.fr"
                   className="w-64"
                 />
               </div>

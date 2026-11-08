@@ -50,7 +50,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     credentials: "include",
   }).catch(() => {
     throw new ApiError(
-      "Le serveur SI PNFor PILOTE est injoignable. Vérifiez qu'il est démarré.",
+      "Le serveur est injoignable. Vérifiez que l'application est démarrée.",
       0,
       "NETWORK_ERROR",
     );

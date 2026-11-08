@@ -108,7 +108,20 @@ DOCUMENT_CATEGORIES = (
 )
 
 DEFAULT_SETTINGS = (
-    ("app.name", "SI PNFor PILOTE", "general", False, "Nom affiché de l'application"),
+    ("app.name", "SI PILOT", "general", False, "Nom affiché de l'application"),
+    ("app.organization", "Votre structure", "general", False, "Nom de la structure ou de l'organisation"),
+    ("app.tagline", "Cockpit du système d'information", "general", False, "Accroche affichée sur l'écran de connexion"),
+    (
+        "app.description",
+        "Centralisez votre parc, vos demandes, vos contrats, votre budget, vos projets et votre sécurité dans un outil unique.",
+        "general",
+        False,
+        "Description courte de l'application",
+    ),
+    ("app.support_email", None, "general", False, "Adresse de contact affichée aux utilisateurs"),
+    ("app.primary_color", "#772B2F", "general", False, "Couleur principale de l'interface et des exports"),
+    ("app.logo_filename", None, "general", False, "Logo personnalisé de l'application"),
+    ("app.logo_version", None, "general", False, "Version technique du logo personnalisé"),
     ("app.timezone", "Europe/Paris", "general", False, "Fuseau horaire d'affichage"),
     ("app.currency", "EUR", "general", False, "Devise utilisée pour les montants"),
     ("dashboard.renewal_threshold", 70, "dashboard", False, "Seuil du score de renouvellement"),
@@ -125,7 +138,7 @@ DEFAULT_SETTINGS = (
     ("smtp.use_tls", True, "notifications", False, "Utiliser STARTTLS"),
     ("smtp.use_ssl", False, "notifications", False, "Connexion SMTP SSL directe"),
     ("smtp.from_email", "", "notifications", False, "Adresse d'expédition"),
-    ("smtp.from_name", "SI PNFor PILOTE", "notifications", False, "Nom de l'expéditeur"),
+    ("smtp.from_name", "SI PILOT", "notifications", False, "Nom de l'expéditeur"),
     ("wapt.enabled", False, "wapt", False, "Activer la connexion au serveur WAPT"),
     ("wapt.base_url", "", "wapt", False, "URL du serveur WAPT"),
     ("wapt.username", "", "wapt", False, "Identifiant WAPT"),

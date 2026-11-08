@@ -6,7 +6,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib.units import mm
 
-from app.exports.pdf_utils import create_document, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, make_table, meta_line
 from app.models.assets import Asset
 
 BASE_HEADERS = [
@@ -224,12 +224,13 @@ def assets_xlsx(
     return buffer.getvalue()
 
 
-def assets_pdf(assets: list[Asset]) -> bytes:
+def assets_pdf(assets: list[Asset], branding: PdfBranding | None = None) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
         buffer,
         title="Parc informatique détaillé",
         subtitle=f"{len(assets)} équipement(s)",
+        branding=branding,
     )
     headers = [
         "Inventaire",

@@ -107,7 +107,7 @@ def _bootstrap(args: argparse.Namespace) -> None:
             email=settings.bootstrap_admin_email.strip().lower(),
             password_hash=hash_password(settings.bootstrap_admin_password),
             first_name="Administrateur",
-            last_name="SI PNFor",
+            last_name="SI PILOT",
             role_id=role.id,
             data_scope="all",
             is_active=True,
@@ -139,7 +139,7 @@ def _reset_password(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="SI PNFor PILOTE - outil d'administration")
+    parser = argparse.ArgumentParser(description="SI PILOT - outil d'administration")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     seed_parser = subparsers.add_parser("seed", help="Initialiser les référentiels")

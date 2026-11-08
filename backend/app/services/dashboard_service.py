@@ -187,7 +187,7 @@ def get_summary(db: Session) -> DashboardSummary:
             key="users",
             label="Comptes applicatifs",
             value=users_active,
-            hint="Comptes actifs dans SI PNFor PILOTE",
+            hint="Comptes actifs dans l'application",
             link="/admin/users",
         ),
         KpiValue(

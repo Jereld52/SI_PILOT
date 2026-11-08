@@ -20,7 +20,7 @@ from app.schemas.reservations import (
     ReservationAvailability,
     ReservationConflict,
 )
-from app.services import notifications_service
+from app.services import branding_service, notifications_service
 from app.services.audit_service import write_audit
 from fastapi import Request
 from sqlalchemy import select
@@ -593,13 +593,16 @@ def export_ics(
         statement.order_by(EquipmentReservation.start_at)
     ).unique().all()
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    app_name = branding_service.get_branding(db).app_name
+    calendar_name = f"Reservations de materiel - {app_name}".replace(",", "\\,")
+    product_id = f"-//{app_name}//Reservations//FR".replace(",", "\\,")
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//SI PNFor PILOTE//Reservations//FR",
+        f"PRODID:{product_id}",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        "X-WR-CALNAME:Reservations de materiel - SI PNFor PILOTE",
+        f"X-WR-CALNAME:{calendar_name}",
     ]
     for row in rows:
         unavailable = row.kind == "unavailability"

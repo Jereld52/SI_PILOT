@@ -150,7 +150,7 @@ def export_reservations_ics(
         content=content,
         media_type="text/calendar; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="reservations-si-pnfor.ics"'
+            "Content-Disposition": 'attachment; filename="reservations.ics"'
         },
     )
 

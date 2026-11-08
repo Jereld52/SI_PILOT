@@ -16,7 +16,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.permissions import has_permission
-from app.exports.pdf_utils import create_document, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, make_table, meta_line
 from app.models.assets import Asset, License, Supplier
 from app.models.auth import User
 from app.models.contracts import Contract
@@ -910,12 +910,14 @@ def custom_pdf(
     rows: list[dict[str, Any]],
     *,
     subtitle: str = "",
+    branding: PdfBranding | None = None,
 ) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
         buffer,
         title=title,
         subtitle=subtitle or f"{len(rows)} ligne(s)",
+        branding=branding,
     )
     story: list[Any] = [meta_line(count=len(rows), label="ligne(s)")]
 

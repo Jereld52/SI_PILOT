@@ -119,8 +119,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
     historique des affectations, lignes mobiles non secrètes, tickets demandés et mouvements
     de stock. Les PIN/PUK ne sont jamais inclus.
 - Les exports sont audités (nombre de lignes et format).
-- Tous les PDF sont harmonisés : logo du Parc national de forêts, nom de l'application, titre de
-  l'export, date de génération, en-tête, pied de page et pagination.
+- Tous les PDF sont harmonisés : logo et nom de la structure configurés, nom de l'application,
+  titre de l'export, date de génération, en-tête, pied de page et pagination.
 - Les tableaux PDF utilisent des cellules à retour à la ligne automatique pour éviter les
   débordements de colonnes.
 - Les secrets mobiles (PIN/PUK) ne sont jamais inclus dans les exports.
@@ -173,6 +173,17 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - QR code par matériel réservable, ouvrant directement la page de réservation.
 - Sortie et retour du matériel avec horodatage, notification et audit.
 - Une réservation retournée libère immédiatement le créneau.
+
+### Identité et personnalisation
+
+- Carte **Identité de l'application** dans **Administration → Paramètres**.
+- Nom de l'application, nom de la structure, accroche, description et adresse de contact.
+- Logo personnalisé PNG, JPEG ou WEBP (4 Mo maximum), prévisualisé et remplaçable.
+- Couleur principale configurable, appliquée automatiquement aux variables CSS de l'interface
+  et à l'en-tête des exports PDF.
+- Ces valeurs alimentent l'écran de connexion, la sidebar, le navigateur, les e-mails,
+  les notifications et tous les exports PDF.
+- Les modifications sont auditées ; le logo et les paramètres restent stockés localement.
 
 ### Notifications et SMTP externe
 
@@ -405,6 +416,8 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - `GET/PUT /ldap/config`, `POST /ldap/test`, `POST /ldap/preview`, `POST /ldap/sync`
 - `GET /imports`, `GET /imports/templates/{type}`, `POST /imports/preview`,
   `POST /imports/{id}/apply`
+- `GET /branding`, `GET /branding/logo`
+- `PUT /admin/branding`, `POST/DELETE /admin/branding/logo`
 - `GET/PUT /admin/settings/smtp`, `POST /admin/settings/smtp/test`
 - `GET/PUT /admin/wapt/config`, `POST /admin/wapt/test`, `POST /admin/wapt/sync`
 - `GET /admin/wapt/hosts`, `GET /admin/wapt/packages`,

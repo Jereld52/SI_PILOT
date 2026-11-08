@@ -6,7 +6,7 @@ from app.core.permissions import has_permission
 from app.models.auth import User
 from app.models.notification import Notification
 from app.models.reservations import EquipmentReservation
-from app.services import email_service
+from app.services import branding_service, email_service
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -96,10 +96,11 @@ def notify_reservation(
     if reservation.requester_email:
         emails.add(reservation.requester_email)
     emails.update(user.email for user in recipients.values() if user.email)
+    app_name = branding_service.get_branding(db).app_name
     for email in emails:
         email_service.send_email(
             db,
             email,
-            f"[SI PNFor PILOTE] {title}",
+            f"[{app_name}] {title}",
             f"{body}\n\nConsultez le planning : /reservations",
         )

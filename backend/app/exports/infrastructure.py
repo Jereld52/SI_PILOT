@@ -6,7 +6,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib.units import mm
 
-from app.exports.pdf_utils import create_document, make_table, meta_line
+from app.exports.pdf_utils import PdfBranding, create_document, make_table, meta_line
 from app.models.infrastructure import (
     InfraDependency,
     InfraEquipment,
@@ -167,12 +167,16 @@ def infrastructure_xlsx(
     return buffer.getvalue()
 
 
-def infrastructure_pdf(equipments: list[InfraEquipment]) -> bytes:
+def infrastructure_pdf(
+    equipments: list[InfraEquipment],
+    branding: PdfBranding | None = None,
+) -> bytes:
     buffer = io.BytesIO()
     document = create_document(
         buffer,
         title="Infrastructure détaillée",
         subtitle=f"{len(equipments)} équipement(s)",
+        branding=branding,
     )
     headers = [
         "Nom",
