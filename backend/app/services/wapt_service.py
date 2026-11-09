@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -305,6 +306,15 @@ def _as_text(value: Any) -> str:
     return str(value)
 
 
+UUID_PATTERN = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def _is_uuid(value: str) -> bool:
+    return bool(UUID_PATTERN.fullmatch(value.strip()))
+
+
 def _as_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
@@ -456,13 +466,23 @@ def fetch_host_packages(config: WaptConfig, uuid: str) -> list[WaptHostPackageRe
     for raw in rows:
         data = _normalized_map(raw)
         name = _as_text(_pick(data, "package", "name", "id", "package_name"))
-        if not name:
+        if not name or _is_uuid(name):
+            continue
+        status = _as_text(_pick(data, "install_status", "status", "etat")).lower()
+        installed = status not in {
+            "removed",
+            "uninstalled",
+            "absent",
+            "need-install",
+            "need-remove",
+        }
+        if not installed:
             continue
         packages.append(
             WaptHostPackageRead(
                 name=name,
                 version=_as_text(_pick(data, "version", "package_version")),
-                installed=_as_text(_pick(data, "status", "etat")).lower() not in {"removed", "uninstalled", "absent"},
+                installed=True,
                 raw=raw,
             )
         )
