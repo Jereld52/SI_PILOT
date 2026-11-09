@@ -39,6 +39,7 @@ SOURCE_LABELS = {
     "manual": "Saisie manuelle",
     "direct": "Demande directe",
     "email": "E-mail",
+    "tchap": "Tchap",
     "phone": "Téléphone",
     "portal": "Portail",
     "import": "Import",

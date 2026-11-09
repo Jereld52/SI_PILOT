@@ -33,6 +33,7 @@ const sourceLabels: Record<string, string> = {
   manual: "Saisie manuelle",
   direct: "Demande directe",
   email: "E-mail",
+  tchap: "Tchap",
   phone: "Téléphone",
   portal: "Portail",
   import: "Import",

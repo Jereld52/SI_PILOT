@@ -225,6 +225,7 @@ export function TicketFormDialog({
                   <option value="direct">Demande directe</option>
                   <option value="phone">Téléphone</option>
                   <option value="email">E-mail</option>
+                  <option value="tchap">Tchap</option>
                   <option value="portal">Portail</option>
                   <option value="import">Import</option>
                 </Select>
