@@ -93,16 +93,21 @@ def get_config(db: Session) -> WaptConfig:
         verify_tls=bool(_value(db, "wapt.verify_tls", True)),
         hosts_path=str(_value(db, "wapt.hosts_path", "/api/v1/hosts") or "/api/v1/hosts"),
         host_detail_path=str(
-            _value(db, "wapt.host_detail_path", "/api/v1/hosts/{uuid}")
-            or "/api/v1/hosts/{uuid}"
+            _value(db, "wapt.host_detail_path", "/api/v1/hosts?uuid={uuid}")
+            or "/api/v1/hosts?uuid={uuid}"
         ),
-        fetch_details=bool(_value(db, "wapt.fetch_details", True)),
+        fetch_details=bool(_value(db, "wapt.fetch_details", False)),
         packages_path=str(
-            _value(db, "wapt.packages_path", "/api/v1/packages") or "/api/v1/packages"
+            _value(db, "wapt.packages_path", "/api/v3/packages")
+            or "/api/v3/packages"
         ),
         host_packages_path=str(
-            _value(db, "wapt.host_packages_path", "/api/v1/hosts/{uuid}/packages")
-            or "/api/v1/hosts/{uuid}/packages"
+            _value(
+                db,
+                "wapt.host_packages_path",
+                "/api/v1/host_data?uuid={uuid}&field=installed_packages",
+            )
+            or "/api/v1/host_data?uuid={uuid}&field=installed_packages"
         ),
         install_path=str(
             _value(db, "wapt.install_path", "/api/v1/hosts/{uuid}/install")
@@ -156,16 +161,19 @@ def update_settings(
     _set_value(
         db,
         "wapt.host_detail_path",
-        payload.host_detail_path.strip() or "/api/v1/hosts/{uuid}",
+        payload.host_detail_path.strip() or "/api/v1/hosts?uuid={uuid}",
     )
     _set_value(db, "wapt.fetch_details", payload.fetch_details)
     _set_value(
-        db, "wapt.packages_path", payload.packages_path.strip() or "/api/v1/packages"
+        db,
+        "wapt.packages_path",
+        payload.packages_path.strip() or "/api/v3/packages",
     )
     _set_value(
         db,
         "wapt.host_packages_path",
-        payload.host_packages_path.strip() or "/api/v1/hosts/{uuid}/packages",
+        payload.host_packages_path.strip()
+        or "/api/v1/host_data?uuid={uuid}&field=installed_packages",
     )
     _set_value(
         db,
@@ -344,18 +352,36 @@ def _normalize_host(raw: dict[str, Any], detail: dict[str, Any] | None = None) -
             _pick(data, "os_name", "os", "operating_system", "systeme_d_exploitation")
         ),
         os_version=_as_text(_pick(data, "os_version", "platform", "plateforme")),
-        ip_address=_as_text(_pick(data, "ip_address", "ip", "adresse_ip", "ipaddress")),
-        mac_address=_as_text(_pick(data, "mac_address", "mac", "adresse_mac")),
+        ip_address=_as_text(
+            _pick(data, "ip_address", "main_ip", "ip", "adresse_ip", "ipaddress")
+        ),
+        mac_address=_as_text(
+            _pick(data, "mac_address", "mac_addresses", "mac", "adresse_mac")
+        ),
         serial_number=_as_text(
-            _pick(data, "serial_number", "serial", "numero_de_serie", "serialnumber")
+            _pick(
+                data,
+                "serial_number",
+                "serialnr",
+                "serial",
+                "numero_de_serie",
+                "serialnumber",
+            )
         ),
         manufacturer=_as_text(_pick(data, "manufacturer", "brand", "manufacteur")),
-        model=_as_text(_pick(data, "model", "modele")),
+        model=_as_text(_pick(data, "model", "productname", "modele")),
         last_user=_as_text(
-            _pick(data, "last_user", "last_logged_user", "utilisateur", "dernier_utilisateur_logue")
+            _pick(
+                data,
+                "last_user",
+                "connected_users",
+                "last_logged_user",
+                "utilisateur",
+                "dernier_utilisateur_logue",
+            )
         ),
         groups=_groups(_pick(data, "groups", "groupes", "group")),
-        domain=_as_text(_pick(data, "domain", "domaine")),
+        domain=_as_text(_pick(data, "domain", "dnsdomain", "domaine")),
         wapt_version=_as_text(
             _pick(data, "wapt_version", "version_de_wapt", "version", "agent_version")
         ),
@@ -413,7 +439,9 @@ def fetch_packages(config: WaptConfig) -> list[WaptPackageRead]:
             WaptPackageRead(
                 name=name,
                 version=_as_text(_pick(data, "version", "package_version")),
-                description=_as_text(_pick(data, "description", "summary", "title")),
+                description=_as_text(
+                    _pick(data, "description", "description_fr", "summary", "title", "name")
+                ),
                 raw=raw,
             )
         )

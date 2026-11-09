@@ -42,7 +42,9 @@ se configurent depuis l'administration.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - **Connexion WAPT** dans Administration : synchronisation de l'inventaire et de l'état en ligne,
-  consultation des postes et des logiciels, installation et désinstallation à distance auditée.
+  consultation des postes et des logiciels, catalogue des paquets. Le déploiement direct nécessite
+  une action signée WAPT et reste réalisé depuis la console WAPT lorsque la clé privée n'est pas
+  disponible dans l'application.
 - **Gestion Active Directory** : création et modification d'utilisateurs, activation/désactivation,
   réinitialisation de mot de passe via LDAPS et gestion de l'appartenance aux groupes, avec audit.
 - **Partages réseau** : suivi de l'espace libre des lecteurs et chemins UNC, seuils d'alerte et

@@ -58,10 +58,10 @@ export function AdminWaptPage() {
   const [password, setPassword] = useState("");
   const [verifyTls, setVerifyTls] = useState(true);
   const [hostsPath, setHostsPath] = useState("/api/v1/hosts");
-  const [hostDetailPath, setHostDetailPath] = useState("/api/v1/hosts/{uuid}");
-  const [fetchDetails, setFetchDetails] = useState(true);
-  const [packagesPath, setPackagesPath] = useState("/api/v1/packages");
-  const [hostPackagesPath, setHostPackagesPath] = useState("/api/v1/hosts/{uuid}/packages");
+  const [hostDetailPath, setHostDetailPath] = useState("/api/v1/hosts?uuid={uuid}");
+  const [fetchDetails, setFetchDetails] = useState(false);
+  const [packagesPath, setPackagesPath] = useState("/api/v3/packages");
+  const [hostPackagesPath, setHostPackagesPath] = useState("/api/v1/host_data?uuid={uuid}&field=installed_packages");
   const [installPath, setInstallPath] = useState("/api/v1/hosts/{uuid}/install");
   const [uninstallPath, setUninstallPath] = useState("/api/v1/hosts/{uuid}/uninstall");
   const [packageField, setPackageField] = useState("package");
@@ -357,6 +357,10 @@ export function AdminWaptPage() {
                   <Input id="wapt-timeout" inputMode="numeric" value={timeoutSeconds} onChange={(event) => setTimeoutSeconds(event.target.value)} disabled={!canManage} />
                 </div>
               </div>
+              <div className="mt-3 rounded-lg border border-info/20 bg-info/5 px-3 py-2 text-[10px] leading-4 text-info">
+                WAPT 2.4 : catalogue via <span className="font-mono">/api/v3/packages</span> et paquets installés via{" "}
+                <span className="font-mono">/api/v1/host_data?uuid=&#123;uuid&#125;&amp;field=installed_packages</span>.
+              </div>
             </details>
             {canManage ? (
               <div className="flex flex-wrap gap-2">
@@ -538,6 +542,11 @@ export function AdminWaptPage() {
               </CardContent>
             ) : null}
           </Card>
+
+          <div className="rounded-lg border border-warning/20 bg-warning/[0.04] px-3 py-2 text-[10px] leading-4 text-warning">
+            WAPT 2.4 exige une action signée avec la clé privée WAPT pour installer ou désinstaller un paquet.
+            Utilisez la console WAPT si cette signature n'est pas configurée.
+          </div>
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Card>

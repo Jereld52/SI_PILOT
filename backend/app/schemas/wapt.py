@@ -11,10 +11,10 @@ class WaptConfigRead(BaseModel):
     password_set: bool = False
     verify_tls: bool = True
     hosts_path: str = "/api/v1/hosts"
-    host_detail_path: str = "/api/v1/hosts/{uuid}"
-    fetch_details: bool = True
-    packages_path: str = "/api/v1/packages"
-    host_packages_path: str = "/api/v1/hosts/{uuid}/packages"
+    host_detail_path: str = "/api/v1/hosts?uuid={uuid}"
+    fetch_details: bool = False
+    packages_path: str = "/api/v3/packages"
+    host_packages_path: str = "/api/v1/host_data?uuid={uuid}&field=installed_packages"
     install_path: str = "/api/v1/hosts/{uuid}/install"
     uninstall_path: str = "/api/v1/hosts/{uuid}/uninstall"
     package_field: str = "package"
@@ -29,10 +29,13 @@ class WaptConfigUpdate(BaseModel):
     password: str | None = Field(default=None, max_length=255)
     verify_tls: bool = True
     hosts_path: str = Field(default="/api/v1/hosts", max_length=255)
-    host_detail_path: str = Field(default="/api/v1/hosts/{uuid}", max_length=255)
-    fetch_details: bool = True
-    packages_path: str = Field(default="/api/v1/packages", max_length=255)
-    host_packages_path: str = Field(default="/api/v1/hosts/{uuid}/packages", max_length=255)
+    host_detail_path: str = Field(default="/api/v1/hosts?uuid={uuid}", max_length=255)
+    fetch_details: bool = False
+    packages_path: str = Field(default="/api/v3/packages", max_length=255)
+    host_packages_path: str = Field(
+        default="/api/v1/host_data?uuid={uuid}&field=installed_packages",
+        max_length=255,
+    )
     install_path: str = Field(default="/api/v1/hosts/{uuid}/install", max_length=255)
     uninstall_path: str = Field(default="/api/v1/hosts/{uuid}/uninstall", max_length=255)
     package_field: str = Field(default="package", max_length=60)

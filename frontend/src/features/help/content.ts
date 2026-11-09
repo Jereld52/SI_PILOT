@@ -896,7 +896,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   {
     slug: "wapt",
     title: "Connexion WAPT",
-    summary: "Synchroniser l'inventaire et déployer des logiciels à distance.",
+    summary: "Synchroniser l'inventaire et consulter les logiciels des postes.",
     category: "administration",
     tags: ["WAPT", "inventaire", "logiciel", "déploiement", "poste"],
     blocks: [
@@ -907,11 +907,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Configuration de l'URL, des identifiants, du mot de passe chiffré et des chemins API.",
         "Test de connexion et synchronisation de l'inventaire.",
         "Création ou mise à jour des fiches du parc : nom machine, IP, MAC, série, fabricant, modèle, système, dernier utilisateur, groupes et domaine.",
-        "Installation et désinstallation de paquets avec confirmation et audit.",
+        "Catalogue des paquets via `/api/v3/packages` et paquets installés via `/api/v1/host_data?uuid=...&field=installed_packages` sur WAPT 2.4.",
       ]),
       note(
         "warning",
-        "Aucune action distante n'est lancée sans validation explicite. Vérifiez le poste cible avant une installation ou une désinstallation.",
+        "Le déploiement direct par l'API WAPT nécessite une action signée avec la clé privée WAPT. Utilisez la console WAPT pour installer ou désinstaller un paquet lorsque cette signature n'est pas configurée.",
       ),
     ],
   },

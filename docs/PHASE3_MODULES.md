@@ -231,7 +231,10 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - L'inventaire brut WAPT est conservé dans les données externes de l'équipement.
 - État en ligne / hors ligne et dernière connexion visibles dans l'administration et dans le parc.
 - Liste des paquets disponibles, liste des paquets installés par poste.
-- Installation et désinstallation à distance avec confirmation et journal d'audit.
+- WAPT 2.4 : catalogue via `/api/v3/packages`, paquets installés via
+  `/api/v1/host_data?uuid=...&field=installed_packages`.
+- Le déploiement direct par l'API nécessite une action signée avec la clé privée WAPT. Sans cette
+  signature, l'installation et la désinstallation restent réalisées depuis la console WAPT.
 - Aucune action distante n'est lancée sans validation explicite de l'administrateur.
 
 ### Personnalisation du tableau de bord
