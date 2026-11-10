@@ -10,8 +10,8 @@ se configurent depuis l'administration.
 > **État actuel : socle et modules métier livrés.**
 > Parc, agents, téléphonie, fournisseurs, licences, stock, tickets, interventions, contrats,
 > budget, infrastructure, supervision, cybersécurité, projets, documentation, RGPD, réservations,
-> exports et administration sont opérationnels. Les automatisations planifiées et l'assistant IA
-> restent à venir.
+> communication, sauvegarde, exports, assistant IA et administration sont opérationnels. Les
+> automatisations planifiées restent à venir.
 
 ---
 
@@ -195,6 +195,7 @@ configurée.
 - **Windows natif** : voir [`docs/INSTALL_WINDOWS.md`](docs/INSTALL_WINDOWS.md).
 - **Docker** : voir [`docs/DOCKER.md`](docs/DOCKER.md).
 - **Sauvegarde / restauration** : voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
+- **Assistant IA et fournisseurs** : voir [`docs/ASSISTANT_IA.md`](docs/ASSISTANT_IA.md).
 - **Sécurité** : voir [`docs/SECURITY.md`](docs/SECURITY.md).
 - **Centre d'aide** : voir [`docs/HELP.md`](docs/HELP.md).
 - **Architecture** : voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -264,7 +265,9 @@ npm run build
 - Aucune suppression physique des données sensibles ; archivage ou anonymisation.
 - Aucun mot de passe en clair, aucun secret dans le dépôt.
 - Aucun scan réseau ou action administrative sans autorisation explicite.
-- L'assistant IA reste facultatif : l'application fonctionne intégralement sans lui.
+- L'assistant IA est facultatif et configurable : OpenAI, Azure OpenAI, Mistral, Groq,
+  OpenRouter, Gemini, Anthropic, Ollama, Open WebUI ou tout endpoint compatible OpenAI. La clé
+  est chiffrée, le contexte du parc est optionnel et l'assistant ne modifie jamais les données.
 - Toute mutation est auditée.
 
 ## 9. Feuille de route
@@ -275,7 +278,7 @@ npm run build
 | Phase 2 | Socle technique, auth, rôles, dashboard, administration | **Terminée** |
 | Phase 3 | Référentiels, agents, parc enrichi WAPT, téléphonie, imports, QR codes, exports, fournisseurs, licences, stock, demandes IT, interventions, contrats, budget | **Livrée** |
 | Phase 4 | Infrastructure, cybersécurité, projets, RGPD, documentation | **Livrée** |
-| Phase 5 | Assistant IA (Ollama / Open WebUI) | Planifiée |
+| Phase 5 | Assistant IA multi-fournisseurs (OpenAI, Mistral, Gemini, Anthropic, Ollama, Open WebUI) | **Livrée** |
 | Phase 6 | Automatisations, notifications, exports, sauvegardes, industrialisation | Planifiée |
 
 Détail : [`docs/ROADMAP.md`](docs/ROADMAP.md).

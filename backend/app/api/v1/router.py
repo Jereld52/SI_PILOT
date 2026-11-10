@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     admin,
     agents,
+    ai,
     assets,
     audit,
     auth,
@@ -49,6 +50,8 @@ api_router.include_router(dashboard.router)
 api_router.include_router(search.router)
 api_router.include_router(notifications.router)
 api_router.include_router(admin.router)
+api_router.include_router(ai.router)
+api_router.include_router(ai.admin_router)
 api_router.include_router(backup.router)
 api_router.include_router(system.router)
 api_router.include_router(audit.router)

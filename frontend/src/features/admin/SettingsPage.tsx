@@ -229,14 +229,14 @@ export function SettingsPage() {
           <div className="flex-1">
             <p className="text-xs font-medium text-foreground">Intégration de l'assistant IA</p>
             <p className="mt-1 text-[11px] leading-5 text-muted">
-              L'URL et le modèle se configurent ci-dessus. La clé d'API n'est jamais stockée en
-              base : renseignez <span className="font-mono text-[10px]">AI_API_KEY</span> dans
-              <span className="font-mono text-[10px]"> backend/.env</span>, puis redémarrez l'API.
-              L'intégration reste désactivée par défaut et sera branchée en Phase 5.
+              La configuration complète (fournisseur, URL, modèle, clé d'API, température et
+              contexte du parc) se trouve dans{" "}
+              <span className="font-medium">Administration → Assistant IA</span>. La clé est stockée
+              chiffrée en base et n'est jamais renvoyée par l'API.
             </p>
             <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] text-muted-2">
               <KeyRound className="h-3 w-3" />
-              Aucune donnée n'est transmise tant que l'intégration n'est pas activée et validée.
+              Aucune donnée n'est transmise tant que l'intégration n'est pas activée et testée.
             </p>
           </div>
         </CardContent>

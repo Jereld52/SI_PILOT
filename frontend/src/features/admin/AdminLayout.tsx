@@ -1,4 +1,4 @@
-import { ArchiveRestore, ArrowDownUp, Database, FileClock, Laptop, Plug, ServerCog, Settings, ShieldAlert, ShieldCheck, UsersRound } from "lucide-react";
+import { ArchiveRestore, ArrowDownUp, Database, FileClock, Laptop, Plug, ServerCog, Settings, ShieldAlert, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { PageHeader } from "@/components/ui/page-header";
@@ -16,6 +16,7 @@ const tabs = [
   { to: "/admin/wapt", label: "Connexion WAPT", icon: Laptop, permission: "admin.settings.read" },
   { to: "/admin/import-export", label: "Import / Export", icon: ArrowDownUp, permission: "imports.preview" },
   { to: "/admin/backup", label: "Sauvegarde", icon: ArchiveRestore, permission: "admin.backup.manage" },
+  { to: "/admin/ai", label: "Assistant IA", icon: Sparkles, permission: "ai.configure" },
   { to: "/admin/system", label: "Système", icon: ServerCog, permission: "admin.settings.read" },
   { to: "/admin/settings", label: "Paramètres", icon: Settings, permission: "admin.settings.read" },
 ];

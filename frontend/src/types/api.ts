@@ -1716,6 +1716,41 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface AiConfig {
+  enabled: boolean;
+  provider: string;
+  base_url: string;
+  model: string;
+  api_key_set: boolean;
+  temperature: number;
+  max_tokens: number;
+  timeout_seconds: number;
+  include_fleet_context: boolean;
+  configured: boolean;
+}
+
+export interface AiStatus {
+  enabled: boolean;
+  configured: boolean;
+  provider: string;
+  model: string;
+}
+
+export interface AiTestResponse {
+  ok: boolean;
+  message: string;
+  model: string;
+  latency_ms: number;
+}
+
+export interface AiChatResponse {
+  message: string;
+  model: string;
+  provider: string;
+  duration_ms: number;
+  usage: Record<string, number> | null;
+}
+
 export interface BackupFileItem {
   name: string;
   size: number;

@@ -954,6 +954,32 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "assistant-ia",
+    title: "Assistant IA",
+    summary: "Connecter OpenAI, Mistral, Gemini, Anthropic, Ollama ou un endpoint compatible.",
+    category: "administration",
+    tags: ["IA", "OpenAI", "Mistral", "Gemini", "Anthropic", "Ollama", "assistant"],
+    blocks: [
+      p(
+        "Administration → Assistant IA connecte l'assistant à un fournisseur externe ou local. La configuration est facultative : SI PILOT fonctionne sans IA.",
+      ),
+      list([
+        "Fournisseurs pris en charge : OpenAI, Azure OpenAI, Mistral, Groq, OpenRouter, Google Gemini, Anthropic Claude, Ollama local, Open WebUI et tout endpoint compatible OpenAI.",
+        "URL de base, modèle, clé d'API, température, nombre de jetons et délai sont configurables.",
+        "La clé d'API est chiffrée en base et n'est jamais renvoyée au navigateur.",
+        "Le bouton « Tester la connexion » vérifie le fournisseur et le modèle.",
+        "Un contexte agrégé du parc peut être envoyé : compteurs, pannes, renouvellements, mises à jour WAPT, demandes, contrats et alertes.",
+      ]),
+      p(
+        "Usages : bilan du parc, identification des postes à renouveler ou en panne, suivi des mises à jour WAPT, analyse des demandes, anticipation des échéances, rédaction de synthèses et comptes rendus.",
+      ),
+      note(
+        "warning",
+        "L'assistant ne modifie aucune donnée. Les actions proposées doivent être réalisées dans l'application par un utilisateur habilité. Pour un usage souverain, privilégiez Ollama ou une instance interne.",
+      ),
+    ],
+  },
+  {
     slug: "wapt",
     title: "Connexion WAPT",
     summary: "Configurer la connexion au serveur WAPT et synchroniser le parc.",
