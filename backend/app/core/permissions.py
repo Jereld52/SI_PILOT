@@ -140,6 +140,16 @@ PERMISSION_DEFINITIONS: tuple[PermissionDefinition, ...] = (
     _p("admin.settings.manage", "admin", "settings.manage", "Gérer les paramètres"),
     _p("admin.backup.manage", "admin", "backup.manage", "Gérer les sauvegardes"),
     _p("audit.read", "audit", "read", "Consulter le journal d'audit"),
+    # Communication
+    _p("communications.read", "communications", "read", "Consulter les communications"),
+    _p("communications.manage", "communications", "manage", "Créer et modifier les communications"),
+    _p("communications.publish", "communications", "publish", "Publier une communication"),
+    _p("meetings.read", "meetings", "read", "Consulter les réunions"),
+    _p("meetings.manage", "meetings", "manage", "Organiser et modifier les réunions"),
+    _p("manager_points.read", "manager_points", "read", "Consulter les points de suivi"),
+    _p("manager_points.manage", "manager_points", "manage", "Gérer les points de suivi"),
+    _p("trainings.read", "trainings", "read", "Consulter les formations"),
+    _p("trainings.manage", "trainings", "manage", "Gérer les formations"),
     # Assistant IA
     _p("ai.use", "ai", "use", "Utiliser l'assistant IA"),
     _p("ai.configure", "ai", "configure", "Configurer la connexion de l'assistant IA"),
@@ -216,6 +226,12 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "actions.update",
             "actions.complete",
             "automations.read",
+            "communications.read",
+            "meetings.read",
+            "meetings.manage",
+            "manager_points.read",
+            "manager_points.manage",
+            "trainings.read",
             "exports.run",
             "ai.use",
         }
@@ -248,6 +264,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "documents.download",
             "calendar.read",
             "actions.read",
+            "communications.read",
+            "meetings.read",
+            "manager_points.read",
+            "trainings.read",
         }
     ),
     "dpo": frozenset(
@@ -266,6 +286,9 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "documents.download",
             "audit.read",
             "calendar.read",
+            "communications.read",
+            "meetings.read",
+            "trainings.read",
             "exports.run",
         }
     ),
@@ -286,6 +309,9 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "documents.download",
             "calendar.read",
             "actions.read",
+            "communications.read",
+            "meetings.read",
+            "trainings.read",
         }
     ),
 }

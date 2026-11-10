@@ -47,6 +47,11 @@ se configurent depuis l'administration.
   mises à jour disponibles par logiciel et par poste, alertes sur le tableau de bord, catalogue
   et installation/désinstallation par équipement. Le déploiement direct nécessite une action
   signée WAPT et reste réalisé depuis la console WAPT lorsque la clé privée n'est pas disponible.
+- **Communication** : communications ciblées aux utilisateurs (tous, service, rôle ou sélection),
+  publication avec notification interne et e-mail optionnel, suivi de lecture et archivage ;
+  réunions d'équipe, de service, de projet ou points avec la responsable avec ordre du jour,
+  compte rendu et décisions ; formations avec organisme, dates, coût, caractère obligatoire et
+  participants ; points de suivi 1:1 avec priorité, échéance et prochaine revue.
 - **Gestion Active Directory** : création et modification d'utilisateurs, activation/désactivation,
   réinitialisation de mot de passe via LDAPS et gestion de l'appartenance aux groupes, avec audit.
 - **Partages réseau** : suivi de l'espace libre des lecteurs et chemins UNC, seuils d'alerte et

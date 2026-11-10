@@ -56,6 +56,11 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     description: "Demandes IT, interventions, réservations et stock.",
   },
   {
+    key: "communication",
+    label: "Communication",
+    description: "Communications aux utilisateurs, réunions, formations et points de suivi.",
+  },
+  {
     key: "gestion",
     label: "Gestion et pilotage",
     description: "Fournisseurs, contrats, budget, projets, documentation et calendrier.",
@@ -546,6 +551,35 @@ export const HELP_ARTICLES: HelpArticle[] = [
       note(
         "warning",
         "Un ajustement d'inventaire doit correspondre à un comptage physique. Il est tracé dans l'historique avec l'opérateur.",
+      ),
+    ],
+  },
+  {
+    slug: "communication",
+    title: "Communication, réunions et formations",
+    summary: "Informer les utilisateurs, organiser les réunions et suivre les formations.",
+    category: "communication",
+    tags: ["communication", "réunion", "formation", "points", "responsable", "notification"],
+    blocks: [
+      p(
+        "Le menu Communication regroupe quatre espaces : Communications, Réunions, Formations et Points 1:1.",
+      ),
+      list([
+        "Communications : rédaction, ciblage des destinataires, publication, suivi de lecture et archivage.",
+        "Réunions : équipe, service, projet, cellule de crise ou point avec la responsable, avec ordre du jour, compte rendu et décisions.",
+        "Formations : organisme, dates, durée, coût, caractère obligatoire et participants.",
+        "Points 1:1 : sujets en cours avec la responsable, priorité, échéance, prochaine revue et historique des échanges.",
+      ]),
+      p(
+        "Une communication peut cibler tous les utilisateurs, un service, un rôle ou une sélection nominative. La publication crée une notification interne et, si le canal le prévoit, un e-mail via la configuration SMTP.",
+      ),
+      note(
+        "info",
+        "Le suivi de lecture comptabilise les utilisateurs ayant marqué la communication comme lue. Les brouillons ne sont visibles que des profils autorisés à gérer les communications.",
+      ),
+      note(
+        "warning",
+        "Les communications sensibles doivent rester dans les canaux maîtrisés par la structure. Vérifiez les destinataires avant publication.",
       ),
     ],
   },

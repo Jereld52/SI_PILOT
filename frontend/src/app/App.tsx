@@ -62,6 +62,31 @@ const CalendarPage = lazy(() =>
     default: module.CalendarPage,
   })),
 );
+const CommunicationLayout = lazy(() =>
+  import("@/features/communication/CommunicationLayout").then((module) => ({
+    default: module.CommunicationLayout,
+  })),
+);
+const CommunicationsPage = lazy(() =>
+  import("@/features/communication/CommunicationsPage").then((module) => ({
+    default: module.CommunicationsPage,
+  })),
+);
+const MeetingsPage = lazy(() =>
+  import("@/features/communication/MeetingsPage").then((module) => ({
+    default: module.MeetingsPage,
+  })),
+);
+const ManagerPointsPage = lazy(() =>
+  import("@/features/communication/ManagerPointsPage").then((module) => ({
+    default: module.ManagerPointsPage,
+  })),
+);
+const TrainingsPage = lazy(() =>
+  import("@/features/communication/TrainingsPage").then((module) => ({
+    default: module.TrainingsPage,
+  })),
+);
 const ContractsPage = lazy(() =>
   import("@/features/contracts/ContractsPage").then((module) => ({
     default: module.ContractsPage,
@@ -462,6 +487,42 @@ export function App() {
               </RequirePermission>
             }
           />
+
+          <Route path="communication" element={<CommunicationLayout />}>
+            <Route index element={<Navigate to="/communication/communications" replace />} />
+            <Route
+              path="communications"
+              element={
+                <RequirePermission permission="communications.read">
+                  <CommunicationsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="reunions"
+              element={
+                <RequirePermission permission="meetings.read">
+                  <MeetingsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="formations"
+              element={
+                <RequirePermission permission="trainings.read">
+                  <TrainingsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="points"
+              element={
+                <RequirePermission permission="manager_points.read">
+                  <ManagerPointsPage />
+                </RequirePermission>
+              }
+            />
+          </Route>
 
           <Route path="aide" element={<HelpPage />} />
           <Route path="aide/:slug" element={<HelpPage />} />

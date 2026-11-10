@@ -9,6 +9,7 @@ from app.api.v1 import (
     branding,
     budget,
     calendar,
+    communication,
     contracts,
     dashboard,
     documents,
@@ -70,6 +71,7 @@ api_router.include_router(security.router)
 api_router.include_router(projects.router)
 api_router.include_router(documents.router)
 api_router.include_router(calendar.router)
+api_router.include_router(communication.router)
 api_router.include_router(ldap.router)
 api_router.include_router(wapt.router)
 api_router.include_router(wapt_software.router)

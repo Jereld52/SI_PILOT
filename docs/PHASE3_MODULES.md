@@ -242,6 +242,28 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
   signature, l'installation et la désinstallation restent réalisées depuis la console WAPT.
 - Aucune action distante n'est lancée sans validation explicite de l'administrateur.
 
+### Communication
+
+- Nouveau menu principal **Communication** avec quatre espaces : Communications, Réunions,
+  Formations et Points 1:1.
+- **Communications** : titre, contenu, catégorie, ciblage (tous, service, rôle ou utilisateurs),
+  canal (notification interne, e-mail ou les deux), statut, épinglage, planification et fin de
+  diffusion.
+- Publication : création d'une notification pour chaque destinataire, envoi e-mail optionnel via
+  le serveur SMTP configuré, journal d'audit. Suivi de lecture par utilisateur
+  (`communication_receipts`).
+- **Réunions** : type (équipe, service, projet, point responsable, cellule de crise), date, durée,
+  lieu ou visio, participants, ordre du jour, compte rendu, décisions et statut.
+- **Formations** : organisme, catégorie, dates, durée, lieu, coût, caractère obligatoire, places et
+  participants (agents). Suivi des statuts planifiée, en cours, terminée, annulée.
+- **Points 1:1** : sujets en cours avec la responsable, priorité, statut, échéance, prochaine revue,
+  dernier échange et notes. Rattachement facultatif à une réunion.
+- Permissions dédiées : `communications.read`, `communications.manage`, `communications.publish`,
+  `meetings.read`, `meetings.manage`, `manager_points.read`, `manager_points.manage`,
+  `trainings.read`, `trainings.manage`.
+- Migration `d4e5f6a7b8c9` : tables `communications`, `communication_receipts`, `meetings`,
+  `meeting_points` et `trainings`.
+
 ### Personnalisation du tableau de bord
 
 - Chaque utilisateur choisit les tuiles de modules affichées et leur ordre.

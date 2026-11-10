@@ -1716,6 +1716,100 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface CommunicationRoleRef {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CommunicationItem {
+  id: string;
+  title: string;
+  body: string;
+  category: string;
+  audience: string;
+  audience_service_id: string | null;
+  audience_service: { id: string; code: string; name: string } | null;
+  audience_role_id: string | null;
+  audience_role: CommunicationRoleRef | null;
+  audience_user_ids: string[];
+  audience_users: TicketUserRef[];
+  audience_label: string;
+  channel: string;
+  status: string;
+  is_pinned: boolean;
+  scheduled_at: string | null;
+  published_at: string | null;
+  expires_at: string | null;
+  author_user_id: string | null;
+  author: TicketUserRef | null;
+  read_count: number;
+  recipient_count: number;
+  is_read: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MeetingItem {
+  id: string;
+  title: string;
+  meeting_type: string;
+  scheduled_at: string;
+  duration_minutes: number;
+  location: string | null;
+  visio_url: string | null;
+  organizer_user_id: string | null;
+  organizer: TicketUserRef | null;
+  participant_user_ids: string[];
+  participants: TicketUserRef[];
+  agenda: string | null;
+  notes: string | null;
+  decisions: string | null;
+  status: string;
+  open_point_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MeetingPointItem {
+  id: string;
+  meeting_id: string | null;
+  meeting_title: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  next_review_at: string | null;
+  last_discussed_at: string | null;
+  owner_user_id: string | null;
+  owner: TicketUserRef | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrainingItem {
+  id: string;
+  title: string;
+  provider: string | null;
+  description: string | null;
+  category: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  duration_hours: number | null;
+  location: string | null;
+  mandatory: boolean;
+  cost: number | null;
+  status: string;
+  capacity: number | null;
+  participant_agent_ids: string[];
+  participants: AgentRef[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface WaptConfig {
   enabled: boolean;
   base_url: string;

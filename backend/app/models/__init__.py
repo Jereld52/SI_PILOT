@@ -31,6 +31,13 @@ from app.models.budget import (
 )
 from app.models.calendar import ActionItem, CalendarEvent
 from app.models.common import Attachment, Comment, DocumentSequence, UserPreference
+from app.models.communication import (
+    Communication,
+    CommunicationReceipt,
+    Meeting,
+    MeetingPoint,
+    Training,
+)
 from app.models.contracts import Contract, ContractCategory
 from app.models.documents import (
     Document,
@@ -129,6 +136,8 @@ __all__ = [
     "ChecklistTemplate",
     "ChecklistTemplateItem",
     "Comment",
+    "Communication",
+    "CommunicationReceipt",
     "Contract",
     "ContractCategory",
     "DataBreach",
@@ -151,6 +160,8 @@ __all__ = [
     "InterventionAsset",
     "License",
     "Location",
+    "Meeting",
+    "MeetingPoint",
     "MonitoringCheck",
     "MonitoringResult",
     "MobileLine",
@@ -191,6 +202,7 @@ __all__ = [
     "TicketPriority",
     "TicketStatus",
     "TicketTimeEntry",
+    "Training",
     "User",
     "UserPermissionOverride",
     "UserPreference",
