@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -57,6 +58,7 @@ def test_wapt_software_overview_and_alert(admin_client, csrf_headers):
             "external_id": str(uuid4()),
             "category_id": desktop["id"],
             "status": "in_service",
+            "external_data_json": json.dumps({"connected_users": ["jdupont"]}),
         },
     )
     assert created.status_code == 201, created.text
@@ -100,4 +102,7 @@ def test_wapt_software_overview_and_alert(admin_client, csrf_headers):
 
     listed = client.get("/api/v1/wapt/assets")
     assert listed.status_code == 200, listed.text
-    assert any(entry["id"] == asset_id for entry in listed.json())
+    listed_asset = next(entry for entry in listed.json() if entry["id"] == asset_id)
+    assert listed_asset["last_user"] == "jdupont"
+    assert listed_asset["software_count"] == 1
+    assert item["hosts"][0]["user"] == "jdupont"

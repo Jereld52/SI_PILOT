@@ -1891,7 +1891,12 @@ export interface WaptAsset {
   external_id: string;
   os_name: string;
   os_version: string;
+  category_name: string;
+  assigned_agent_name: string;
+  last_user: string;
+  connected: boolean;
   update_count: number;
+  software_count: number;
 }
 
 export interface WaptSoftwareHost {
@@ -1899,6 +1904,7 @@ export interface WaptSoftwareHost {
   asset_tag: string;
   name: string;
   hostname: string;
+  user: string;
   installed_version: string;
   available_version: string;
   last_seen: string;

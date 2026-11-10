@@ -179,7 +179,13 @@ class Asset(Base, UUIDMixin, TimestampMixin):
     @property
     def wapt_last_user(self) -> str | None:
         data = self.external_data or {}
-        return data.get("dernier_utilisateur_logue")
+        last_user = data.get("dernier_utilisateur_logue")
+        if last_user:
+            return str(last_user)
+        connected = data.get("connected_users")
+        if isinstance(connected, list):
+            return ", ".join(str(item) for item in connected if item) or None
+        return str(connected) if connected else None
 
     @property
     def wapt_groups(self) -> str | None:

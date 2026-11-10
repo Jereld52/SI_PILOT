@@ -15,6 +15,7 @@ from app.core.crypto import decrypt_secret, encrypt_secret
 from app.core.errors import NotFoundError, ValidationAppError
 from app.models.assets import Asset, AssetCategory, AssetSoftware
 from app.models.auth import User
+from app.models.organization import Agent
 from app.models.setting import Setting
 from app.schemas.wapt import (
     WaptActionResponse,
@@ -679,6 +680,38 @@ def sync_software(
     )
 
 
+def _asset_logins(asset: Asset) -> list[str]:
+    data = asset.external_data or {}
+    values: list[str] = []
+    connected = data.get("connected_users")
+    if isinstance(connected, list):
+        values.extend(str(item) for item in connected if item)
+    elif connected:
+        values.append(str(connected))
+    last_user = data.get("dernier_utilisateur_logue")
+    if last_user:
+        values.append(str(last_user))
+    return list(dict.fromkeys(item.strip() for item in values if item.strip()))
+
+
+def _agent_login_map(db: Session) -> dict[str, str]:
+    agents = db.scalars(select(Agent).where(Agent.login.is_not(None))).all()
+    return {
+        agent.login.lower(): f"{agent.first_name} {agent.last_name}"
+        for agent in agents
+        if agent.login
+    }
+
+
+def _asset_user_label(asset: Asset, login_map: dict[str, str]) -> str:
+    if asset.assigned_agent is not None:
+        return f"{asset.assigned_agent.first_name} {asset.assigned_agent.last_name}"
+    logins = _asset_logins(asset)
+    if not logins:
+        return ""
+    return ", ".join(login_map.get(login.lower(), login) for login in logins)
+
+
 def list_wapt_assets(db: Session) -> list[WaptAssetRead]:
     update_counts = dict(
         db.execute(
@@ -687,11 +720,19 @@ def list_wapt_assets(db: Session) -> list[WaptAssetRead]:
             .group_by(AssetSoftware.asset_id)
         ).all()
     )
+    software_counts = dict(
+        db.execute(
+            select(AssetSoftware.asset_id, func.count(AssetSoftware.id)).group_by(
+                AssetSoftware.asset_id
+            )
+        ).all()
+    )
     assets = db.scalars(
         select(Asset)
         .where(Asset.external_id.is_not(None), Asset.archived_at.is_(None))
-        .order_by(Asset.name)
+        .order_by(Asset.hostname, Asset.name)
     ).all()
+    login_map = _agent_login_map(db)
     return [
         WaptAssetRead(
             id=str(asset.id),
@@ -701,7 +742,16 @@ def list_wapt_assets(db: Session) -> list[WaptAssetRead]:
             external_id=asset.external_id or "",
             os_name=asset.os_name or "",
             os_version=asset.os_version or "",
+            category_name=asset.category.name if asset.category else "",
+            assigned_agent_name=(
+                f"{asset.assigned_agent.first_name} {asset.assigned_agent.last_name}"
+                if asset.assigned_agent
+                else ""
+            ),
+            last_user=_asset_user_label(asset, login_map),
+            connected=asset.wapt_reachable == "OK",
             update_count=int(update_counts.get(asset.id, 0)),
+            software_count=int(software_counts.get(asset.id, 0)),
         )
         for asset in assets
     ]
@@ -720,6 +770,7 @@ def get_software_overview(db: Session) -> WaptSoftwareOverview:
     updates_available = 0
     hosts_with_updates: set[str] = set()
     last_sync: datetime | None = None
+    login_map = _agent_login_map(db)
 
     for software, asset in rows:
         installations += 1
@@ -748,6 +799,7 @@ def get_software_overview(db: Session) -> WaptSoftwareOverview:
                 asset_tag=asset.asset_tag,
                 name=asset.name,
                 hostname=asset.hostname or "",
+                user=_asset_user_label(asset, login_map),
                 installed_version=software.package_version,
                 available_version=software.available_version,
                 last_seen=software.synced_at.isoformat(),

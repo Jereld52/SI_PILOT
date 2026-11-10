@@ -10,6 +10,7 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  UserRound,
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -23,7 +24,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs } from "@/components/ui/tabs";
@@ -128,7 +128,17 @@ export function SoftwarePage() {
     const needle = search.trim().toLowerCase();
     if (!needle) return assets;
     return assets.filter((asset) =>
-      `${asset.name} ${asset.asset_tag} ${asset.hostname}`.toLowerCase().includes(needle),
+      [
+        asset.hostname,
+        asset.name,
+        asset.asset_tag,
+        asset.assigned_agent_name,
+        asset.last_user,
+        asset.category_name,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
     );
   }, [assets, search]);
 
@@ -366,12 +376,20 @@ export function SoftwarePage() {
                                       to={`/logiciels?asset=${host.asset_id}`}
                                       className="text-xs font-medium text-accent hover:underline"
                                     >
-                                      {host.asset_tag}
+                                      {host.hostname || host.name}
                                     </Link>
-                                    <span className="text-[11px] text-foreground">{host.name}</span>
-                                    <span className="text-[10px] text-muted-2">
-                                      {host.hostname || "—"}
+                                    <span className="font-mono text-[10px] text-muted-2">
+                                      {host.asset_tag}
                                     </span>
+                                    {host.name !== host.hostname ? (
+                                      <span className="text-[10px] text-muted-2">{host.name}</span>
+                                    ) : null}
+                                    {host.user ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] text-muted">
+                                        <UserRound className="h-3 w-3" />
+                                        {host.user}
+                                      </span>
+                                    ) : null}
                                     {host.installed_version ? (
                                       <span className="font-mono text-[10px] text-muted">
                                         {host.installed_version}
@@ -400,54 +418,167 @@ export function SoftwarePage() {
       ) : (
         <div className="space-y-4">
           <Card>
-            <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center">
+            <CardHeader className="flex-col gap-3 lg:flex-row lg:items-center">
               <div>
-                <h2 className="text-sm font-semibold text-foreground">Poste</h2>
+                <h2 className="text-sm font-semibold text-foreground">Postes du parc</h2>
                 <p className="mt-0.5 text-[11px] text-muted">
-                  Sélectionnez un poste pour consulter ses logiciels et demander une installation ou
-                  une désinstallation.
+                  {formatNumber(assets.length)} poste(s) relié(s) à WAPT. Recherchez par nom machine,
+                  inventaire ou utilisateur, puis sélectionnez le poste.
                 </p>
               </div>
-              <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:justify-end">
-                <div className="relative w-full sm:max-w-xs">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-2" />
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Filtrer les postes…"
-                    className="pl-8"
-                    aria-label="Filtrer les postes"
-                  />
-                </div>
-                <Select
-                  value={selectedAssetId}
-                  onChange={(event) => setSelectedAssetId(event.target.value)}
-                  className="w-full sm:w-80"
-                >
-                  <option value="">Sélectionner un poste</option>
-                  {filteredAssets.map((asset) => (
-                    <option key={asset.id} value={asset.id}>
-                      {asset.asset_tag} — {asset.name}
-                      {asset.update_count > 0 ? ` (${asset.update_count} MAJ)` : ""}
-                    </option>
-                  ))}
-                </Select>
+              <div className="relative w-full lg:max-w-sm">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-2" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Machine, inventaire, utilisateur…"
+                  className="pl-8"
+                  aria-label="Rechercher un poste ou un utilisateur"
+                />
               </div>
             </CardHeader>
-            {selectedAsset ? (
-              <CardContent className="grid gap-2 text-[11px] sm:grid-cols-2 xl:grid-cols-4">
-                <p><span className="text-muted-2">Inventaire : </span>{selectedAsset.asset_tag}</p>
-                <p><span className="text-muted-2">Machine : </span>{selectedAsset.hostname || "—"}</p>
-                <p><span className="text-muted-2">Système : </span>{[selectedAsset.os_name, selectedAsset.os_version].filter(Boolean).join(" ") || "—"}</p>
+            <CardContent className="p-0 pt-2">
+              {assetsQuery.isError ? (
+                <ErrorState
+                  message={
+                    assetsQuery.error instanceof Error
+                      ? assetsQuery.error.message
+                      : "Erreur inconnue."
+                  }
+                  onRetry={() => void assetsQuery.refetch()}
+                />
+              ) : assetsQuery.isLoading ? (
+                <div className="space-y-1 px-3 pb-4">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <Skeleton key={index} className="h-12 rounded-lg" />
+                  ))}
+                </div>
+              ) : filteredAssets.length === 0 ? (
+                <EmptyState
+                  icon={MonitorSmartphone}
+                  title="Aucun poste"
+                  description="Aucun poste ne correspond à la recherche."
+                />
+              ) : (
+                <div className="max-h-[360px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Poste</TableHead>
+                        <TableHead>Utilisateur associé</TableHead>
+                        <TableHead className="hidden md:table-cell">Système</TableHead>
+                        <TableHead className="hidden lg:table-cell">Logiciels</TableHead>
+                        <TableHead>Mises à jour</TableHead>
+                        <TableHead className="w-24 text-right" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAssets.map((asset) => {
+                        const selected = asset.id === selectedAssetId;
+                        const userLabel =
+                          asset.assigned_agent_name || asset.last_user || "Non affecté";
+                        return (
+                          <TableRow
+                            key={asset.id}
+                            className={cn("cursor-pointer", selected && "bg-primary/10")}
+                            onClick={() => setSelectedAssetId(asset.id)}
+                          >
+                            <TableCell>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <p className="text-xs font-semibold text-foreground">
+                                  {asset.hostname || asset.name}
+                                </p>
+                                <Badge tone={asset.connected ? "success" : "neutral"}>
+                                  {asset.connected ? "En ligne" : "Hors ligne"}
+                                </Badge>
+                              </div>
+                              <p className="text-[10px] text-muted-2">
+                                <span className="font-mono">{asset.asset_tag}</span>
+                                {asset.name !== asset.hostname ? ` · ${asset.name}` : ""}
+                              </p>
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-xs text-foreground">{userLabel}</p>
+                              {asset.assigned_agent_name &&
+                              asset.last_user &&
+                              asset.assigned_agent_name !== asset.last_user ? (
+                                <p className="text-[10px] text-muted-2">
+                                  Dernier utilisateur WAPT : {asset.last_user}
+                                </p>
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="hidden text-xs text-muted md:table-cell">
+                              {[asset.os_name, asset.os_version].filter(Boolean).join(" ") || "—"}
+                            </TableCell>
+                            <TableCell className="hidden text-xs text-muted lg:table-cell">
+                              {formatNumber(asset.software_count)}
+                            </TableCell>
+                            <TableCell>
+                              {asset.update_count > 0 ? (
+                                <Badge tone="warning">
+                                  {formatNumber(asset.update_count)} à faire
+                                </Badge>
+                              ) : (
+                                <span className="text-[10px] text-muted-2">À jour</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {selected ? (
+                                <Badge tone="success">Sélectionné</Badge>
+                              ) : (
+                                <Button size="sm" variant="ghost">
+                                  Choisir
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {selectedAsset ? (
+            <Card>
+              <CardContent className="grid gap-2 text-[11px] sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+                <p>
+                  <span className="text-muted-2">Machine : </span>
+                  <span className="font-medium text-foreground">
+                    {selectedAsset.hostname || selectedAsset.name}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-2">Inventaire : </span>
+                  {selectedAsset.asset_tag}
+                </p>
+                <p>
+                  <span className="text-muted-2">Utilisateur : </span>
+                  {selectedAsset.assigned_agent_name || selectedAsset.last_user || "Non affecté"}
+                </p>
+                <p>
+                  <span className="text-muted-2">Système : </span>
+                  {[selectedAsset.os_name, selectedAsset.os_version].filter(Boolean).join(" ") || "—"}
+                </p>
+                <p>
+                  <span className="text-muted-2">Logiciels : </span>
+                  {formatNumber(selectedAsset.software_count)}
+                </p>
                 <p>
                   <span className="text-muted-2">Mises à jour : </span>
-                  <span className={selectedAsset.update_count > 0 ? "text-warning" : "text-success"}>
+                  <span
+                    className={
+                      selectedAsset.update_count > 0 ? "text-warning" : "text-success"
+                    }
+                  >
                     {formatNumber(selectedAsset.update_count)}
                   </span>
                 </p>
               </CardContent>
-            ) : null}
-          </Card>
+            </Card>
+          ) : null}
 
           {!selectedAssetId ? (
             <EmptyState

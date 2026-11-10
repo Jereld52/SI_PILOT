@@ -111,7 +111,12 @@ class WaptAssetRead(BaseModel):
     external_id: str = ""
     os_name: str = ""
     os_version: str = ""
+    category_name: str = ""
+    assigned_agent_name: str = ""
+    last_user: str = ""
+    connected: bool = False
     update_count: int = 0
+    software_count: int = 0
 
 
 class WaptSoftwareHostRead(BaseModel):
@@ -119,6 +124,7 @@ class WaptSoftwareHostRead(BaseModel):
     asset_tag: str
     name: str
     hostname: str = ""
+    user: str = ""
     installed_version: str = ""
     available_version: str = ""
     last_seen: str = ""
