@@ -9,6 +9,7 @@ import { App } from "@/app/App";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { BrandingProvider } from "@/features/branding/BrandingProvider";
+import { ModulesProvider } from "@/features/modules/ModulesProvider";
 import { ThemeProvider, useTheme } from "@/features/theme/ThemeProvider";
 import "@/index.css";
 
@@ -41,10 +42,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <BrandingProvider>
             <AuthProvider>
-              <TooltipProvider delayDuration={250}>
-                <App />
-                <ThemedToaster />
-              </TooltipProvider>
+              <ModulesProvider>
+                <TooltipProvider delayDuration={250}>
+                  <App />
+                  <ThemedToaster />
+                </TooltipProvider>
+              </ModulesProvider>
             </AuthProvider>
           </BrandingProvider>
         </ThemeProvider>

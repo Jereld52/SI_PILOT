@@ -1735,6 +1735,25 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface ModuleSettingItem {
+  key: string;
+  label: string;
+  description: string;
+  path: string;
+  permission: string;
+  section: string;
+  enabled: boolean;
+}
+
+export interface ModuleSettings {
+  disabled: string[];
+  modules: ModuleSettingItem[];
+}
+
+export interface ModuleStatus {
+  disabled: string[];
+}
+
 export interface AiConfig {
   enabled: boolean;
   provider: string;

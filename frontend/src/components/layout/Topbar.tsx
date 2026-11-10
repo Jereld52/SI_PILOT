@@ -32,6 +32,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
+import { useModules } from "@/features/modules/ModulesProvider";
 import { THEME_OPTIONS, useTheme } from "@/features/theme/ThemeProvider";
 import { AiDialog } from "@/features/ai/AiDialog";
 import { fullName } from "@/lib/utils";
@@ -43,6 +44,7 @@ interface TopbarProps {
 
 export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
   const { user, hasPermission, logout } = useAuth();
+  const { isEnabled } = useModules();
   const branding = useBranding();
   const { theme, setTheme, cycleTheme } = useTheme();
   const themeLabel = THEME_OPTIONS.find((option) => option.value === theme)?.label ?? "Sombre";
@@ -131,20 +133,22 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
 
             <NotificationsMenu />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setAiOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
-                  aria-label="Ouvrir l'assistant IA"
-                >
-                  <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">IA</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Assistant IA</TooltipContent>
-            </Tooltip>
+            {isEnabled("ai") ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setAiOpen(true)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+                    aria-label="Ouvrir l'assistant IA"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">IA</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Assistant IA</TooltipContent>
+              </Tooltip>
+            ) : null}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

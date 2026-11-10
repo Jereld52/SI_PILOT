@@ -39,6 +39,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useModules } from "@/features/modules/ModulesProvider";
 import { apiFetch } from "@/lib/api";
 import { cn, formatCurrency, formatDate, formatDateTime, formatNumber, formatRelative, humanize } from "@/lib/utils";
 import type {
@@ -266,6 +267,7 @@ function DeadlineRow({ deadline }: { deadline: CockpitDeadline }) {
 
 export function DashboardPage() {
   const { user, hasPermission } = useAuth();
+  const { isEnabled } = useModules();
   const [tab, setTab] = useState<"cockpit" | "analyses" | "veille" | "week">("cockpit");
   const [showAllCharts, setShowAllCharts] = useState(false);
   const [tilesDialogOpen, setTilesDialogOpen] = useState(false);
@@ -351,16 +353,17 @@ export function DashboardPage() {
   const featuredSet = new Set(featured.map((kpi) => kpi.key));
   const secondaryKpis = kpis.filter((kpi) => !featuredSet.has(kpi.key));
   const modules = cockpitQuery.data?.modules ?? [];
+  const enabledModules = modules.filter((module) => isEnabled(module.key));
   useEffect(() => {
     if (tilesQuery.data) setTileKeys(tilesQuery.data.tiles);
   }, [tilesQuery.data]);
-  const moduleMap = new Map(modules.map((module) => [module.key, module]));
+  const moduleMap = new Map(enabledModules.map((module) => [module.key, module]));
   const visibleModules =
     tileKeys.length > 0
       ? tileKeys
           .map((key) => moduleMap.get(key))
           .filter((module): module is NonNullable<typeof module> => Boolean(module))
-      : modules;
+      : enabledModules;
   const deadlines = cockpitQuery.data?.deadlines ?? [];
   const alerts = alertsQuery.data?.items ?? [];
   const activities = activityQuery.data?.items ?? [];
@@ -535,7 +538,7 @@ export function DashboardPage() {
             <Button
               variant="secondary"
               size="sm"
-              disabled={modules.length === 0}
+              disabled={enabledModules.length === 0}
               onClick={() => setTilesDialogOpen(true)}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -931,7 +934,7 @@ export function DashboardPage() {
       <DashboardTilesDialog
         open={tilesDialogOpen}
         onOpenChange={setTilesDialogOpen}
-        modules={modules}
+        modules={enabledModules}
         selected={tileKeys}
         onSaved={setTileKeys}
       />

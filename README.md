@@ -54,6 +54,9 @@ se configurent depuis l'administration.
 - **Sauvegarde et restauration** depuis Administration : export de la configuration JSON, dump
   PostgreSQL, archive ZIP complète (base, configuration, fichiers), import de configuration et
   restauration de base avec sauvegarde de sécurité automatique.
+- **Modules activables** : chaque module du menu peut être désactivé depuis Administration → Modules.
+  Un module désactivé disparaît du menu, son URL directe affiche un écran dédié et le tableau de
+  bord masque sa tuile. Tous les modules sont actifs par défaut et les données sont conservées.
 - **Communication** : communications ciblées aux utilisateurs (tous, service, rôle ou sélection),
   publication avec notification interne et e-mail optionnel, suivi de lecture et archivage ;
   réunions d'équipe, de service, de projet ou points avec la responsable avec ordre du jour,

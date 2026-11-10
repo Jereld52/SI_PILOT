@@ -36,6 +36,7 @@ export interface NavItem {
   to: string;
   icon: LucideIcon;
   permission: string;
+  moduleKey?: string;
   admin?: boolean;
 }
 
@@ -58,6 +59,7 @@ export const calendarNavItem: NavItem = {
   to: "/calendrier",
   icon: CalendarDays,
   permission: "calendar.read",
+  moduleKey: "calendar",
 };
 
 export const navigationSections: NavSection[] = [
@@ -66,8 +68,20 @@ export const navigationSections: NavSection[] = [
     label: "Pilotage",
     icon: BarChart3,
     items: [
-      { label: "Statistiques", to: "/statistiques", icon: BarChart3, permission: "statistics.read" },
-      { label: "Exports", to: "/exports", icon: Download, permission: "exports.run" },
+      {
+        label: "Statistiques",
+        to: "/statistiques",
+        icon: BarChart3,
+        permission: "statistics.read",
+        moduleKey: "statistics",
+      },
+      {
+        label: "Exports",
+        to: "/exports",
+        icon: Download,
+        permission: "exports.run",
+        moduleKey: "exports",
+      },
     ],
   },
   {
@@ -75,28 +89,55 @@ export const navigationSections: NavSection[] = [
     label: "Support & parc",
     icon: LifeBuoy,
     items: [
-      { label: "Demandes IT", to: "/demandes", icon: LifeBuoy, permission: "tickets.read" },
+      {
+        label: "Demandes IT",
+        to: "/demandes",
+        icon: LifeBuoy,
+        permission: "tickets.read",
+        moduleKey: "tickets",
+      },
       {
         label: "Parc informatique",
         to: "/parc",
         icon: MonitorSmartphone,
         permission: "assets.read",
+        moduleKey: "assets",
       },
-      { label: "Logiciels", to: "/logiciels", icon: Boxes, permission: "assets.read" },
-      { label: "Stock IT", to: "/stock", icon: Package, permission: "stock.read" },
+      {
+        label: "Logiciels",
+        to: "/logiciels",
+        icon: Boxes,
+        permission: "assets.read",
+        moduleKey: "software",
+      },
+      {
+        label: "Stock IT",
+        to: "/stock",
+        icon: Package,
+        permission: "stock.read",
+        moduleKey: "stock",
+      },
       {
         label: "Réservations",
         to: "/reservations",
         icon: CalendarCheck,
         permission: "reservations.read",
+        moduleKey: "reservations",
       },
       {
         label: "Téléphonie mobile",
         to: "/telephonie",
         icon: Smartphone,
         permission: "mobile_lines.read",
+        moduleKey: "mobile",
       },
-      { label: "Agents", to: "/agents", icon: Users, permission: "agents.read" },
+      {
+        label: "Agents",
+        to: "/agents",
+        icon: Users,
+        permission: "agents.read",
+        moduleKey: "agents",
+      },
     ],
   },
   {
@@ -109,24 +150,28 @@ export const navigationSections: NavSection[] = [
         to: "/communication/communications",
         icon: Megaphone,
         permission: "communications.read",
+        moduleKey: "communications",
       },
       {
         label: "Réunions",
         to: "/communication/reunions",
         icon: CalendarClock,
         permission: "meetings.read",
+        moduleKey: "meetings",
       },
       {
         label: "Formations",
         to: "/communication/formations",
         icon: GraduationCap,
         permission: "trainings.read",
+        moduleKey: "trainings",
       },
       {
         label: "Points 1:1",
         to: "/communication/points",
         icon: ListChecks,
         permission: "manager_points.read",
+        moduleKey: "manager_points",
       },
     ],
   },
@@ -140,24 +185,28 @@ export const navigationSections: NavSection[] = [
         to: "/infrastructure",
         icon: Server,
         permission: "infrastructure.read",
+        moduleKey: "infrastructure",
       },
       {
         label: "Supervision",
         to: "/supervision",
         icon: Radar,
         permission: "infrastructure.topology",
+        moduleKey: "supervision",
       },
       {
         label: "Partages réseau",
         to: "/partages-reseau",
         icon: FolderTree,
         permission: "infrastructure.read",
+        moduleKey: "network_shares",
       },
       {
         label: "Cybersécurité",
         to: "/cybersecurite",
         icon: ShieldCheck,
         permission: "security.read",
+        moduleKey: "security",
       },
     ],
   },
@@ -171,10 +220,29 @@ export const navigationSections: NavSection[] = [
         to: "/fournisseurs",
         icon: Truck,
         permission: "suppliers.read",
+        moduleKey: "suppliers",
       },
-      { label: "Contrats", to: "/contrats", icon: FileText, permission: "contracts.read" },
-      { label: "Budget", to: "/budget", icon: Wallet, permission: "budget.read" },
-      { label: "Projets", to: "/projets", icon: FolderKanban, permission: "projects.read" },
+      {
+        label: "Contrats",
+        to: "/contrats",
+        icon: FileText,
+        permission: "contracts.read",
+        moduleKey: "contracts",
+      },
+      {
+        label: "Budget",
+        to: "/budget",
+        icon: Wallet,
+        permission: "budget.read",
+        moduleKey: "budget",
+      },
+      {
+        label: "Projets",
+        to: "/projets",
+        icon: FolderKanban,
+        permission: "projects.read",
+        moduleKey: "projects",
+      },
     ],
   },
   {
@@ -182,12 +250,19 @@ export const navigationSections: NavSection[] = [
     label: "Conformité",
     icon: Scale,
     items: [
-      { label: "RGPD", to: "/rgpd", icon: Scale, permission: "rgpd.read" },
+      {
+        label: "RGPD",
+        to: "/rgpd",
+        icon: Scale,
+        permission: "rgpd.read",
+        moduleKey: "rgpd",
+      },
       {
         label: "Documentation",
         to: "/documentation",
         icon: BookOpen,
         permission: "documents.read",
+        moduleKey: "documents",
       },
     ],
   },
@@ -229,4 +304,14 @@ export function findNavItem(pathname: string): NavItem | undefined {
       .filter((item) => item.to !== "/")
       .find((item) => isNavigationItemActive(item, pathname)) ?? homeNavItem
   );
+}
+
+export function findModuleKeyForPath(pathname: string): string | undefined {
+  const candidates = [...navigationSections.flatMap((section) => section.items), calendarNavItem]
+    .filter((item) => Boolean(item.moduleKey))
+    .sort((left, right) => right.to.length - left.to.length);
+  const match = candidates.find(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  );
+  return match?.moduleKey;
 }

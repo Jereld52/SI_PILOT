@@ -16,6 +16,7 @@ import {
 } from "@/components/layout/navigation";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
+import { useModules } from "@/features/modules/ModulesProvider";
 import { cn, fullName } from "@/lib/utils";
 
 interface SidebarProps {
@@ -27,6 +28,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { user, hasPermission } = useAuth();
+  const { isEnabled } = useModules();
   const branding = useBranding();
   const location = useLocation();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -34,7 +36,9 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
   const sections = navigationSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => hasPermission(item.permission)),
+      items: section.items.filter(
+        (item) => hasPermission(item.permission) && isEnabled(item.moduleKey),
+      ),
     }))
     .filter((section) => section.items.length > 0);
   const activeSectionKey =
@@ -131,7 +135,9 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
 
         <nav className="relative z-10 flex-1 space-y-1 overflow-y-auto px-2.5 py-4">
           {hasPermission(homeNavItem.permission) ? renderItem(homeNavItem) : null}
-          {hasPermission(calendarNavItem.permission) ? renderItem(calendarNavItem) : null}
+          {hasPermission(calendarNavItem.permission) && isEnabled(calendarNavItem.moduleKey)
+            ? renderItem(calendarNavItem)
+            : null}
 
           {sections.map((section) => {
             const open = !collapsed && Boolean(openSections[section.key]);

@@ -984,6 +984,33 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "modules-activables",
+    title: "Modules activables",
+    summary: "Masquer les modules inutilisés pour alléger le menu et éviter les onglets vides.",
+    category: "administration",
+    tags: ["modules", "menu", "activation", "désactivation", "interface", "usine à gaz"],
+    blocks: [
+      p(
+        "Administration → Modules permet d'activer ou de désactiver chaque module de l'application. Tous les modules sont actifs par défaut.",
+      ),
+      list([
+        "Un module désactivé disparaît du menu latéral.",
+        "Son URL directe affiche un écran « Module désactivé » au lieu d'un onglet vide.",
+        "Les données, permissions, historiques et exports restent conservés.",
+        "Le tableau de bord masque aussi les tuiles des modules désactivés.",
+        "La réactivation est immédiate pour tous les utilisateurs.",
+      ]),
+      note(
+        "info",
+        "Cette configuration est globale à l'instance. Elle ne remplace pas les permissions : un module actif reste soumis aux rôles et aux portées de données.",
+      ),
+      note(
+        "warning",
+        "Désactiver un module ne supprime aucune donnée. Ne confondez pas avec la suppression ou l'archivage, qui restent des actions distinctes.",
+      ),
+    ],
+  },
+  {
     slug: "assistant-ia",
     title: "Assistant IA",
     summary: "Connecter OpenAI, Mistral, Gemini, Anthropic, Ollama ou un endpoint compatible.",

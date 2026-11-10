@@ -39,6 +39,11 @@ const AdminAiPage = lazy(() =>
     default: module.AdminAiPage,
   })),
 );
+const AdminModulesPage = lazy(() =>
+  import("@/features/admin/AdminModulesPage").then((module) => ({
+    default: module.AdminModulesPage,
+  })),
+);
 const AuditPage = lazy(() =>
   import("@/features/admin/AuditPage").then((module) => ({ default: module.AuditPage })),
 );
@@ -310,6 +315,14 @@ export function App() {
               element={
                 <RequirePermission permission="ai.configure">
                   <AdminAiPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="modules"
+              element={
+                <RequirePermission permission="admin.settings.read">
+                  <AdminModulesPage />
                 </RequirePermission>
               }
             />

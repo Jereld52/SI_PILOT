@@ -107,7 +107,7 @@ DOCUMENT_CATEGORIES = (
     ("security", "Documents sécurité"),
 )
 
-DEFAULT_SETTINGS = (
+DEFAULT_SETTINGS: tuple[tuple[str, object, str, bool, str], ...] = (
     ("app.name", "SI PILOT", "general", False, "Nom affiché de l'application"),
     ("app.organization", "Votre structure", "general", False, "Nom de la structure ou de l'organisation"),
     ("app.tagline", "Cockpit du système d'information", "general", False, "Accroche affichée sur l'écran de connexion"),
@@ -166,6 +166,7 @@ DEFAULT_SETTINGS = (
     ("ai.max_tokens", 1200, "ai", False, "Nombre maximal de jetons en réponse"),
     ("ai.timeout_seconds", 60, "ai", False, "Délai maximal des appels IA"),
     ("ai.include_fleet_context", True, "ai", False, "Envoyer un contexte agrégé du parc"),
+    ("modules.disabled", [], "modules", False, "Modules désactivés"),
     ("ldap.enabled", False, "ldap", False, "Activer la synchronisation Active Directory"),
     ("ldap.url", "", "ldap", False, "URL du serveur LDAP (ldap:// ou ldaps://)"),
     ("ldap.base_dn", "", "ldap", False, "Base de recherche des utilisateurs"),
