@@ -1,7 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, LockKeyhole, RefreshCw, Send, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  LockKeyhole,
+  RefreshCw,
+  Send,
+  Sparkles,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,11 +26,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { ApiError, apiFetch } from "@/lib/api";
-import type { AiChatResponse, AiStatus } from "@/types/api";
+import type { AiChatResponse, AiContextRef, AiStatus } from "@/types/api";
 
 interface AiDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  context?: AiContextRef | null;
+  initialPrompt?: string;
 }
 
 interface ChatMessage {
@@ -29,7 +40,7 @@ interface ChatMessage {
   content: string;
 }
 
-const suggestedPrompts = [
+const genericPrompts = [
   "Fais-moi un bilan du parc informatique.",
   "Quels postes sont en panne ou à renouveler ?",
   "Quelles mises à jour WAPT sont en attente ?",
@@ -38,7 +49,116 @@ const suggestedPrompts = [
   "Prépare un bilan mensuel pour la direction.",
 ];
 
-export function AiDialog({ open, onOpenChange }: AiDialogProps) {
+const contextPrompts: Record<string, string[]> = {
+  asset: [
+    "Analyse ce poste : état, risques et points d'attention.",
+    "Ce poste doit-il être renouvelé ?",
+    "Quelles mises à jour sont prioritaires sur ce poste ?",
+    "Prépare une fiche de diagnostic pour ce poste.",
+  ],
+  ticket: [
+    "Résume cette demande.",
+    "Propose une qualification et une priorité.",
+    "Rédige une réponse à l'utilisateur.",
+    "Quelles informations manquent pour traiter cette demande ?",
+  ],
+  meeting: [
+    "Résume cette réunion.",
+    "Extrais les décisions et les actions.",
+    "Prépare le prochain point avec la responsable.",
+  ],
+  training: [
+    "Résume cette formation.",
+    "Propose un plan de suivi pour les participants.",
+    "Rédige une communication aux participants.",
+  ],
+  communication: [
+    "Améliore ce message.",
+    "Propose une version plus courte.",
+    "Adapte le ton pour les utilisateurs.",
+  ],
+};
+
+const contextLabels: Record<string, string> = {
+  asset: "Poste",
+  ticket: "Demande",
+  meeting: "Réunion",
+  training: "Formation",
+  communication: "Communication",
+};
+
+function InlineText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        if (part.startsWith("`") && part.endsWith("`")) {
+          return (
+            <code
+              key={index}
+              className="rounded bg-background/70 px-1 py-0.5 font-mono text-[10px] text-accent"
+            >
+              {part.slice(1, -1)}
+            </code>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+}
+
+function MarkdownText({ text }: { text: string }) {
+  return (
+    <div className="space-y-1.5">
+      {text.split("\n").map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-1" />;
+        if (trimmed.startsWith("### ")) {
+          return (
+            <p key={index} className="text-xs font-semibold text-foreground">
+              <InlineText text={trimmed.slice(4)} />
+            </p>
+          );
+        }
+        if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+          return (
+            <p key={index} className="text-xs font-semibold text-foreground">
+              <InlineText text={trimmed.replace(/^#+\s/, "")} />
+            </p>
+          );
+        }
+        if (/^[-*]\s/.test(trimmed)) {
+          return (
+            <div key={index} className="flex gap-1.5">
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
+              <span>
+                <InlineText text={trimmed.replace(/^[-*]\s/, "")} />
+              </span>
+            </div>
+          );
+        }
+        if (/^\d+\.\s/.test(trimmed)) {
+          return (
+            <p key={index} className="pl-3">
+              <InlineText text={trimmed} />
+            </p>
+          );
+        }
+        return (
+          <p key={index}>
+            <InlineText text={line} />
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialogProps) {
   const { hasPermission } = useAuth();
   const branding = useBranding();
   const navigate = useNavigate();
@@ -46,10 +166,13 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoStarted = useRef<string>("");
 
   const canUse = hasPermission("ai.use");
   const canConfigure = hasPermission("ai.configure");
+  const contextKey = context ? `${context.type}:${context.id}` : "general";
 
   const statusQuery = useQuery({
     queryKey: ["ai", "status"],
@@ -63,6 +186,57 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    setMessages([]);
+    setInput("");
+    setError(null);
+    setCopiedIndex(null);
+    autoStarted.current = "";
+  }, [open, contextKey]);
+
+  const payloadContext = context
+    ? { type: context.type, id: context.id }
+    : undefined;
+
+  const complete = async (history: ChatMessage[]) => {
+    return apiFetch<AiChatResponse>("/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: history.slice(-12),
+        include_context: true,
+        context: payloadContext,
+      }),
+    });
+  };
+
+  const startWithPrompt = async (prompt: string) => {
+    const userMessage: ChatMessage = { role: "user", content: prompt };
+    setMessages([userMessage]);
+    setInput("");
+    setError(null);
+    setSending(true);
+    try {
+      const result = await complete([userMessage]);
+      setMessages([userMessage, { role: "assistant", content: result.message }]);
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError ? caught.message : "L'assistant IA est indisponible.",
+      );
+    } finally {
+      setSending(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open || !initialPrompt) return;
+    const key = `${contextKey}:${initialPrompt}`;
+    if (autoStarted.current === key) return;
+    autoStarted.current = key;
+    void startWithPrompt(initialPrompt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialPrompt, contextKey]);
+
   const send = async (prompt?: string) => {
     const content = (prompt ?? input).trim();
     if (!content || sending) return;
@@ -72,13 +246,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     setError(null);
     setSending(true);
     try {
-      const result = await apiFetch<AiChatResponse>("/ai/chat", {
-        method: "POST",
-        body: JSON.stringify({
-          messages: next.slice(-12),
-          include_context: true,
-        }),
-      });
+      const result = await complete(next);
       setMessages([...next, { role: "assistant", content: result.message }]);
     } catch (caught) {
       setError(
@@ -93,7 +261,22 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     setMessages([]);
     setInput("");
     setError(null);
+    setCopiedIndex(null);
+    autoStarted.current = "";
   };
+
+  const copyMessage = async (content: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedIndex(index);
+      toast.success("Réponse copiée.");
+      window.setTimeout(() => setCopiedIndex(null), 1500);
+    } catch {
+      toast.error("Copie impossible.");
+    }
+  };
+
+  const prompts = context ? contextPrompts[context.type] ?? genericPrompts : genericPrompts;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,6 +302,12 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
                   : status.configured
                     ? "Connecté"
                     : "Non configuré"}
+              </Badge>
+            ) : null}
+            {context ? (
+              <Badge tone="info">
+                {contextLabels[context.type] ?? "Contexte"}
+                {context.label ? ` : ${context.label}` : ""}
               </Badge>
             ) : null}
             {status?.model ? (
@@ -213,10 +402,12 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
               {messages.length === 0 ? (
                 <div className="space-y-3">
                   <p className="text-xs text-muted">
-                    Posez une question sur le parc ou choisissez une suggestion.
+                    {context
+                      ? "Contexte chargé. Choisissez une action ou posez votre question."
+                      : "Posez une question sur le parc ou choisissez une suggestion."}
                   </p>
                   <div className="grid gap-1.5 sm:grid-cols-2">
-                    {suggestedPrompts.map((prompt) => (
+                    {prompts.map((prompt) => (
                       <button
                         key={prompt}
                         type="button"
@@ -234,11 +425,32 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
                     key={index}
                     className={
                       message.role === "user"
-                        ? "ml-auto max-w-[85%] rounded-lg bg-primary/15 px-3 py-2 text-xs text-foreground"
-                        : "mr-auto max-w-[92%] whitespace-pre-wrap rounded-lg border border-border-soft bg-background/70 px-3 py-2 text-xs leading-5 text-foreground"
+                        ? "ml-auto max-w-[85%] whitespace-pre-wrap rounded-lg bg-primary/15 px-3 py-2 text-xs text-foreground"
+                        : "mr-auto max-w-[92%] rounded-lg border border-border-soft bg-background/70 px-3 py-2 text-xs leading-5 text-foreground"
                     }
                   >
-                    {message.content}
+                    {message.role === "assistant" ? (
+                      <MarkdownText text={message.content} />
+                    ) : (
+                      message.content
+                    )}
+                    {message.role === "assistant" ? (
+                      <div className="mt-1.5 flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[10px] text-muted-2"
+                          onClick={() => void copyMessage(message.content, index)}
+                        >
+                          {copiedIndex === index ? (
+                            <Check className="h-3 w-3" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          Copier
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ))
               )}

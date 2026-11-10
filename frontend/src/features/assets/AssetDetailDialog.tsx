@@ -1,4 +1,4 @@
-import { Boxes, Cpu, Network, ShieldCheck, UserRound } from "lucide-react";
+import { Boxes, Cpu, Network, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import {
   assetConditionLabels,
   assetConditionTones,
@@ -86,6 +87,8 @@ interface AssetDetailDialogProps {
 }
 
 export function AssetDetailDialog({ open, onOpenChange, asset }: AssetDetailDialogProps) {
+  const { open: openAi } = useAiAssistant();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -197,6 +200,25 @@ export function AssetDetailDialog({ open, onOpenChange, asset }: AssetDetailDial
         ) : null}
 
         <DialogFooter>
+          {asset ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onOpenChange(false);
+                openAi(
+                  {
+                    type: "asset",
+                    id: asset.id,
+                    label: asset.hostname || asset.name,
+                  },
+                  "Analyse ce poste : état, risques, renouvellement, mises à jour WAPT et points d'attention.",
+                );
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Analyser avec l'IA
+            </Button>
+          ) : null}
           {asset ? (
             <Link
               to={`/logiciels?asset=${asset.id}`}

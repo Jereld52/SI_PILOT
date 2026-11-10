@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Sparkles,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs } from "@/components/ui/tabs";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { cn, formatDateTime, formatNumber } from "@/lib/utils";
@@ -50,6 +52,7 @@ interface PendingAction {
 
 export function SoftwarePage() {
   const { hasPermission } = useAuth();
+  const { open: openAi } = useAiAssistant();
   const canRead = hasPermission("assets.read");
   const canManage = hasPermission("assets.update");
   const [searchParams] = useSearchParams();
@@ -576,6 +579,25 @@ export function SoftwarePage() {
                     {formatNumber(selectedAsset.update_count)}
                   </span>
                 </p>
+                <div className="flex items-center">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      openAi(
+                        {
+                          type: "asset",
+                          id: selectedAsset.id,
+                          label: selectedAsset.hostname || selectedAsset.name,
+                        },
+                        "Analyse les logiciels de ce poste : mises à jour prioritaires, risques et actions à prévoir.",
+                      )
+                    }
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Analyser avec l'IA
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : null}

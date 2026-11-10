@@ -1,4 +1,4 @@
-import { Clock, MessageSquare, Send, UserRound } from "lucide-react";
+import { Clock, MessageSquare, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDateTime, fullName } from "@/lib/utils";
@@ -66,6 +67,7 @@ export function TicketDetailDialog({
   onChanged,
 }: TicketDetailDialogProps) {
   const { hasPermission, user } = useAuth();
+  const { open: openAi } = useAiAssistant();
   const [statusId, setStatusId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [comment, setComment] = useState("");
@@ -504,6 +506,25 @@ export function TicketDetailDialog({
         ) : null}
 
         <DialogFooter>
+          {ticket ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onOpenChange(false);
+                openAi(
+                  {
+                    type: "ticket",
+                    id: ticket.id,
+                    label: ticket.reference,
+                  },
+                  "Analyse cette demande : résumé, qualification, priorité, informations manquantes et réponse suggérée à l'utilisateur.",
+                );
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Aider avec l'IA
+            </Button>
+          ) : null}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Fermer
           </Button>

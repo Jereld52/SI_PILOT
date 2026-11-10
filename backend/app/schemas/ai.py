@@ -1,4 +1,5 @@
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -60,9 +61,15 @@ class AiChatMessage(BaseModel):
     content: str = Field(min_length=1, max_length=8000)
 
 
+class AiContext(BaseModel):
+    type: Literal["asset", "ticket", "meeting", "training", "communication"]
+    id: UUID
+
+
 class AiChatRequest(BaseModel):
     messages: list[AiChatMessage] = Field(min_length=1, max_length=20)
     include_context: bool | None = None
+    context: AiContext | None = None
 
 
 class AiChatResponse(BaseModel):

@@ -124,6 +124,59 @@ def test_provider_urls():
     assert ai_service._provider_url(openai) == "https://example.test/v1/chat/completions"
 
 
+def test_ai_chat_with_asset_context(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    client.put(
+        "/api/v1/admin/ai/config",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "provider": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4.1-mini",
+            "api_key": None,
+            "include_fleet_context": True,
+        },
+    )
+    categories = client.get("/api/v1/asset-categories").json()
+    desktop = next(item for item in categories if item["code"] == "desktop")
+    created = client.post(
+        "/api/v1/assets",
+        headers=csrf_headers(csrf),
+        json={
+            "name": "Poste analyse IA",
+            "hostname": "IA-POSTE-01",
+            "category_id": desktop["id"],
+            "status": "in_service",
+        },
+    )
+    assert created.status_code == 201, created.text
+    asset_id = created.json()["id"]
+
+    captured: dict = {}
+
+    def fake_complete(config, messages, max_tokens=None):  # noqa: ANN001, ARG001
+        captured["messages"] = messages
+        return ("Analyse terminée.", None)
+
+    monkeypatch.setattr(ai_service, "_complete", fake_complete)
+    response = client.post(
+        "/api/v1/ai/chat",
+        headers=csrf_headers(csrf),
+        json={
+            "messages": [
+                {"role": "user", "content": "Analyse ce poste."}
+            ],
+            "include_context": True,
+            "context": {"type": "asset", "id": asset_id},
+        },
+    )
+    assert response.status_code == 200, response.text
+    system = captured["messages"][0]["content"]
+    assert "Contexte ciblé — Équipement" in system
+    assert "IA-POSTE-01" in system
+
+
 def test_ollama_adapter_disables_thinking(monkeypatch):
     captured: dict = {}
 

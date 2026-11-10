@@ -1030,6 +1030,15 @@ export const HELP_ARTICLES: HelpArticle[] = [
       p(
         "Usages : bilan du parc, identification des postes à renouveler ou en panne, suivi des mises à jour WAPT, analyse des demandes, anticipation des échéances, rédaction de synthèses et comptes rendus.",
       ),
+      p(
+        "L'assistant est aussi contextuel : depuis une fiche équipement, une demande IT ou un poste de la page Logiciels, le bouton « Analyser avec l'IA » charge automatiquement les informations utiles (état, garantie, affectation, mises à jour WAPT, description, commentaires, équipements liés).",
+      ),
+      list([
+        "Actions rapides : bilan du parc, synthèse du support, mises à jour WAPT, échéances contrats, sécurité.",
+        "Analyse d'un poste : risques, renouvellement, mises à jour prioritaires et points d'attention.",
+        "Analyse d'une demande : résumé, qualification, priorité, informations manquantes et réponse suggérée.",
+        "Réponses mises en forme (titres, listes, gras) et bouton de copie.",
+      ]),
       note(
         "warning",
         "L'assistant ne modifie aucune donnée. Les actions proposées doivent être réalisées dans l'application par un utilisateur habilité. Pour un usage souverain, privilégiez Ollama ou une instance interne.",

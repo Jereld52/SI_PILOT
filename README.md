@@ -274,6 +274,10 @@ npm run build
 - L'assistant IA est facultatif et configurable : OpenAI, Azure OpenAI, Mistral, Groq,
   OpenRouter, Gemini, Anthropic, Ollama, Open WebUI ou tout endpoint compatible OpenAI. La clé
   est chiffrée, le contexte du parc est optionnel et l'assistant ne modifie jamais les données.
+- **Assistant IA contextuel** : bouton « Analyser avec l'IA » sur une fiche équipement, une demande
+  IT ou un poste de la page Logiciels. Contexte ciblé (état, garantie, affectation, mises à jour
+  WAPT, description, commentaires, équipements liés), actions rapides, réponses mises en forme et
+  copie.
 - Toute mutation est auditée.
 
 ## 9. Feuille de route

@@ -8,19 +8,23 @@ from typing import Any
 
 import httpx
 from app.core.crypto import decrypt_secret, encrypt_secret
-from app.core.errors import ValidationAppError
+from app.core.errors import PermissionDeniedError, ValidationAppError
+from app.core.permissions import has_permission
 from app.models.ai import AiRun
 from app.models.assets import Asset, AssetCategory, AssetSoftware
 from app.models.auth import User
+from app.models.communication import Communication, Meeting, MeetingPoint, Training
 from app.models.contracts import Contract
 from app.models.network import NetworkShare
+from app.models.organization import Agent
 from app.models.setting import Setting
-from app.models.tickets import Ticket, TicketStatus
+from app.models.tickets import Ticket, TicketAsset, TicketComment, TicketStatus
 from app.schemas.ai import (
     AiChatMessage,
     AiChatResponse,
     AiConfigRead,
     AiConfigUpdate,
+    AiContext,
     AiStatusRead,
     AiTestResponse,
 )
@@ -404,6 +408,247 @@ def _fleet_context(db: Session) -> str:
     return text[:4500]
 
 
+def _truncate(value: str | None, limit: int = 1500) -> str:
+    if not value:
+        return ""
+    text = value.strip()
+    return text if len(text) <= limit else f"{text[:limit]}…"
+
+
+def _users_by_ids(db: Session, ids: list[Any]) -> list[User]:
+    if not ids:
+        return []
+    rows = db.scalars(select(User).where(User.id.in_(ids))).all()
+    by_id = {row.id: row for row in rows}
+    return [by_id[item] for item in ids if item in by_id]
+
+
+def _asset_context(db: Session, asset: Asset) -> str:
+    assigned = asset.assigned_agent
+    lines = [
+        "Contexte ciblé — Équipement :",
+        f"- Inventaire : {asset.asset_tag}.",
+        f"- Nom : {asset.name}.",
+        f"- Nom machine : {asset.hostname or '—'}.",
+        f"- Catégorie : {asset.category.name if asset.category else 'non précisée'}.",
+        f"- Statut : {ASSET_STATUS_LABELS.get(asset.status, asset.status)}.",
+        f"- Marque / modèle : {asset.brand or '—'} / {asset.model or '—'}.",
+        f"- Numéro de série : {asset.serial_number or '—'}.",
+        f"- Système : {asset.os_name or '—'} {asset.os_version or ''}.",
+        f"- IP / MAC : {asset.ip_address or '—'} / {asset.mac_address or '—'}.",
+        (
+            f"- Affecté à : {assigned.first_name} {assigned.last_name}."
+            if assigned
+            else "- Affectation : non affecté."
+        ),
+        f"- Service : {asset.service.name if asset.service else '—'}.",
+        f"- Site : {asset.location.name if asset.location else '—'}.",
+        f"- Dernier utilisateur WAPT : {asset.wapt_last_user or '—'}.",
+        f"- Dernière connexion : {asset.wapt_last_seen or '—'}.",
+        f"- Garantie : {asset.warranty_end:%d/%m/%Y}" if asset.warranty_end else "- Garantie : non renseignée.",
+        f"- Critique : {'oui' if asset.is_critical else 'non'}.",
+    ]
+    updates = db.scalars(
+        select(AssetSoftware)
+        .where(
+            AssetSoftware.asset_id == asset.id,
+            AssetSoftware.update_available.is_(True),
+        )
+        .order_by(AssetSoftware.package_name)
+        .limit(15)
+    ).all()
+    if updates:
+        lines.append("- Mises à jour WAPT en attente :")
+        for item in updates:
+            lines.append(
+                f"  - {item.package_name} : {item.package_version or '—'} "
+                f"→ {item.available_version or '—'}."
+            )
+    else:
+        lines.append("- Aucune mise à jour WAPT en attente connue.")
+    if asset.comments:
+        lines.append(f"- Commentaires : {_truncate(asset.comments, 500)}")
+    return "\n".join(lines)
+
+
+def _ticket_context(db: Session, ticket: Ticket) -> str:
+    requester = ticket.requester_agent
+    lines = [
+        "Contexte ciblé — Demande IT :",
+        f"- Référence : {ticket.reference}.",
+        f"- Sujet : {ticket.subject}.",
+        f"- Statut : {ticket.status.name if ticket.status else '—'}.",
+        f"- Priorité : {ticket.priority.name if ticket.priority else '—'}.",
+        f"- Catégorie : {ticket.category.name if ticket.category else '—'}.",
+        f"- Origine : {ticket.source}.",
+        (
+            f"- Demandeur : {requester.first_name} {requester.last_name}."
+            if requester
+            else "- Demandeur : non précisé."
+        ),
+        f"- Service : {ticket.service.name if ticket.service else '—'}.",
+        (
+            f"- Assigné à : {ticket.assignee.first_name} {ticket.assignee.last_name}."
+            if ticket.assignee
+            else "- Assigné à : personne."
+        ),
+        f"- Ouverte le : {ticket.opened_at:%d/%m/%Y %H:%M}.",
+        f"- Échéance : {ticket.due_at:%d/%m/%Y %H:%M}." if ticket.due_at else "- Échéance : non renseignée.",
+        f"- Temps passé : {ticket.time_spent_minutes} minutes.",
+        f"- Description : {_truncate(ticket.description, 1800) or '—'}",
+    ]
+    assets = db.scalars(
+        select(Asset)
+        .join(TicketAsset, TicketAsset.asset_id == Asset.id)
+        .where(TicketAsset.ticket_id == ticket.id)
+        .limit(5)
+    ).all()
+    if assets:
+        lines.append(
+            "- Équipements liés : "
+            + ", ".join(f"{asset.asset_tag} ({asset.name})" for asset in assets)
+            + "."
+        )
+    comments = db.scalars(
+        select(TicketComment)
+        .where(TicketComment.ticket_id == ticket.id)
+        .order_by(TicketComment.created_at.desc())
+        .limit(4)
+    ).all()
+    if comments:
+        lines.append("- Derniers commentaires :")
+        for comment in reversed(comments):
+            author = db.get(User, comment.author_user_id) if comment.author_user_id else None
+            author_name = (
+                f"{author.first_name} {author.last_name}" if author else "Utilisateur"
+            )
+            lines.append(
+                f"  - {author_name} ({comment.created_at:%d/%m/%Y}) : "
+                f"{_truncate(comment.body, 400)}"
+            )
+    return "\n".join(lines)
+
+
+def _meeting_context(db: Session, meeting: Meeting) -> str:
+    participants = _users_by_ids(db, meeting.participant_user_ids)
+    points = db.scalars(
+        select(MeetingPoint)
+        .where(MeetingPoint.meeting_id == meeting.id)
+        .order_by(MeetingPoint.status, MeetingPoint.due_date)
+        .limit(12)
+    ).all()
+    lines = [
+        "Contexte ciblé — Réunion :",
+        f"- Titre : {meeting.title}.",
+        f"- Type : {meeting.meeting_type}.",
+        f"- Date : {meeting.scheduled_at:%d/%m/%Y %H:%M}.",
+        f"- Durée : {meeting.duration_minutes} minutes.",
+        f"- Statut : {meeting.status}.",
+        (
+            "- Participants : "
+            + ", ".join(f"{user.first_name} {user.last_name}" for user in participants)
+            + "."
+            if participants
+            else "- Participants : non précisés."
+        ),
+        f"- Ordre du jour : {_truncate(meeting.agenda, 1200) or '—'}",
+        f"- Compte rendu : {_truncate(meeting.notes, 1800) or '—'}",
+        f"- Décisions : {_truncate(meeting.decisions, 1200) or '—'}",
+    ]
+    if points:
+        lines.append("- Points de suivi :")
+        for point in points:
+            lines.append(f"  - [{point.status}] {point.title} — priorité {point.priority}.")
+    return "\n".join(lines)
+
+
+def _training_context(db: Session, training: Training) -> str:
+    participants = db.scalars(
+        select(Agent).where(Agent.id.in_(training.participant_agent_ids))
+    ).all()
+    return "\n".join(
+        [
+            "Contexte ciblé — Formation :",
+            f"- Titre : {training.title}.",
+            f"- Organisme : {training.provider or '—'}.",
+            f"- Catégorie : {training.category or '—'}.",
+            f"- Statut : {training.status}.",
+            f"- Dates : {training.start_date or '—'} → {training.end_date or '—'}.",
+            f"- Durée : {training.duration_hours or '—'} heures.",
+            f"- Obligatoire : {'oui' if training.mandatory else 'non'}.",
+            f"- Coût : {training.cost or '—'}.",
+            (
+                "- Participants : "
+                + ", ".join(
+                    f"{agent.first_name} {agent.last_name}" for agent in participants
+                )
+                + "."
+                if participants
+                else "- Participants : aucun."
+            ),
+            f"- Description : {_truncate(training.description, 1200) or '—'}",
+            f"- Notes : {_truncate(training.notes, 800) or '—'}",
+        ]
+    )
+
+
+def _communication_context(db: Session, communication: Communication) -> str:
+    return "\n".join(
+        [
+            "Contexte ciblé — Communication :",
+            f"- Titre : {communication.title}.",
+            f"- Catégorie : {communication.category}.",
+            f"- Statut : {communication.status}.",
+            f"- Canal : {communication.channel}.",
+            f"- Audience : {communication.audience}.",
+            f"- Publiée le : {communication.published_at or '—'}.",
+            f"- Contenu : {_truncate(communication.body, 2200)}",
+        ]
+    )
+
+
+def _context_block(
+    db: Session, context: AiContext | None, actor: User
+) -> str | None:
+    if context is None:
+        return None
+    permission = {
+        "asset": "assets.read",
+        "ticket": "tickets.read",
+        "meeting": "meetings.read",
+        "training": "trainings.read",
+        "communication": "communications.read",
+    }[context.type]
+    if not has_permission(actor, permission):
+        raise PermissionDeniedError(
+            "Votre rôle ne permet pas d'utiliser ce contexte avec l'assistant."
+        )
+    if context.type == "asset":
+        asset = db.get(Asset, context.id)
+        if asset is None:
+            raise ValidationAppError("Équipement introuvable.")
+        return _asset_context(db, asset)
+    if context.type == "ticket":
+        ticket = db.get(Ticket, context.id)
+        if ticket is None:
+            raise ValidationAppError("Demande introuvable.")
+        return _ticket_context(db, ticket)
+    if context.type == "meeting":
+        meeting = db.get(Meeting, context.id)
+        if meeting is None:
+            raise ValidationAppError("Réunion introuvable.")
+        return _meeting_context(db, meeting)
+    if context.type == "training":
+        training = db.get(Training, context.id)
+        if training is None:
+            raise ValidationAppError("Formation introuvable.")
+        return _training_context(db, training)
+    communication = db.get(Communication, context.id)
+    if communication is None:
+        raise ValidationAppError("Communication introuvable.")
+    return _communication_context(db, communication)
+
+
 SYSTEM_PROMPT = (
     "Tu es l'assistant IA de SI PILOT, un outil de gestion du parc informatique. "
     "Tu aides les équipes IT à analyser le parc, les demandes, les logiciels WAPT, les "
@@ -618,6 +863,7 @@ def _record_run(
     include_context: bool,
     status: str,
     duration_ms: int,
+    context: AiContext | None = None,
     response_text: str | None = None,
     http_status: int | None = None,
     error_code: str | None = None,
@@ -625,7 +871,12 @@ def _record_run(
     run = AiRun(
         user_id=actor.id,
         feature_code="assistant_chat",
-        scope_json=json.dumps({"include_fleet_context": include_context}),
+        scope_json=json.dumps(
+            {
+                "include_fleet_context": include_context,
+                "context": context.model_dump(mode="json") if context else None,
+            }
+        ),
         request_summary=request_summary[:500],
         response_text=response_text[:8000] if response_text else None,
         status=status,
@@ -682,6 +933,7 @@ def chat(
     *,
     actor: User,
     include_context: bool | None = None,
+    context: AiContext | None = None,
     request: Request | None = None,
 ) -> AiChatResponse:
     config = get_config(db)
@@ -693,6 +945,9 @@ def chat(
     system_content = SYSTEM_PROMPT
     if use_context:
         system_content = f"{SYSTEM_PROMPT}\n\n{_fleet_context(db)}"
+    context_text = _context_block(db, context, actor)
+    if context_text:
+        system_content = f"{system_content}\n\n{context_text}"
     payload_messages: list[dict[str, str]] = [
         {"role": "system", "content": system_content}
     ]
@@ -714,6 +969,7 @@ def chat(
             include_context=use_context,
             status="error",
             duration_ms=duration,
+            context=context,
             error_code=type(exc).__name__,
         )
         raise
@@ -725,6 +981,7 @@ def chat(
         include_context=use_context,
         status="success",
         duration_ms=duration,
+        context=context,
         response_text=answer,
         http_status=200,
     )

@@ -12,7 +12,6 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react";
-import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -30,11 +29,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
 import { THEME_OPTIONS, useTheme } from "@/features/theme/ThemeProvider";
-import { AiDialog } from "@/features/ai/AiDialog";
 import { fullName } from "@/lib/utils";
 
 interface TopbarProps {
@@ -45,13 +44,13 @@ interface TopbarProps {
 export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
   const { user, hasPermission, logout } = useAuth();
   const { isEnabled } = useModules();
+  const { open: openAi } = useAiAssistant();
   const branding = useBranding();
   const { theme, setTheme, cycleTheme } = useTheme();
   const themeLabel = THEME_OPTIONS.find((option) => option.value === theme)?.label ?? "Sombre";
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Palette;
   const location = useLocation();
   const navigate = useNavigate();
-  const [aiOpen, setAiOpen] = useState(false);
   const current = findNavItem(location.pathname);
 
   const handleLogout = async () => {
@@ -138,7 +137,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => setAiOpen(true)}
+                    onClick={() => openAi()}
                     className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
                     aria-label="Ouvrir l'assistant IA"
                   >
@@ -231,7 +230,6 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
         </div>
       </header>
 
-      <AiDialog open={aiOpen} onOpenChange={setAiOpen} />
     </>
   );
 }

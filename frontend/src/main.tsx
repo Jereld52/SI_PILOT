@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 
 import { App } from "@/app/App";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AiAssistantProvider } from "@/features/ai/AiAssistantProvider";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { BrandingProvider } from "@/features/branding/BrandingProvider";
 import { ModulesProvider } from "@/features/modules/ModulesProvider";
@@ -43,10 +44,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <BrandingProvider>
             <AuthProvider>
               <ModulesProvider>
-                <TooltipProvider delayDuration={250}>
-                  <App />
-                  <ThemedToaster />
-                </TooltipProvider>
+                <AiAssistantProvider>
+                  <TooltipProvider delayDuration={250}>
+                    <App />
+                    <ThemedToaster />
+                  </TooltipProvider>
+                </AiAssistantProvider>
               </ModulesProvider>
             </AuthProvider>
           </BrandingProvider>

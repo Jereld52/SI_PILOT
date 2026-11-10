@@ -38,6 +38,7 @@ def chat(
         payload.messages,
         actor=actor,
         include_context=payload.include_context,
+        context=payload.context,
         request=request,
     )
 

@@ -1781,6 +1781,19 @@ export interface AiTestResponse {
   latency_ms: number;
 }
 
+export type AiContextType =
+  | "asset"
+  | "ticket"
+  | "meeting"
+  | "training"
+  | "communication";
+
+export interface AiContextRef {
+  type: AiContextType;
+  id: string;
+  label?: string;
+}
+
 export interface AiChatResponse {
   message: string;
   model: string;
