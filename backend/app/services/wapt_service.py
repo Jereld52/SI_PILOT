@@ -10,24 +10,31 @@ from uuid import UUID
 
 import httpx
 from app.core.crypto import decrypt_secret, encrypt_secret
-from app.core.errors import ValidationAppError
-from app.models.assets import Asset, AssetCategory
+from app.core.errors import NotFoundError, ValidationAppError
+from app.models.assets import Asset, AssetCategory, AssetSoftware
 from app.models.auth import User
 from app.models.setting import Setting
 from app.schemas.wapt import (
     WaptActionResponse,
+    WaptAssetRead,
+    WaptAssetSoftwareRead,
     WaptConfigRead,
     WaptConfigUpdate,
     WaptHostPackageRead,
     WaptHostRead,
     WaptPackageRead,
+    WaptSoftwareHostRead,
+    WaptSoftwareOverview,
+    WaptSoftwareOverviewItem,
+    WaptSoftwareSummary,
+    WaptSoftwareSyncResponse,
     WaptSyncResponse,
     WaptTestResponse,
 )
 from app.services.assets_service import generate_asset_tag
 from app.services.audit_service import write_audit
 from fastapi import Request
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 
@@ -458,35 +465,326 @@ def fetch_packages(config: WaptConfig) -> list[WaptPackageRead]:
     return sorted(packages, key=lambda item: item.name.lower())
 
 
-def fetch_host_packages(config: WaptConfig, uuid: str) -> list[WaptHostPackageRead]:
-    rows = _extract_list(
-        _request_json(config, "GET", config.host_packages_path, uuid=uuid)
-    )
-    packages: list[WaptHostPackageRead] = []
+_EXCLUDED_INSTALL_STATUSES = {
+    "removed",
+    "uninstalled",
+    "absent",
+    "need-install",
+    "need-remove",
+}
+
+
+def _catalog_versions(config: WaptConfig) -> dict[str, str]:
+    try:
+        return {package.name.lower(): package.version for package in fetch_packages(config)}
+    except ValidationAppError:
+        return {}
+
+
+def _parse_host_packages(
+    rows: list[dict[str, Any]], catalog: dict[str, str]
+) -> list[WaptHostPackageRead]:
+    entries: dict[str, dict[str, Any]] = {}
     for raw in rows:
         data = _normalized_map(raw)
         name = _as_text(_pick(data, "package", "name", "id", "package_name"))
         if not name or _is_uuid(name):
             continue
+        version = _as_text(_pick(data, "version", "package_version"))
         status = _as_text(_pick(data, "install_status", "status", "etat")).lower()
-        installed = status not in {
-            "removed",
-            "uninstalled",
-            "absent",
-            "need-install",
-            "need-remove",
-        }
-        if not installed:
+        key = name.lower()
+        entry = entries.setdefault(
+            key,
+            {
+                "name": name,
+                "version": "",
+                "available": "",
+                "status": "",
+                "installed": False,
+                "raw": raw,
+            },
+        )
+        if status in _EXCLUDED_INSTALL_STATUSES:
+            if status == "need-install" and version:
+                entry["available"] = version
             continue
+        entry.update(
+            {
+                "name": name,
+                "version": version,
+                "status": status or "ok",
+                "installed": True,
+                "raw": raw,
+            }
+        )
+
+    packages: list[WaptHostPackageRead] = []
+    for entry in entries.values():
+        if not entry["installed"]:
+            continue
+        catalog_version = catalog.get(entry["name"].lower(), "")
+        available_version = catalog_version or entry["available"]
+        update_available = "upgrade" in entry["status"]
         packages.append(
             WaptHostPackageRead(
-                name=name,
-                version=_as_text(_pick(data, "version", "package_version")),
+                name=entry["name"],
+                version=entry["version"],
                 installed=True,
-                raw=raw,
+                install_status=entry["status"],
+                update_available=update_available,
+                available_version=available_version if update_available else "",
+                raw=entry["raw"],
             )
         )
-    return packages
+    return sorted(packages, key=lambda item: item.name.lower())
+
+
+def fetch_host_packages(
+    config: WaptConfig, uuid: str, catalog: dict[str, str] | None = None
+) -> list[WaptHostPackageRead]:
+    rows = _extract_list(
+        _request_json(config, "GET", config.host_packages_path, uuid=uuid)
+    )
+    return _parse_host_packages(rows, catalog if catalog is not None else _catalog_versions(config))
+
+
+def sync_software(
+    db: Session,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> WaptSoftwareSyncResponse:
+    config = get_config(db)
+    if not config.enabled:
+        raise ValidationAppError("Activez la connexion WAPT avant de synchroniser les logiciels.")
+    started = time.perf_counter()
+    catalog = _catalog_versions(config)
+    hosts = fetch_hosts(config)
+    synced = 0
+    skipped = 0
+    packages = 0
+    updates = 0
+    errors: list[str] = []
+    synced_at = datetime.now(UTC)
+
+    for host in hosts:
+        if not host.uuid:
+            skipped += 1
+            continue
+        try:
+            software = fetch_host_packages(config, host.uuid, catalog)
+            asset = _find_asset(db, host)
+            if asset is None:
+                skipped += 1
+                continue
+            with db.begin_nested():
+                db.execute(
+                    delete(AssetSoftware).where(AssetSoftware.asset_id == asset.id)
+                )
+                for item in software:
+                    db.add(
+                        AssetSoftware(
+                            asset_id=asset.id,
+                            package_name=item.name,
+                            package_version=item.version,
+                            install_status=item.install_status,
+                            update_available=item.update_available,
+                            available_version=item.available_version,
+                            source="wapt",
+                            synced_at=synced_at,
+                        )
+                    )
+                    packages += 1
+                    if item.update_available:
+                        updates += 1
+            synced += 1
+        except Exception as exc:  # noqa: BLE001 - le poste est ignoré, la sync continue
+            errors.append(f"{host.hostname or host.uuid}: {exc}")
+            skipped += 1
+
+    duration = round(time.perf_counter() - started, 2)
+    write_audit(
+        db,
+        module="assets",
+        action="wapt_software_synced",
+        actor=actor,
+        entity_type="wapt",
+        entity_id="software",
+        entity_label="Synchronisation des logiciels WAPT",
+        after={
+            "total_hosts": len(hosts),
+            "synced_hosts": synced,
+            "packages": packages,
+            "updates": updates,
+            "skipped": skipped,
+            "errors": len(errors),
+            "duration_seconds": duration,
+        },
+        request=request,
+    )
+    db.commit()
+    return WaptSoftwareSyncResponse(
+        total_hosts=len(hosts),
+        synced_hosts=synced,
+        packages=packages,
+        updates=updates,
+        skipped=skipped,
+        errors=errors[:50],
+        duration_seconds=duration,
+        synced_at=synced_at,
+    )
+
+
+def list_wapt_assets(db: Session) -> list[WaptAssetRead]:
+    update_counts = dict(
+        db.execute(
+            select(AssetSoftware.asset_id, func.count(AssetSoftware.id))
+            .where(AssetSoftware.update_available.is_(True))
+            .group_by(AssetSoftware.asset_id)
+        ).all()
+    )
+    assets = db.scalars(
+        select(Asset)
+        .where(Asset.external_id.is_not(None), Asset.archived_at.is_(None))
+        .order_by(Asset.name)
+    ).all()
+    return [
+        WaptAssetRead(
+            id=str(asset.id),
+            asset_tag=asset.asset_tag,
+            name=asset.name,
+            hostname=asset.hostname or "",
+            external_id=asset.external_id or "",
+            os_name=asset.os_name or "",
+            os_version=asset.os_version or "",
+            update_count=int(update_counts.get(asset.id, 0)),
+        )
+        for asset in assets
+    ]
+
+
+def get_software_overview(db: Session) -> WaptSoftwareOverview:
+    config = get_config(db)
+    rows = db.execute(
+        select(AssetSoftware, Asset)
+        .join(Asset, Asset.id == AssetSoftware.asset_id)
+        .order_by(AssetSoftware.package_name, Asset.asset_tag)
+    ).all()
+
+    items: dict[str, dict[str, Any]] = {}
+    installations = 0
+    updates_available = 0
+    hosts_with_updates: set[str] = set()
+    last_sync: datetime | None = None
+
+    for software, asset in rows:
+        installations += 1
+        if last_sync is None or software.synced_at > last_sync:
+            last_sync = software.synced_at
+        item = items.setdefault(
+            software.package_name,
+            {
+                "versions": set(),
+                "hosts": [],
+                "update_count": 0,
+                "available_version": "",
+            },
+        )
+        if software.package_version:
+            item["versions"].add(software.package_version)
+        if software.update_available:
+            item["update_count"] += 1
+            updates_available += 1
+            hosts_with_updates.add(str(asset.id))
+            if software.available_version:
+                item["available_version"] = software.available_version
+        item["hosts"].append(
+            WaptSoftwareHostRead(
+                asset_id=str(asset.id),
+                asset_tag=asset.asset_tag,
+                name=asset.name,
+                hostname=asset.hostname or "",
+                installed_version=software.package_version,
+                available_version=software.available_version,
+                last_seen=software.synced_at.isoformat(),
+            )
+        )
+
+    overview_items = [
+        WaptSoftwareOverviewItem(
+            name=name,
+            installed_versions=sorted(item["versions"]),
+            host_count=len(item["hosts"]),
+            update_count=item["update_count"],
+            available_version=item["available_version"],
+            hosts=sorted(item["hosts"], key=lambda host: host.asset_tag),
+        )
+        for name, item in items.items()
+    ]
+    overview_items.sort(key=lambda item: (-item.update_count, item.name.lower()))
+
+    return WaptSoftwareOverview(
+        summary=WaptSoftwareSummary(
+            total_software=len(overview_items),
+            total_installations=installations,
+            updates_available=updates_available,
+            hosts_with_updates=len(hosts_with_updates),
+            synced_at=last_sync,
+            configured=config.configured,
+        ),
+        items=overview_items,
+    )
+
+
+def get_asset_software(db: Session, asset_id: UUID) -> WaptAssetSoftwareRead:
+    asset = db.get(Asset, asset_id)
+    if asset is None:
+        raise NotFoundError("Équipement introuvable.")
+    rows = db.scalars(
+        select(AssetSoftware)
+        .where(AssetSoftware.asset_id == asset.id)
+        .order_by(AssetSoftware.package_name)
+    ).all()
+    synced_at = max((row.synced_at for row in rows), default=None)
+    return WaptAssetSoftwareRead(
+        asset_id=str(asset.id),
+        configured=get_config(db).configured,
+        synced_at=synced_at,
+        packages=[
+            WaptHostPackageRead(
+                name=row.package_name,
+                version=row.package_version,
+                installed=True,
+                install_status=row.install_status,
+                update_available=row.update_available,
+                available_version=row.available_version,
+            )
+            for row in rows
+        ],
+    )
+
+
+def _asset_wapt_uuid(db: Session, asset_id: UUID) -> str:
+    asset = db.get(Asset, asset_id)
+    if asset is None:
+        raise NotFoundError("Équipement introuvable.")
+    if not asset.external_id:
+        raise ValidationAppError(
+            "Cet équipement n'est pas relié à un poste WAPT. Synchronisez l'inventaire WAPT."
+        )
+    return asset.external_id
+
+
+def install_package_for_asset(
+    db: Session, asset_id: UUID, package: str
+) -> WaptActionResponse:
+    return install_package(get_config(db), _asset_wapt_uuid(db, asset_id), package)
+
+
+def uninstall_package_for_asset(
+    db: Session, asset_id: UUID, package: str
+) -> WaptActionResponse:
+    return uninstall_package(get_config(db), _asset_wapt_uuid(db, asset_id), package)
 
 
 def _category_for_host(db: Session, host: WaptHostRead) -> AssetCategory | None:

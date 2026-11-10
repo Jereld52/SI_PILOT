@@ -13,7 +13,7 @@ const tabs = [
   { to: "/admin/referentials", label: "Référentiels", icon: Database, permission: "referentials.read" },
   { to: "/admin/audit", label: "Journal d'audit", icon: FileClock, permission: "audit.read" },
   { to: "/admin/sources", label: "Sources de données", icon: Plug, permission: "admin.settings.read" },
-  { to: "/admin/wapt", label: "WAPT", icon: Laptop, permission: "admin.settings.read" },
+  { to: "/admin/wapt", label: "Connexion WAPT", icon: Laptop, permission: "admin.settings.read" },
   { to: "/admin/import-export", label: "Import / Export", icon: ArrowDownUp, permission: "imports.preview" },
   { to: "/admin/system", label: "Système", icon: ServerCog, permission: "admin.settings.read" },
   { to: "/admin/settings", label: "Paramètres", icon: Settings, permission: "admin.settings.read" },

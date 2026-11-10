@@ -41,10 +41,12 @@ se configurent depuis l'administration.
   export ICS, QR code par matériel et sortie/retour.- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
-- **Connexion WAPT** dans Administration : synchronisation de l'inventaire et de l'état en ligne,
-  consultation des postes et des logiciels, catalogue des paquets. Le déploiement direct nécessite
-  une action signée WAPT et reste réalisé depuis la console WAPT lorsque la clé privée n'est pas
-  disponible dans l'application.
+- **Connexion WAPT** dans Administration : URL, identifiants, chemins API, test et synchronisation
+  de l'inventaire.
+- **Logiciels** dans Support & parc : parc logiciel remonté par WAPT, versions installées,
+  mises à jour disponibles par logiciel et par poste, alertes sur le tableau de bord, catalogue
+  et installation/désinstallation par équipement. Le déploiement direct nécessite une action
+  signée WAPT et reste réalisé depuis la console WAPT lorsque la clé privée n'est pas disponible.
 - **Gestion Active Directory** : création et modification d'utilisateurs, activation/désactivation,
   réinitialisation de mot de passe via LDAPS et gestion de l'appartenance aux groupes, avec audit.
 - **Partages réseau** : suivi de l'espace libre des lecteurs et chemins UNC, seuils d'alerte et

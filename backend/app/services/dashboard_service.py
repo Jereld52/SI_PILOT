@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, date, datetime, timedelta
+from urllib.parse import quote
 
 from app.db.base import utcnow
-from app.models.assets import Asset, AssetAssignment, AssetCategory
+from app.models.assets import Asset, AssetAssignment, AssetCategory, AssetSoftware
 from app.models.audit import AuditLog
 from app.models.auth import User
 from app.models.budget import Budget, BudgetCategory, BudgetCommitment, BudgetInvoice, BudgetLine
@@ -592,6 +593,32 @@ def get_alerts(db: Session) -> DashboardAlerts:
                 detail=detail,
                 link="/partages-reseau",
                 category="infrastructure",
+            )
+        )
+
+    software_updates = db.execute(
+        select(
+            AssetSoftware.package_name,
+            AssetSoftware.available_version,
+            func.count(AssetSoftware.id).label("host_count"),
+        )
+        .where(AssetSoftware.update_available.is_(True))
+        .group_by(AssetSoftware.package_name, AssetSoftware.available_version)
+        .order_by(func.count(AssetSoftware.id).desc(), AssetSoftware.package_name)
+        .limit(5)
+    ).all()
+    for package_name, available_version, host_count in software_updates:
+        detail = f"Mise à jour disponible sur {host_count} poste(s)"
+        if available_version:
+            detail = f"Version {available_version} — {detail}"
+        items.append(
+            AlertItem(
+                id=f"wapt-software-{package_name}",
+                severity="medium",
+                title=package_name,
+                detail=detail,
+                link=f"/logiciels?software={quote(package_name)}",
+                category="software",
             )
         )
 

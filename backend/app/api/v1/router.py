@@ -35,6 +35,7 @@ from app.api.v1 import (
     system,
     tickets,
     wapt,
+    wapt_software,
 )
 
 api_router = APIRouter()
@@ -71,4 +72,5 @@ api_router.include_router(documents.router)
 api_router.include_router(calendar.router)
 api_router.include_router(ldap.router)
 api_router.include_router(wapt.router)
+api_router.include_router(wapt_software.router)
 api_router.include_router(statistics.router)

@@ -1772,7 +1772,72 @@ export interface WaptHostPackage {
   name: string;
   version: string;
   installed: boolean;
+  install_status: string;
+  update_available: boolean;
+  available_version: string;
   raw: Record<string, unknown>;
+}
+
+export interface WaptAsset {
+  id: string;
+  asset_tag: string;
+  name: string;
+  hostname: string;
+  external_id: string;
+  os_name: string;
+  os_version: string;
+  update_count: number;
+}
+
+export interface WaptSoftwareHost {
+  asset_id: string;
+  asset_tag: string;
+  name: string;
+  hostname: string;
+  installed_version: string;
+  available_version: string;
+  last_seen: string;
+}
+
+export interface WaptSoftwareOverviewItem {
+  name: string;
+  installed_versions: string[];
+  host_count: number;
+  update_count: number;
+  available_version: string;
+  hosts: WaptSoftwareHost[];
+}
+
+export interface WaptSoftwareSummary {
+  total_software: number;
+  total_installations: number;
+  updates_available: number;
+  hosts_with_updates: number;
+  synced_at: string | null;
+  configured: boolean;
+}
+
+export interface WaptSoftwareOverview {
+  summary: WaptSoftwareSummary;
+  items: WaptSoftwareOverviewItem[];
+}
+
+export interface WaptSoftwareSyncResponse {
+  total_hosts: number;
+  synced_hosts: number;
+  packages: number;
+  updates: number;
+  skipped: number;
+  errors: string[];
+  duration_seconds: number;
+  synced_at: string;
+}
+
+export interface WaptAssetSoftware {
+  asset_id: string;
+  configured: boolean;
+  synced_at: string | null;
+  packages: WaptHostPackage[];
 }
 
 export interface WaptSyncResponse {

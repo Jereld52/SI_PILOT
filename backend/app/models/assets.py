@@ -17,6 +17,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -146,6 +147,9 @@ class Asset(Base, UUIDMixin, TimestampMixin):
     assigned_agent: Mapped[Agent | None] = relationship(lazy="joined")
     service: Mapped[Service | None] = relationship(lazy="joined")
     location: Mapped[Location | None] = relationship(lazy="joined")
+    softwares: Mapped[list[AssetSoftware]] = relationship(
+        back_populates="asset", cascade="all, delete-orphan", lazy="selectin"
+    )
 
     @property
     def external_data(self) -> dict[str, Any] | None:
@@ -196,6 +200,29 @@ class Asset(Base, UUIDMixin, TimestampMixin):
             "condition IN ('new','good','fair','poor','out_of_service')",
             name="asset_condition",
         ),
+    )
+
+
+class AssetSoftware(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "asset_softwares"
+
+    asset_id: Mapped[UUID] = mapped_column(
+        ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    package_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    package_version: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    install_status: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    update_available: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    available_version: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    source: Mapped[str] = mapped_column(String(30), default="wapt", nullable=False)
+    synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    asset: Mapped[Asset] = relationship(back_populates="softwares")
+
+    __table_args__ = (
+        UniqueConstraint("asset_id", "package_name", name="asset_software_unique"),
     )
 
 

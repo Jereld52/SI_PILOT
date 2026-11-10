@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   BookOpen,
+  Boxes,
   Briefcase,
   CalendarCheck,
   CalendarDays,
@@ -76,6 +77,7 @@ export const navigationSections: NavSection[] = [
         icon: MonitorSmartphone,
         permission: "assets.read",
       },
+      { label: "Logiciels", to: "/logiciels", icon: Boxes, permission: "assets.read" },
       { label: "Stock IT", to: "/stock", icon: Package, permission: "stock.read" },
       {
         label: "Réservations",

@@ -323,6 +323,32 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "logiciels",
+    title: "Logiciels du parc",
+    summary: "Suivre les versions installées, les mises à jour WAPT et déployer par poste.",
+    category: "parc",
+    tags: ["logiciel", "WAPT", "mise à jour", "version", "déploiement", "installation"],
+    blocks: [
+      p(
+        "Support & parc → Logiciels présente le parc logiciel remonté par WAPT : versions installées, nombre de postes concernés et mises à jour disponibles.",
+      ),
+      list([
+        "Vue d'ensemble : nombre de logiciels, installations, mises à jour disponibles et postes concernés.",
+        "Recherche par nom de logiciel ou de version.",
+        "Dépliage d'un logiciel pour afficher les postes concernés et la version disponible.",
+        "Onglet « Par poste » : logiciels installés, installation depuis le catalogue WAPT et désinstallation.",
+      ]),
+      note(
+        "info",
+        "Les mises à jour sont détectées à partir du statut WAPT NEED-UPGRADE et de la version du catalogue. Lancez « Synchroniser les logiciels » après une mise à jour du dépôt WAPT.",
+      ),
+      note(
+        "warning",
+        "L'installation et la désinstallation directes nécessitent une action signée avec la clé privée WAPT. Sinon, utilisez la console WAPT.",
+      ),
+    ],
+  },
+  {
     slug: "affectations-et-historique",
     title: "Affectations et historique",
     summary: "Retracer qui a utilisé quel équipement, quand et pour quel motif.",
@@ -896,18 +922,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
   {
     slug: "wapt",
     title: "Connexion WAPT",
-    summary: "Synchroniser l'inventaire et consulter les logiciels des postes.",
+    summary: "Configurer la connexion au serveur WAPT et synchroniser le parc.",
     category: "administration",
-    tags: ["WAPT", "inventaire", "logiciel", "déploiement", "poste"],
+    tags: ["WAPT", "connexion", "inventaire", "API", "poste"],
     blocks: [
       p(
-        "Administration → WAPT permet de connecter un serveur WAPT, de synchroniser les postes et de consulter les paquets installés.",
+        "Administration → Connexion WAPT regroupe uniquement les paramètres de connexion au serveur. Les logiciels, installations et mises à jour se consultent dans Support & parc → Logiciels.",
       ),
       list([
         "Configuration de l'URL, des identifiants, du mot de passe chiffré et des chemins API.",
         "Test de connexion et synchronisation de l'inventaire.",
         "Création ou mise à jour des fiches du parc : nom machine, IP, MAC, série, fabricant, modèle, système, dernier utilisateur, groupes et domaine.",
-        "Catalogue des paquets via `/api/v3/packages` et paquets installés via `/api/v1/host_data?uuid=...&field=installed_packages` sur WAPT 2.4.",
+        "Catalogue via `/api/v3/packages` et paquets installés via `/api/v1/host_data?uuid=...&field=installed_packages` sur WAPT 2.4.",
       ]),
       note(
         "warning",

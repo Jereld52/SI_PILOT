@@ -1,8 +1,9 @@
-import { Cpu, Network, ShieldCheck, UserRound } from "lucide-react";
+import { Boxes, Cpu, Network, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -196,6 +197,16 @@ export function AssetDetailDialog({ open, onOpenChange, asset }: AssetDetailDial
         ) : null}
 
         <DialogFooter>
+          {asset ? (
+            <Link
+              to={`/logiciels?asset=${asset.id}`}
+              className={buttonVariants({ variant: "secondary", size: "md" })}
+              onClick={() => onOpenChange(false)}
+            >
+              <Boxes className="h-3.5 w-3.5" />
+              Logiciels du poste
+            </Link>
+          ) : null}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Fermer
           </Button>

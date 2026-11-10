@@ -80,7 +80,72 @@ class WaptHostPackageRead(BaseModel):
     name: str
     version: str = ""
     installed: bool = True
+    install_status: str = ""
+    update_available: bool = False
+    available_version: str = ""
     raw: dict[str, Any] = Field(default_factory=dict)
+
+
+class WaptAssetRead(BaseModel):
+    id: str
+    asset_tag: str
+    name: str
+    hostname: str = ""
+    external_id: str = ""
+    os_name: str = ""
+    os_version: str = ""
+    update_count: int = 0
+
+
+class WaptSoftwareHostRead(BaseModel):
+    asset_id: str
+    asset_tag: str
+    name: str
+    hostname: str = ""
+    installed_version: str = ""
+    available_version: str = ""
+    last_seen: str = ""
+
+
+class WaptSoftwareOverviewItem(BaseModel):
+    name: str
+    installed_versions: list[str] = Field(default_factory=list)
+    host_count: int = 0
+    update_count: int = 0
+    available_version: str = ""
+    hosts: list[WaptSoftwareHostRead] = Field(default_factory=list)
+
+
+class WaptSoftwareSummary(BaseModel):
+    total_software: int = 0
+    total_installations: int = 0
+    updates_available: int = 0
+    hosts_with_updates: int = 0
+    synced_at: datetime | None = None
+    configured: bool = False
+
+
+class WaptSoftwareOverview(BaseModel):
+    summary: WaptSoftwareSummary
+    items: list[WaptSoftwareOverviewItem] = Field(default_factory=list)
+
+
+class WaptSoftwareSyncResponse(BaseModel):
+    total_hosts: int
+    synced_hosts: int
+    packages: int
+    updates: int
+    skipped: int
+    errors: list[str] = Field(default_factory=list)
+    duration_seconds: float
+    synced_at: datetime
+
+
+class WaptAssetSoftwareRead(BaseModel):
+    asset_id: str
+    configured: bool = False
+    synced_at: datetime | None = None
+    packages: list[WaptHostPackageRead] = Field(default_factory=list)
 
 
 class WaptSyncResponse(BaseModel):

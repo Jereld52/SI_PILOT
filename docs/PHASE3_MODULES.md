@@ -220,19 +220,24 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - Les codes PIN/PUK restent gérés séparément avec des permissions dédiées.
 - La suppression est tracée dans l'audit avec un instantané de la ligne.
 
-### Connexion WAPT
+### Connexion WAPT et logiciels
 
-- Nouvel onglet **Administration → WAPT** avec trois sections : Connexion, Postes et Logiciels.
-- Configuration de l'URL du serveur, des identifiants, du mot de passe chiffré, de la vérification
-  TLS et des chemins API. Les chemins sont adaptables à la version du serveur WAPT.
-- Test de connexion et synchronisation de l'inventaire des postes.
+- **Administration → Connexion WAPT** : URL du serveur, identifiants, mot de passe chiffré,
+  vérification TLS et chemins API. Test de connexion et synchronisation de l'inventaire.
 - Création ou mise à jour des fiches du parc à partir de WAPT : UUID, nom machine, IP, MAC,
   numéro de série, fabricant, modèle, système, dernier utilisateur, groupes et domaine.
 - L'inventaire brut WAPT est conservé dans les données externes de l'équipement.
-- État en ligne / hors ligne et dernière connexion visibles dans l'administration et dans le parc.
-- Liste des paquets disponibles, liste des paquets installés par poste.
+- **Support & parc → Logiciels** : vue d'ensemble du parc logiciel, versions installées,
+  mises à jour disponibles, postes concernés et dernière synchronisation.
+- Table `asset_softwares` alimentée par la synchronisation des logiciels, pour un affichage
+  rapide et des alertes sans interroger WAPT à chaque chargement du tableau de bord.
+- Alertes du tableau de bord : un logiciel en mise à jour génère une alerte avec le nombre de
+  postes concernés et un lien vers la page Logiciels.
+- Onglet **Par poste** : logiciels installés, catalogue WAPT, installation et désinstallation
+  auditée par équipement.
 - WAPT 2.4 : catalogue via `/api/v3/packages`, paquets installés via
-  `/api/v1/host_data?uuid=...&field=installed_packages`.
+  `/api/v1/host_data?uuid=...&field=installed_packages`. Les statuts `NEED-UPGRADE` alimentent
+  les alertes de mise à jour.
 - Le déploiement direct par l'API nécessite une action signée avec la clé privée WAPT. Sans cette
   signature, l'installation et la désinstallation restent réalisées depuis la console WAPT.
 - Aucune action distante n'est lancée sans validation explicite de l'administrateur.

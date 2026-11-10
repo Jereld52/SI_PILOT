@@ -128,6 +128,11 @@ const StatisticsPage = lazy(() =>
     default: module.StatisticsPage,
   })),
 );
+const SoftwarePage = lazy(() =>
+  import("@/features/software/SoftwarePage").then((module) => ({
+    default: module.SoftwarePage,
+  })),
+);
 const StockPage = lazy(() =>
   import("@/features/stock/StockPage").then((module) => ({ default: module.StockPage })),
 );
@@ -284,6 +289,15 @@ export function App() {
             element={
               <RequirePermission permission="assets.read">
                 <AssetsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="logiciels"
+            element={
+              <RequirePermission permission="assets.read">
+                <SoftwarePage />
               </RequirePermission>
             }
           />
