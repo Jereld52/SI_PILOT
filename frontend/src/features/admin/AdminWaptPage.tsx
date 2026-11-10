@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Boxes, Plug, RefreshCw, Save, ShieldCheck } from "lucide-react";
+import { Boxes, KeyRound, Plug, RefreshCw, Save, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,7 +14,12 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
-import type { WaptConfig, WaptSyncResponse, WaptTestResponse } from "@/types/api";
+import type {
+  WaptConfig,
+  WaptSigningTestResponse,
+  WaptSyncResponse,
+  WaptTestResponse,
+} from "@/types/api";
 
 export function AdminWaptPage() {
   const { hasPermission } = useAuth();
@@ -35,13 +40,23 @@ export function AdminWaptPage() {
   );
   const [installPath, setInstallPath] = useState("/api/v1/hosts/{uuid}/install");
   const [uninstallPath, setUninstallPath] = useState("/api/v1/hosts/{uuid}/uninstall");
+  const [triggerActionPath, setTriggerActionPath] = useState(
+    "/api/v3/trigger_host_action",
+  );
+  const [signingKeyPath, setSigningKeyPath] = useState("");
+  const [signingCertPath, setSigningCertPath] = useState("");
+  const [signingKeyPassword, setSigningKeyPassword] = useState("");
   const [packageField, setPackageField] = useState("package");
   const [timeoutSeconds, setTimeoutSeconds] = useState("30");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [signingTesting, setSigningTesting] = useState(false);
   const [testResult, setTestResult] = useState<WaptTestResponse | null>(null);
   const [syncResult, setSyncResult] = useState<WaptSyncResponse | null>(null);
+  const [signingResult, setSigningResult] = useState<WaptSigningTestResponse | null>(
+    null,
+  );
 
   const configQuery = useQuery({
     queryKey: ["admin", "wapt", "config"],
@@ -64,8 +79,13 @@ export function AdminWaptPage() {
     setHostPackagesPath(config.host_packages_path);
     setInstallPath(config.install_path);
     setUninstallPath(config.uninstall_path);
+    setTriggerActionPath(config.trigger_action_path);
+    setSigningKeyPath(config.signing_key_path);
+    setSigningCertPath(config.signing_cert_path);
+    setSigningKeyPassword("");
     setPackageField(config.package_field);
     setTimeoutSeconds(String(config.timeout_seconds));
+    setSigningResult(null);
   }, [config]);
 
   const saveConfig = async () => {
@@ -86,12 +106,17 @@ export function AdminWaptPage() {
           host_packages_path: hostPackagesPath,
           install_path: installPath,
           uninstall_path: uninstallPath,
+          trigger_action_path: triggerActionPath,
+          signing_key_path: signingKeyPath,
+          signing_cert_path: signingCertPath,
+          signing_key_password: signingKeyPassword || null,
           package_field: packageField,
           timeout_seconds: Number(timeoutSeconds) || 30,
         }),
       });
       toast.success("Configuration WAPT enregistrée.");
       setPassword("");
+      setSigningKeyPassword("");
       void configQuery.refetch();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Enregistrement impossible.");
@@ -111,6 +136,25 @@ export function AdminWaptPage() {
       toast.error(error instanceof ApiError ? error.message : "Test WAPT impossible.");
     } finally {
       setTesting(false);
+    }
+  };
+
+  const testSigning = async () => {
+    setSigningTesting(true);
+    setSigningResult(null);
+    try {
+      const result = await apiFetch<WaptSigningTestResponse>(
+        "/admin/wapt/signing-test",
+        { method: "POST" },
+      );
+      setSigningResult(result);
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError ? error.message : "Test de signature impossible.",
+      );
+    } finally {
+      setSigningTesting(false);
     }
   };
 
@@ -237,6 +281,10 @@ export function AdminWaptPage() {
                 <Input id="wapt-uninstall-path" value={uninstallPath} onChange={(event) => setUninstallPath(event.target.value)} disabled={!canManage} />
               </div>
               <div>
+                <Label htmlFor="wapt-trigger-path">Actions signées</Label>
+                <Input id="wapt-trigger-path" value={triggerActionPath} onChange={(event) => setTriggerActionPath(event.target.value)} disabled={!canManage} />
+              </div>
+              <div>
                 <Label htmlFor="wapt-package-field">Champ paquet</Label>
                 <Input id="wapt-package-field" value={packageField} onChange={(event) => setPackageField(event.target.value)} disabled={!canManage} />
               </div>
@@ -250,6 +298,92 @@ export function AdminWaptPage() {
               <span className="font-mono">/api/v1/host_data?uuid=&#123;uuid&#125;&amp;field=installed_packages</span>.
             </div>
           </details>
+          <div className="space-y-3 rounded-lg border border-border-soft bg-background/30 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold text-foreground">
+                  Signature des actions à distance
+                </p>
+                <p className="mt-0.5 text-[10px] leading-4 text-muted">
+                  WAPT 2.4 refuse les installations et désinstallations non signées. Indiquez la clé
+                  privée et le certificat utilisés par la console WAPT.
+                </p>
+              </div>
+              <Badge
+                tone={
+                  config?.signing_key_path && config?.signing_cert_path
+                    ? "success"
+                    : "warning"
+                }
+              >
+                {config?.signing_key_path && config?.signing_cert_path
+                  ? "Signature configurée"
+                  : "Signature non configurée"}
+              </Badge>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="wapt-signing-key">Clé privée</Label>
+                <Input
+                  id="wapt-signing-key"
+                  value={signingKeyPath}
+                  onChange={(event) => setSigningKeyPath(event.target.value)}
+                  placeholder={"C:\\Users\\compte\\private\\key.pem"}
+                  disabled={!canManage}
+                />
+              </div>
+              <div>
+                <Label htmlFor="wapt-signing-cert">Certificat</Label>
+                <Input
+                  id="wapt-signing-cert"
+                  value={signingCertPath}
+                  onChange={(event) => setSigningCertPath(event.target.value)}
+                  placeholder={"C:\\Users\\compte\\private\\key.crt"}
+                  disabled={!canManage}
+                />
+              </div>
+              <div>
+                <Label htmlFor="wapt-signing-password">Mot de passe de la clé</Label>
+                <Input
+                  id="wapt-signing-password"
+                  type="password"
+                  value={signingKeyPassword}
+                  onChange={(event) => setSigningKeyPassword(event.target.value)}
+                  placeholder={
+                    config?.signing_key_password_set
+                      ? "Laisser vide pour conserver"
+                      : "Mot de passe de la clé privée"
+                  }
+                  disabled={!canManage}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  variant="secondary"
+                  loading={signingTesting}
+                  onClick={() => void testSigning()}
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Tester la signature
+                </Button>
+              </div>
+            </div>
+            {signingResult ? (
+              <div className="rounded-lg border border-success/25 bg-success/10 px-3 py-2 text-[11px] text-success">
+                <p className="font-semibold">{signingResult.message}</p>
+                <p className="mt-1 break-all font-mono text-[10px] text-success/90">
+                  {signingResult.fingerprint}
+                </p>
+                <p className="text-[10px] text-success/90">{signingResult.certificate_subject}</p>
+              </div>
+            ) : null}
+            <p className="text-[10px] leading-4 text-muted-2">
+              La clé se trouve généralement dans <span className="font-mono">C:\Users\&lt;compte&gt;\private\key.pem</span>{" "}
+              avec son certificat <span className="font-mono">key.crt</span>. Le mot de passe est celui
+              saisi par la console WAPT lors de la signature. Il est chiffré en base et n'est jamais
+              renvoyé par l'API.
+            </p>
+          </div>
           {canManage ? (
             <div className="flex flex-wrap gap-2">
               <Button loading={saving} onClick={() => void saveConfig()}>

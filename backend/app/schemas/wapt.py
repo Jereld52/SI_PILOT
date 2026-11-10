@@ -17,6 +17,10 @@ class WaptConfigRead(BaseModel):
     host_packages_path: str = "/api/v1/host_data?uuid={uuid}&field=installed_packages"
     install_path: str = "/api/v1/hosts/{uuid}/install"
     uninstall_path: str = "/api/v1/hosts/{uuid}/uninstall"
+    trigger_action_path: str = "/api/v3/trigger_host_action"
+    signing_key_path: str = ""
+    signing_cert_path: str = ""
+    signing_key_password_set: bool = False
     package_field: str = "package"
     timeout_seconds: int = 30
     configured: bool = False
@@ -38,8 +42,21 @@ class WaptConfigUpdate(BaseModel):
     )
     install_path: str = Field(default="/api/v1/hosts/{uuid}/install", max_length=255)
     uninstall_path: str = Field(default="/api/v1/hosts/{uuid}/uninstall", max_length=255)
+    trigger_action_path: str = Field(
+        default="/api/v3/trigger_host_action", max_length=255
+    )
+    signing_key_path: str = Field(default="", max_length=500)
+    signing_cert_path: str = Field(default="", max_length=500)
+    signing_key_password: str | None = Field(default=None, max_length=255)
     package_field: str = Field(default="package", max_length=60)
     timeout_seconds: int = Field(default=30, ge=5, le=300)
+
+
+class WaptSigningTestResponse(BaseModel):
+    ok: bool
+    message: str
+    fingerprint: str = ""
+    certificate_subject: str = ""
 
 
 class WaptTestResponse(BaseModel):

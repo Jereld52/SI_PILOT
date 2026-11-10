@@ -1823,9 +1823,20 @@ export interface WaptConfig {
   host_packages_path: string;
   install_path: string;
   uninstall_path: string;
+  trigger_action_path: string;
+  signing_key_path: string;
+  signing_cert_path: string;
+  signing_key_password_set: boolean;
   package_field: string;
   timeout_seconds: number;
   configured: boolean;
+}
+
+export interface WaptSigningTestResponse {
+  ok: boolean;
+  message: string;
+  fingerprint: string;
+  certificate_subject: string;
 }
 
 export interface WaptTestResponse {

@@ -12,6 +12,7 @@ from app.schemas.wapt import (
     WaptHostRead,
     WaptPackageAction,
     WaptPackageRead,
+    WaptSigningTestResponse,
     WaptSyncResponse,
     WaptTestResponse,
 )
@@ -45,6 +46,14 @@ def test_connection(
     db: Session = Depends(get_db),
 ) -> WaptTestResponse:
     return wapt_service.test_connection(wapt_service.get_config(db))
+
+
+@router.post("/signing-test", response_model=WaptSigningTestResponse)
+def test_signing(
+    _: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> WaptSigningTestResponse:
+    return wapt_service.test_signing(db)
 
 
 @router.post("/sync", response_model=WaptSyncResponse)

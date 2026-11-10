@@ -238,8 +238,14 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 - WAPT 2.4 : catalogue via `/api/v3/packages`, paquets installés via
   `/api/v1/host_data?uuid=...&field=installed_packages`. Les statuts `NEED-UPGRADE` alimentent
   les alertes de mise à jour.
-- Le déploiement direct par l'API nécessite une action signée avec la clé privée WAPT. Sans cette
-  signature, l'installation et la désinstallation restent réalisées depuis la console WAPT.
+- Le déploiement direct par l'API nécessite une action signée avec la clé privée WAPT
+  (`/api/v3/trigger_host_action`, actions `trigger_install_packages` et
+  `trigger_remove_packages`). Sans cette signature, l'installation et la désinstallation restent
+  réalisées depuis la console WAPT.
+- La clé privée, le certificat et le mot de passe de la clé se configurent dans
+  **Administration → Connexion WAPT**. Le mot de passe est chiffré avec `FIELD_ENCRYPTION_KEY`.
+  Le bouton **Tester la signature** vérifie que la clé correspond au certificat et affiche
+  l'empreinte du signataire.
 - Aucune action distante n'est lancée sans validation explicite de l'administrateur.
 
 ### Communication

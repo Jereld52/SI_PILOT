@@ -42,7 +42,8 @@ se configurent depuis l'administration.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - **Connexion WAPT** dans Administration : URL, identifiants, chemins API, test et synchronisation
-  de l'inventaire.
+  de l'inventaire ; clé privée et certificat de signature des actions à distance
+  (`/api/v3/trigger_host_action`) avec test de la clé.
 - **Logiciels** dans Support & parc : parc logiciel remonté par WAPT, versions installées,
   mises à jour disponibles par logiciel et par poste, alertes sur le tableau de bord, catalogue
   et installation/désinstallation par équipement. Le déploiement direct nécessite une action

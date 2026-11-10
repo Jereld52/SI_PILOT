@@ -15,6 +15,10 @@ def _config() -> wapt_service.WaptConfig:
         host_packages_path="/api/v1/host_data?uuid={uuid}&field=installed_packages",
         install_path="/api/v1/hosts/{uuid}/install",
         uninstall_path="/api/v1/hosts/{uuid}/uninstall",
+        trigger_action_path="/api/v3/trigger_host_action",
+        signing_key_path="",
+        signing_cert_path="",
+        signing_key_password="",
         package_field="package",
         timeout_seconds=30,
     )

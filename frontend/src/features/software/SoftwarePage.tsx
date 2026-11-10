@@ -460,8 +460,9 @@ export function SoftwarePage() {
               <div className="rounded-lg border border-warning/20 bg-warning/[0.04] px-3 py-2 text-[10px] leading-4 text-warning">
                 <AlertTriangle className="mr-1 inline h-3 w-3" />
                 WAPT 2.4 exige une action signée avec la clé privée WAPT pour installer ou
-                désinstaller un paquet. Utilisez la console WAPT si cette signature n'est pas
-                configurée.
+                désinstaller un paquet. Configurez la clé et le certificat dans{" "}
+                <span className="font-medium">Administration → Connexion WAPT</span>, ou utilisez la
+                console WAPT.
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">

@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import re
 import time
+from base64 import b64decode, b64encode
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -23,6 +25,7 @@ from app.schemas.wapt import (
     WaptHostPackageRead,
     WaptHostRead,
     WaptPackageRead,
+    WaptSigningTestResponse,
     WaptSoftwareHostRead,
     WaptSoftwareOverview,
     WaptSoftwareOverviewItem,
@@ -33,6 +36,10 @@ from app.schemas.wapt import (
 )
 from app.services.assets_service import generate_asset_tag
 from app.services.audit_service import write_audit
+from cryptography import x509
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 from fastapi import Request
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -52,6 +59,10 @@ class WaptConfig:
     host_packages_path: str
     install_path: str
     uninstall_path: str
+    trigger_action_path: str
+    signing_key_path: str
+    signing_cert_path: str
+    signing_key_password: str
     package_field: str
     timeout_seconds: int
 
@@ -125,6 +136,16 @@ def get_config(db: Session) -> WaptConfig:
             _value(db, "wapt.uninstall_path", "/api/v1/hosts/{uuid}/uninstall")
             or "/api/v1/hosts/{uuid}/uninstall"
         ),
+        trigger_action_path=str(
+            _value(db, "wapt.trigger_action_path", "/api/v3/trigger_host_action")
+            or "/api/v3/trigger_host_action"
+        ),
+        signing_key_path=str(_value(db, "wapt.signing_key_path", "") or ""),
+        signing_cert_path=str(_value(db, "wapt.signing_cert_path", "") or ""),
+        signing_key_password=(
+            decrypt_secret(str(_value(db, "wapt.signing_key_password_encrypted", "") or ""))
+            or ""
+        ),
         package_field=str(_value(db, "wapt.package_field", "package") or "package"),
         timeout_seconds=int(str(_value(db, "wapt.timeout_seconds", 30) or 30)),
     )
@@ -145,6 +166,10 @@ def get_settings(db: Session) -> WaptConfigRead:
         host_packages_path=config.host_packages_path,
         install_path=config.install_path,
         uninstall_path=config.uninstall_path,
+        trigger_action_path=config.trigger_action_path,
+        signing_key_path=config.signing_key_path,
+        signing_cert_path=config.signing_cert_path,
+        signing_key_password_set=bool(config.signing_key_password),
         package_field=config.package_field,
         timeout_seconds=config.timeout_seconds,
         configured=config.configured,
@@ -193,6 +218,21 @@ def update_settings(
         "wapt.uninstall_path",
         payload.uninstall_path.strip() or "/api/v1/hosts/{uuid}/uninstall",
     )
+    _set_value(
+        db,
+        "wapt.trigger_action_path",
+        payload.trigger_action_path.strip() or "/api/v3/trigger_host_action",
+    )
+    _set_value(db, "wapt.signing_key_path", payload.signing_key_path.strip())
+    _set_value(db, "wapt.signing_cert_path", payload.signing_cert_path.strip())
+    if payload.signing_key_password:
+        _set_value(
+            db,
+            "wapt.signing_key_password_encrypted",
+            encrypt_secret(payload.signing_key_password) or "",
+            is_secret=True,
+            description="Mot de passe de la clé privée WAPT, chiffré",
+        )
     _set_value(db, "wapt.package_field", payload.package_field.strip() or "package")
     _set_value(db, "wapt.timeout_seconds", payload.timeout_seconds)
     if payload.password:
@@ -217,6 +257,10 @@ def update_settings(
             "enabled": payload.enabled,
             "verify_tls": payload.verify_tls,
             "password_changed": bool(payload.password),
+            "signing_configured": bool(
+                payload.signing_key_path and payload.signing_cert_path
+            ),
+            "signing_password_changed": bool(payload.signing_key_password),
         },
         request=request,
     )
@@ -237,7 +281,7 @@ def _request_json(
     path: str,
     *,
     uuid: str | None = None,
-    payload: dict[str, Any] | None = None,
+    payload: Any | None = None,
 ) -> Any:
     if not config.configured:
         raise ValidationAppError("La connexion WAPT n'est pas configurée.")
@@ -960,29 +1004,145 @@ def test_connection(config: WaptConfig) -> WaptTestResponse:
     )
 
 
+def _load_signing_material(config: WaptConfig):  # noqa: ANN202
+    if not config.signing_key_path or not config.signing_cert_path:
+        raise ValidationAppError(
+            "La signature WAPT n'est pas configurée. Renseignez la clé privée et le "
+            "certificat dans Administration → Connexion WAPT."
+        )
+    key_path = Path(config.signing_key_path)
+    cert_path = Path(config.signing_cert_path)
+    if not key_path.is_file():
+        raise ValidationAppError(f"Clé privée WAPT introuvable : {key_path}.")
+    if not cert_path.is_file():
+        raise ValidationAppError(f"Certificat de signature WAPT introuvable : {cert_path}.")
+    try:
+        password = (
+            config.signing_key_password.encode("utf-8")
+            if config.signing_key_password
+            else None
+        )
+        private_key = serialization.load_pem_private_key(
+            key_path.read_bytes(), password=password
+        )
+        certificate = x509.load_pem_x509_certificate(cert_path.read_bytes())
+    except Exception as exc:  # noqa: BLE001 - message de configuration explicite
+        raise ValidationAppError(
+            f"Impossible de charger la clé de signature WAPT : {exc}"
+        ) from exc
+    return private_key, certificate
+
+
+def _certificate_fingerprint(certificate: x509.Certificate) -> str:
+    return certificate.fingerprint(hashes.SHA256()).hex()
+
+
+def _sign_claim(
+    private_key,  # noqa: ANN001
+    certificate: x509.Certificate,
+    claim: dict[str, Any],
+) -> dict[str, Any]:
+    attributes = list(claim.keys())
+    signature_attributes = [
+        "signed_attributes",
+        "signer",
+        "signature_date",
+        "signer_certificate",
+    ]
+    content_attributes = [
+        attribute
+        for attribute in attributes
+        if attribute not in signature_attributes and attribute != "signature"
+    ]
+    reclaim: dict[str, Any] = {
+        attribute: claim.get(attribute) for attribute in content_attributes
+    }
+    reclaim["signer"] = _certificate_fingerprint(certificate)
+    reclaim["signature_date"] = datetime.now(UTC).replace(tzinfo=None).isoformat()
+    reclaim["signer_certificate"] = certificate.public_bytes(
+        serialization.Encoding.PEM
+    ).decode("utf-8")
+    reclaim["signed_attributes"] = content_attributes + signature_attributes
+    serialized = json.dumps(reclaim, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    signature = private_key.sign(serialized, padding.PKCS1v15(), hashes.SHA256())
+    reclaim["signature"] = b64encode(signature).decode("ascii")
+    return reclaim
+
+
+def _trigger_signed_actions(config: WaptConfig, claims: list[dict[str, Any]]) -> Any:
+    private_key, certificate = _load_signing_material(config)
+    actions = [_sign_claim(private_key, certificate, claim) for claim in claims]
+    return _request_json(
+        config, "POST", config.trigger_action_path, payload=actions
+    )
+
+
 def install_package(config: WaptConfig, uuid: str, package: str) -> WaptActionResponse:
-    result = _request_json(
+    _trigger_signed_actions(
         config,
-        "POST",
-        config.install_path,
-        uuid=uuid,
-        payload={config.package_field: package},
+        [
+            {
+                "uuid": uuid,
+                "action": "trigger_install_packages",
+                "packages": [package],
+                "force": False,
+                "notify_server": True,
+            }
+        ],
     )
     return WaptActionResponse(
-        message=f"Demande d'installation envoyée pour {package}.",
-        result=result if isinstance(result, dict) else None,
+        message=f"Demande d'installation signée envoyée pour {package}.",
     )
 
 
 def uninstall_package(config: WaptConfig, uuid: str, package: str) -> WaptActionResponse:
-    result = _request_json(
+    _trigger_signed_actions(
         config,
-        "POST",
-        config.uninstall_path,
-        uuid=uuid,
-        payload={config.package_field: package},
+        [
+            {
+                "uuid": uuid,
+                "action": "trigger_remove_packages",
+                "packages": [package],
+                "force": False,
+                "notify_server": True,
+            }
+        ],
     )
     return WaptActionResponse(
-        message=f"Demande de désinstallation envoyée pour {package}.",
-        result=result if isinstance(result, dict) else None,
+        message=f"Demande de désinstallation signée envoyée pour {package}.",
+    )
+
+
+def test_signing(db: Session) -> WaptSigningTestResponse:
+    config = get_config(db)
+    private_key, certificate = _load_signing_material(config)
+    claim = _sign_claim(private_key, certificate, {"action": "signing_test"})
+    attributes = claim["signed_attributes"]
+    reclaim = {
+        attribute: claim.get(attribute)
+        for attribute in attributes
+        if attribute != "signature"
+    }
+    serialized = json.dumps(reclaim, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    try:
+        certificate.public_key().verify(
+            b64decode(claim["signature"]),
+            serialized,
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+    except InvalidSignature as exc:
+        raise ValidationAppError(
+            "La clé privée ne correspond pas au certificat de signature WAPT."
+        ) from exc
+    fingerprint = _certificate_fingerprint(certificate)
+    return WaptSigningTestResponse(
+        ok=True,
+        message=f"Signature WAPT opérationnelle (empreinte {fingerprint[:16]}…).",
+        fingerprint=fingerprint,
+        certificate_subject=certificate.subject.rfc4514_string(),
     )
