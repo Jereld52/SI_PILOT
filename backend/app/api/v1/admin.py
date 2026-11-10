@@ -222,6 +222,22 @@ def admin_revoke_sessions(
     return MessageResponse(message=f"{count} session(s) révoquée(s).")
 
 
+@router.post("/users/{user_id}/mfa/reset", response_model=MessageResponse)
+def admin_reset_mfa(
+    user_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("admin.users.manage")),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    target = db.get(User, user_id)
+    if target is None:
+        raise NotFoundError("Utilisateur introuvable.")
+    auth_service.reset_user_mfa(db, target, actor=actor, request=request)
+    return MessageResponse(
+        message="MFA réinitialisée. L'utilisateur devra la reconfigurer et se reconnecter."
+    )
+
+
 @router.get("/roles", response_model=list[RoleWithPermissions])
 def list_roles(
     _: User = Depends(require_permission("admin.roles.read")),

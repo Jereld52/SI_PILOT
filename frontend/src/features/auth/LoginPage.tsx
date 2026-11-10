@@ -40,12 +40,15 @@ const pillars = [
 ];
 
 export function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, verifyMfa } = useAuth();
   const branding = useBranding();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaSubmitting, setMfaSubmitting] = useState(false);
   const setupQuery = useQuery({
     queryKey: ["setup-status"],
     queryFn: () => apiFetch<SetupStatus>("/setup/status"),
@@ -70,7 +73,12 @@ export function LoginPage() {
   const onSubmit = async (values: LoginValues) => {
     setError(null);
     try {
-      await login(values.email, values.password);
+      const result = await login(values.email, values.password);
+      if (result.mfa_required && result.challenge_token) {
+        setChallengeToken(result.challenge_token);
+        setMfaCode("");
+        return;
+      }
       const destination = (location.state as { from?: string } | null)?.from;
       navigate(destination && destination !== "/login" ? destination : "/", { replace: true });
     } catch (caught) {
@@ -79,6 +87,29 @@ export function LoginPage() {
           ? caught.message
           : "Connexion impossible. Vérifiez le serveur et réessayez.",
       );
+    }
+  };
+
+  const onVerifyMfa = async () => {
+    if (!challengeToken) return;
+    if (mfaCode.trim().length < 6) {
+      setError("Saisissez le code à 6 chiffres ou un code de secours.");
+      return;
+    }
+    setError(null);
+    setMfaSubmitting(true);
+    try {
+      await verifyMfa(challengeToken, mfaCode.trim());
+      const destination = (location.state as { from?: string } | null)?.from;
+      navigate(destination && destination !== "/login" ? destination : "/", { replace: true });
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : "Vérification impossible. Réessayez.",
+      );
+    } finally {
+      setMfaSubmitting(false);
     }
   };
 
@@ -170,51 +201,120 @@ export function LoginPage() {
             Identifiez-vous avec votre compte {branding.app_name}.
           </p>
 
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-            {error ? (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-lg border border-danger/25 bg-danger/10 px-3 py-2.5 text-xs leading-5 text-danger"
-              >
-                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span>{error}</span>
-              </div>
-            ) : null}
-
-            <div>
-              <Label htmlFor="email">Adresse e-mail professionnelle</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="username"
-                autoFocus
-                placeholder="prenom.nom@exemple.fr"
-                invalid={Boolean(errors.email)}
-                {...register("email")}
-              />
-              {errors.email ? <p className="mt-1 text-[11px] text-danger">{errors.email.message}</p> : null}
-            </div>
-
-            <div>
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••••••"
-                invalid={Boolean(errors.password)}
-                {...register("password")}
-              />
-              {errors.password ? (
-                <p className="mt-1 text-[11px] text-danger">{errors.password.message}</p>
+          {challengeToken ? (
+            <div className="mt-8 space-y-4">
+              {error ? (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-danger/25 bg-danger/10 px-3 py-2.5 text-xs leading-5 text-danger"
+                >
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>{error}</span>
+                </div>
               ) : null}
-            </div>
 
-            <Button type="submit" className="w-full" loading={isSubmitting} size="lg">
-              Se connecter
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          </form>
+              <div className="rounded-lg border border-accent/25 bg-accent/5 p-3">
+                <p className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <ShieldCheck className="h-4 w-4 text-accent" />
+                  Vérification en deux étapes
+                </p>
+                <p className="mt-1 text-[11px] leading-5 text-muted">
+                  Saisissez le code à 6 chiffres de votre application d'authentification
+                  (Google Authenticator, Microsoft Authenticator, FreeOTP, Bitwarden…), ou un code
+                  de secours.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="mfa-code">Code de vérification</Label>
+                <Input
+                  id="mfa-code"
+                  value={mfaCode}
+                  onChange={(event) => setMfaCode(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void onVerifyMfa();
+                    }
+                  }}
+                  autoFocus
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  placeholder="123456 ou code de secours"
+                />
+              </div>
+
+              <Button
+                type="button"
+                className="w-full"
+                loading={mfaSubmitting}
+                size="lg"
+                onClick={() => void onVerifyMfa()}
+              >
+                Vérifier
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setChallengeToken(null);
+                  setMfaCode("");
+                  setError(null);
+                }}
+              >
+                Revenir à la connexion
+              </Button>
+            </div>
+          ) : (
+            <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+              {error ? (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-danger/25 bg-danger/10 px-3 py-2.5 text-xs leading-5 text-danger"
+                >
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>{error}</span>
+                </div>
+              ) : null}
+
+              <div>
+                <Label htmlFor="email">Adresse e-mail professionnelle</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="username"
+                  autoFocus
+                  placeholder="prenom.nom@exemple.fr"
+                  invalid={Boolean(errors.email)}
+                  {...register("email")}
+                />
+                {errors.email ? <p className="mt-1 text-[11px] text-danger">{errors.email.message}</p> : null}
+              </div>
+
+              <div>
+                <Label htmlFor="password">Mot de passe</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••••••"
+                  invalid={Boolean(errors.password)}
+                  {...register("password")}
+                />
+                {errors.password ? (
+                  <p className="mt-1 text-[11px] text-danger">{errors.password.message}</p>
+                ) : null}
+              </div>
+
+              <Button type="submit" className="w-full" loading={isSubmitting} size="lg">
+                Se connecter
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </form>
+          )}
 
           <div className="mt-8 rounded-lg border border-border-soft bg-surface/50 p-3 text-[11px] leading-5 text-muted-2">
             <p className="font-medium text-muted">Accès réservé</p>

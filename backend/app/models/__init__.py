@@ -13,6 +13,8 @@ from app.models.assets import (
 from app.models.audit import AuditLog
 from app.models.auth import (
     AuthSession,
+    MfaChallenge,
+    MfaRecoveryCode,
     PasswordResetToken,
     Permission,
     Role,
@@ -160,6 +162,8 @@ __all__ = [
     "InterventionAsset",
     "License",
     "Location",
+    "MfaChallenge",
+    "MfaRecoveryCode",
     "Meeting",
     "MeetingPoint",
     "MonitoringCheck",

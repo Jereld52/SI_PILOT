@@ -8,6 +8,7 @@ import {
   Moon,
   Palette,
   Settings,
+  ShieldCheck,
   Sparkles,
   Sun,
 } from "lucide-react";
@@ -142,7 +143,7 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
                   <span className="hidden sm:inline">IA</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>Assistant IA — non configuré</TooltipContent>
+              <TooltipContent>Assistant IA</TooltipContent>
             </Tooltip>
 
             <DropdownMenu>
@@ -176,6 +177,10 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
                 <DropdownMenuItem onSelect={onChangePassword}>
                   <KeyRound className="h-3.5 w-3.5" />
                   Changer le mot de passe
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => navigate("/compte/securite")}>
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Sécurité du compte
                 </DropdownMenuItem>
                 {hasPermission("admin.users.read") ? (
                   <DropdownMenuItem onSelect={() => navigate("/admin/users")}>

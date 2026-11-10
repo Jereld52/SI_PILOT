@@ -18,17 +18,19 @@
   `no-store`.
 - Longueur minimale 12 caractères, majuscule, minuscule, chiffre.
 - Verrouillage temporaire après 5 échecs (15 minutes) et limitation de débit.
-- Sessions **opaques** stockées hachées en base, cookie `HttpOnly`, `Secure` en production,
-  `SameSite=Lax`.
+- Sessions **opaques** stockées hachées en base, cookie `HttpOnly`, `Secure` automatique
+  lorsque la requête arrive en HTTPS (ou forcé avec `SECURE_COOKIES=true`), `SameSite=Lax`.
 - Expiration glissante 8 h, absolue 7 jours, révocation immédiate.
 - Révocation de toutes les sessions lors d'un changement de mot de passe, d'un changement de
   rôle ou d'une désactivation.
 - CSRF double-submit sur toutes les mutations.
-- MFA TOTP prévu pour les administrateurs en V1.1.
+- **MFA TOTP disponible pour tous les comptes** : QR code, applications d'authentification,
+  10 codes de secours à usage unique, challenge de connexion limité à 5 tentatives et 5 minutes,
+  réinitialisation par un administrateur. Aucune dépendance au serveur SMTP.
 
 ## 3. Autorisation
 
-- RBAC : 5 rôles, 100 permissions `module.action`.
+- RBAC : 6 rôles, 121 permissions `module.action`.
 - Portées de données : `all`, `service`, `own`.
 - Surcharges utilisateur `allow`/`deny` auditée.
 - Vérification côté serveur dans la dépendance FastAPI **et** dans le service métier.
@@ -77,8 +79,9 @@
 
 ## 8. Cible de maturité
 
-OWASP ASVS niveau 2. Les points non couverts en Phase 2 (MFA, LDAP, antivirus, WAF) sont
-planifiés et documentés dans la feuille de route.
+OWASP ASVS niveau 2. Les points non couverts en Phase 2 (antivirus, WAF) sont planifiés et
+documentés dans la feuille de route. La MFA TOTP et l'intégration LDAP/Active Directory sont
+disponibles.
 
 ## 9. Signaler un incident
 

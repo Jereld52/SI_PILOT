@@ -39,6 +39,7 @@ class UserRead(ORMModel):
     data_scope: str
     is_active: bool
     must_change_password: bool
+    mfa_enabled: bool = False
     last_login_at: datetime | None = None
     created_at: datetime
 
@@ -49,10 +50,42 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    user: UserRead
-    permissions: list[str]
-    csrf_token: str
-    expires_at: datetime
+    user: UserRead | None = None
+    permissions: list[str] = Field(default_factory=list)
+    csrf_token: str = ""
+    expires_at: datetime | None = None
+    mfa_required: bool = False
+    challenge_token: str | None = None
+
+
+class MfaStatusResponse(BaseModel):
+    enabled: bool
+    configured: bool
+
+
+class MfaSetupResponse(BaseModel):
+    secret: str
+    provisioning_uri: str
+    qr_code_data_url: str
+
+
+class MfaCodeRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=32)
+
+
+class MfaEnableResponse(BaseModel):
+    message: str
+    recovery_codes: list[str]
+
+
+class MfaVerifyRequest(BaseModel):
+    challenge_token: str = Field(min_length=20, max_length=200)
+    code: str = Field(min_length=6, max_length=32)
+
+
+class MfaDisableRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+    code: str = Field(min_length=6, max_length=32)
 
 
 class SessionRead(BaseModel):

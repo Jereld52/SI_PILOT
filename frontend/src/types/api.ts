@@ -29,15 +29,34 @@ export interface User {
   data_scope: string;
   is_active: boolean;
   must_change_password: boolean;
+  mfa_enabled: boolean;
   last_login_at: string | null;
   created_at: string;
 }
 
 export interface LoginResponse {
-  user: User;
+  user: User | null;
   permissions: string[];
   csrf_token: string;
-  expires_at: string;
+  expires_at: string | null;
+  mfa_required: boolean;
+  challenge_token: string | null;
+}
+
+export interface MfaStatus {
+  enabled: boolean;
+  configured: boolean;
+}
+
+export interface MfaSetup {
+  secret: string;
+  provisioning_uri: string;
+  qr_code_data_url: string;
+}
+
+export interface MfaEnableResult {
+  message: string;
+  recovery_codes: string[];
 }
 
 export interface MeResponse {

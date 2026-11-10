@@ -6,6 +6,7 @@ import {
   Pencil,
   Plus,
   Search,
+  ShieldOff,
   UserCheck,
   UserX,
   UsersRound,
@@ -63,7 +64,9 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [resetUser, setResetUser] = useState<User | null>(null);
-  const [confirm, setConfirm] = useState<{ kind: "toggle" | "revoke"; user: User } | null>(null);
+  const [confirm, setConfirm] = useState<
+    { kind: "toggle" | "revoke" | "mfa"; user: User } | null
+  >(null);
 
   useEffect(() => {
     setPage(1);
@@ -125,6 +128,18 @@ export function UsersPage() {
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Révocation impossible."),
+  });
+
+  const mfaResetMutation = useMutation({
+    mutationFn: (target: User) =>
+      apiFetch(`/admin/users/${target.id}/mfa/reset`, { method: "POST" }),
+    onSuccess: () => {
+      toast.success("MFA réinitialisée. L'utilisateur devra la reconfigurer.");
+      invalidate();
+      setConfirm(null);
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Réinitialisation impossible."),
   });
 
   const roles = rolesQuery.data ?? [];
@@ -256,11 +271,14 @@ export function UsersPage() {
                         {scopeLabels[item.data_scope] ?? item.data_scope}
                       </TableCell>
                       <TableCell>
-                        {item.is_active ? (
-                          <Badge tone="success">Actif</Badge>
-                        ) : (
-                          <Badge tone="neutral">Inactif</Badge>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1">
+                          {item.is_active ? (
+                            <Badge tone="success">Actif</Badge>
+                          ) : (
+                            <Badge tone="neutral">Inactif</Badge>
+                          )}
+                          {item.mfa_enabled ? <Badge tone="info">MFA</Badge> : null}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden text-xs text-muted xl:table-cell">
                         {item.last_login_at ? formatDateTime(item.last_login_at) : "Jamais"}
@@ -288,6 +306,12 @@ export function UsersPage() {
                               <DropdownMenuItem onSelect={() => setResetUser(item)}>
                                 <KeyRound className="h-3.5 w-3.5" />
                                 Réinitialiser le mot de passe
+                              </DropdownMenuItem>
+                            ) : null}
+                            {hasPermission("admin.users.manage") && item.mfa_enabled ? (
+                              <DropdownMenuItem onSelect={() => setConfirm({ kind: "mfa", user: item })}>
+                                <ShieldOff className="h-3.5 w-3.5" />
+                                Réinitialiser la MFA
                               </DropdownMenuItem>
                             ) : null}
                             <DropdownMenuItem
@@ -375,23 +399,44 @@ export function UsersPage() {
         title={
           confirm?.kind === "revoke"
             ? "Révoquer les sessions ?"
-            : confirm?.user.is_active
-              ? "Désactiver ce compte ?"
-              : "Réactiver ce compte ?"
+            : confirm?.kind === "mfa"
+              ? "Réinitialiser la MFA ?"
+              : confirm?.user.is_active
+                ? "Désactiver ce compte ?"
+                : "Réactiver ce compte ?"
         }
         description={
           confirm?.kind === "revoke"
             ? "L'utilisateur devra se reconnecter sur tous ses appareils. Aucune donnée n'est supprimée."
-            : confirm?.user.is_active
-              ? "L'utilisateur ne pourra plus se connecter. Son historique et ses données sont conservés."
-              : "L'utilisateur pourra à nouveau se connecter avec son mot de passe actuel."
+            : confirm?.kind === "mfa"
+              ? "La double authentification et les codes de secours seront supprimés. L'utilisateur devra la reconfigurer et se reconnecter."
+              : confirm?.user.is_active
+                ? "L'utilisateur ne pourra plus se connecter. Son historique et ses données sont conservés."
+                : "L'utilisateur pourra à nouveau se connecter avec son mot de passe actuel."
         }
-        confirmLabel={confirm?.kind === "revoke" ? "Révoquer" : confirm?.user.is_active ? "Désactiver" : "Réactiver"}
-        tone={confirm?.kind === "revoke" || confirm?.user.is_active ? "danger" : "primary"}
-        loading={toggleMutation.isPending || revokeMutation.isPending}
+        confirmLabel={
+          confirm?.kind === "revoke"
+            ? "Révoquer"
+            : confirm?.kind === "mfa"
+              ? "Réinitialiser"
+              : confirm?.user.is_active
+                ? "Désactiver"
+                : "Réactiver"
+        }
+        tone={
+          confirm?.kind === "revoke" || confirm?.kind === "mfa" || confirm?.user.is_active
+            ? "danger"
+            : "primary"
+        }
+        loading={
+          toggleMutation.isPending ||
+          revokeMutation.isPending ||
+          mfaResetMutation.isPending
+        }
         onConfirm={() => {
           if (!confirm) return;
           if (confirm.kind === "revoke") revokeMutation.mutate(confirm.user);
+          else if (confirm.kind === "mfa") mfaResetMutation.mutate(confirm.user);
           else toggleMutation.mutate(confirm.user);
         }}
       />

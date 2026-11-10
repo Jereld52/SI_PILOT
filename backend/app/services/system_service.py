@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.db.session import check_database
 from app.models.assets import Asset
 from app.models.audit import AuditLog
-from app.models.auth import User
+from app.models.auth import Role, User
 from app.models.automation import EmailOutbox
 from app.models.infrastructure import InfraEquipment
 from app.models.organization import Agent
@@ -214,16 +214,28 @@ def get_diagnostics(db: Session) -> dict[str, Any]:
             "detail": "Désactivé." if not settings.debug else "Le mode debug est actif.",
         }
     )
+    public_https = settings.public_base_url.lower().startswith("https://")
+    if settings.secure_cookies:
+        cookies_status = "ok"
+        cookies_detail = "Cookies marqués Secure de façon forcée."
+    elif public_https:
+        cookies_status = "ok"
+        cookies_detail = (
+            "Cookies Secure automatiques derrière HTTPS "
+            "(PUBLIC_BASE_URL en https)."
+        )
+    else:
+        cookies_status = "warning"
+        cookies_detail = (
+            "Cookies non marqués Secure : servez l'application en HTTPS ou "
+            "définissez SECURE_COOKIES=true."
+        )
     checks.append(
         {
             "key": "secure_cookies",
             "label": "Cookies sécurisés",
-            "status": "ok" if settings.secure_cookies else "warning",
-            "detail": (
-                "Cookies marqués Secure."
-                if settings.secure_cookies
-                else "Cookies non marqués Secure : à activer derrière HTTPS."
-            ),
+            "status": cookies_status,
+            "detail": cookies_detail,
         }
     )
     checks.append(
@@ -238,12 +250,48 @@ def get_diagnostics(db: Session) -> dict[str, Any]:
             ),
         }
     )
+    admin_total = int(
+        db.scalar(
+            select(func.count())
+            .select_from(User)
+            .join(Role)
+            .where(User.is_active.is_(True), Role.code == "admin")
+        )
+        or 0
+    )
+    admin_mfa = int(
+        db.scalar(
+            select(func.count())
+            .select_from(User)
+            .join(Role)
+            .where(
+                User.is_active.is_(True),
+                Role.code == "admin",
+                User.mfa_enabled.is_(True),
+            )
+        )
+        or 0
+    )
+    if admin_total == 0:
+        mfa_status = "info"
+        mfa_detail = "Aucun administrateur actif à contrôler."
+    elif admin_mfa >= admin_total:
+        mfa_status = "ok"
+        mfa_detail = (
+            f"MFA activée pour les {admin_total} administrateur(s) actif(s)."
+        )
+    else:
+        mfa_status = "warning"
+        mfa_detail = (
+            f"MFA activée pour {admin_mfa}/{admin_total} administrateur(s). "
+            "Activez-la dans le menu du profil → Sécurité du compte."
+        )
     checks.append(
         {
             "key": "mfa",
             "label": "Authentification multifacteur",
-            "status": "warning",
-            "detail": "MFA TOTP non encore disponible pour les comptes administrateurs.",
+            "status": mfa_status,
+            "detail": mfa_detail,
         }
     )
 

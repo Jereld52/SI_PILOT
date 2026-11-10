@@ -25,6 +25,12 @@ from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
     MeResponse,
+    MfaCodeRequest,
+    MfaDisableRequest,
+    MfaEnableResponse,
+    MfaSetupResponse,
+    MfaStatusResponse,
+    MfaVerifyRequest,
     ResetPasswordRequest,
     SessionRead,
     UserRead,
@@ -41,14 +47,30 @@ def _aware(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
-def _set_auth_cookies(response: Response, token: str, csrf_token: str) -> None:
+def _is_https(request: Request) -> bool:
+    if request.url.scheme == "https":
+        return True
+    if settings.trust_proxy_headers:
+        forwarded = request.headers.get("x-forwarded-proto", "")
+        return forwarded.split(",")[0].strip().lower() == "https"
+    return False
+
+
+def _cookie_secure(request: Request) -> bool:
+    return settings.secure_cookies or _is_https(request)
+
+
+def _set_auth_cookies(
+    response: Response, token: str, csrf_token: str, request: Request
+) -> None:
     max_age = settings.session_absolute_days * 24 * 3600
+    secure = _cookie_secure(request)
     response.set_cookie(
         key=settings.session_cookie_name,
         value=token,
         max_age=max_age,
         httponly=True,
-        secure=settings.secure_cookies,
+        secure=secure,
         samesite="lax",
         path="/",
     )
@@ -57,15 +79,29 @@ def _set_auth_cookies(response: Response, token: str, csrf_token: str) -> None:
         value=csrf_token,
         max_age=max_age,
         httponly=False,
-        secure=settings.secure_cookies,
+        secure=secure,
         samesite="lax",
         path="/",
     )
 
 
-def _clear_auth_cookies(response: Response) -> None:
-    response.delete_cookie(settings.session_cookie_name, path="/")
-    response.delete_cookie(settings.csrf_cookie_name, path="/")
+def _clear_auth_cookies(response: Response, request: Request) -> None:
+    secure = _cookie_secure(request)
+    response.delete_cookie(
+        settings.session_cookie_name, path="/", secure=secure, samesite="lax"
+    )
+    response.delete_cookie(
+        settings.csrf_cookie_name, path="/", secure=secure, samesite="lax"
+    )
+
+
+def _login_response(user: User, session: AuthSession, csrf_token: str) -> LoginResponse:
+    return LoginResponse(
+        user=UserRead.model_validate(user),
+        permissions=sorted(permission_codes(user)),
+        csrf_token=csrf_token,
+        expires_at=session.expires_at,
+    )
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -83,21 +119,22 @@ def login(
             headers={"Retry-After": str(retry_after)},
         )
 
-    user, session, token = auth_service.authenticate(
+    outcome = auth_service.authenticate(
         db,
         email=payload.email,
         password=payload.password,
         request=request,
     )
     login_limiter.reset(key)
+    if outcome.challenge_token:
+        return LoginResponse(
+            mfa_required=True, challenge_token=outcome.challenge_token
+        )
+    if outcome.session is None or outcome.token is None:
+        raise AuthenticationError("Connexion impossible.")
     csrf_token = generate_csrf_token()
-    _set_auth_cookies(response, token, csrf_token)
-    return LoginResponse(
-        user=UserRead.model_validate(user),
-        permissions=sorted(permission_codes(user)),
-        csrf_token=csrf_token,
-        expires_at=session.expires_at,
-    )
+    _set_auth_cookies(response, outcome.token, csrf_token, request)
+    return _login_response(outcome.user, outcome.session, csrf_token)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -110,8 +147,94 @@ def logout(request: Request, db: Session = Depends(get_db)) -> Response:
         except AuthenticationError:
             db.rollback()
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
-    _clear_auth_cookies(response)
+    _clear_auth_cookies(response, request)
     return response
+
+
+@router.get("/mfa", response_model=MfaStatusResponse)
+def mfa_status(
+    session: AuthSession = Depends(get_current_session),
+) -> MfaStatusResponse:
+    enabled, configured = auth_service.mfa_status(session.user)
+    return MfaStatusResponse(enabled=enabled, configured=configured)
+
+
+@router.post("/mfa/setup", response_model=MfaSetupResponse)
+def mfa_setup(
+    request: Request,
+    session: AuthSession = Depends(get_current_session),
+    db: Session = Depends(get_db),
+) -> MfaSetupResponse:
+    secret, uri, qr_code = auth_service.setup_mfa(
+        db, session.user, request=request
+    )
+    return MfaSetupResponse(
+        secret=secret, provisioning_uri=uri, qr_code_data_url=qr_code
+    )
+
+
+@router.post("/mfa/enable", response_model=MfaEnableResponse)
+def mfa_enable(
+    payload: MfaCodeRequest,
+    request: Request,
+    session: AuthSession = Depends(get_current_session),
+    db: Session = Depends(get_db),
+) -> MfaEnableResponse:
+    codes = auth_service.enable_mfa(
+        db, session.user, code=payload.code, request=request
+    )
+    return MfaEnableResponse(
+        message="Authentification multifacteur activée. Conservez les codes de secours.",
+        recovery_codes=codes,
+    )
+
+
+@router.post("/mfa/disable", response_model=MessageResponse)
+def mfa_disable(
+    payload: MfaDisableRequest,
+    request: Request,
+    session: AuthSession = Depends(get_current_session),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    auth_service.disable_mfa(
+        db,
+        session.user,
+        password=payload.password,
+        code=payload.code,
+        request=request,
+        current_session_id=session.id,
+    )
+    return MessageResponse(
+        message="Authentification multifacteur désactivée. Les autres sessions ont été révoquées."
+    )
+
+
+@router.post("/mfa/verify", response_model=LoginResponse)
+def mfa_verify(
+    payload: MfaVerifyRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
+    key = f"mfa:{get_client_ip(request)}"
+    allowed, retry_after = login_limiter.check(key, limit=10, window_seconds=900)
+    if not allowed:
+        raise RateLimitError(
+            "Trop de tentatives de vérification. Réessayez dans quelques minutes.",
+            headers={"Retry-After": str(retry_after)},
+        )
+    outcome = auth_service.verify_mfa_challenge(
+        db,
+        challenge_token=payload.challenge_token,
+        code=payload.code,
+        request=request,
+    )
+    login_limiter.reset(key)
+    if outcome.session is None or outcome.token is None:
+        raise AuthenticationError("Vérification impossible.")
+    csrf_token = generate_csrf_token()
+    _set_auth_cookies(response, outcome.token, csrf_token, request)
+    return _login_response(outcome.user, outcome.session, csrf_token)
 
 
 @router.get("/me", response_model=MeResponse)

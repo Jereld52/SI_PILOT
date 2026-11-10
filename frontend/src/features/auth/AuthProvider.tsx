@@ -17,6 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<LoginResponse>;
+  verifyMfa: (challengeToken: string, code: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   hasPermission: (code: string) => boolean;
@@ -58,16 +59,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
   }, [loadMe]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const data = await apiFetch<LoginResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    setUser(data.user);
-    setPermissions(data.permissions);
+  const applyLogin = useCallback((data: LoginResponse) => {
+    if (data.user) {
+      setUser(data.user);
+      setPermissions(data.permissions);
+    }
     setError(null);
     return data;
   }, []);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const data = await apiFetch<LoginResponse>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      return applyLogin(data);
+    },
+    [applyLogin],
+  );
+
+  const verifyMfa = useCallback(
+    async (challengeToken: string, code: string) => {
+      const data = await apiFetch<LoginResponse>("/auth/mfa/verify", {
+        method: "POST",
+        body: JSON.stringify({ challenge_token: challengeToken, code }),
+      });
+      return applyLogin(data);
+    },
+    [applyLogin],
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -90,11 +111,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       login,
+      verifyMfa,
       logout,
       refresh: loadMe,
       hasPermission,
     }),
-    [user, permissions, loading, error, login, logout, loadMe, hasPermission],
+    [
+      user,
+      permissions,
+      loading,
+      error,
+      login,
+      verifyMfa,
+      logout,
+      loadMe,
+      hasPermission,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

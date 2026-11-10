@@ -124,6 +124,36 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "double-authentification",
+    title: "Double authentification (TOTP)",
+    summary: "Activer un code temporaire avec une application d'authentification, sans SMTP.",
+    category: "demarrage",
+    tags: ["MFA", "2FA", "TOTP", "authenticator", "sécurité", "code de secours"],
+    blocks: [
+      p(
+        "La double authentification ajoute un code temporaire à la connexion. Elle utilise le standard TOTP et fonctionne avec Google Authenticator, Microsoft Authenticator, FreeOTP, Bitwarden, 1Password ou toute application compatible. Elle ne dépend pas du serveur SMTP.",
+      ),
+      steps([
+        "Ouvrir le menu du profil puis « Sécurité du compte ».",
+        "Cliquer sur « Configurer la MFA ».",
+        "Scanner le QR code avec l'application d'authentification.",
+        "Saisir le code à 6 chiffres généré pour activer la MFA.",
+        "Conserver les codes de secours affichés : ils permettent de se connecter si le téléphone est perdu.",
+      ]),
+      p(
+        "À la connexion, SI PILOT demande le mot de passe puis le code TOTP ou un code de secours. Chaque code de secours ne sert qu'une seule fois.",
+      ),
+      note(
+        "warning",
+        "Si vous perdez l'application et les codes de secours, un administrateur peut réinitialiser la MFA depuis Administration → Utilisateurs. Toutes vos sessions seront alors révoquées.",
+      ),
+      note(
+        "info",
+        "La page Administration → Système indique combien d'administrateurs ont activé la MFA. Les cookies de session sont automatiquement marqués Secure lorsque l'application est servie en HTTPS.",
+      ),
+    ],
+  },
+  {
     slug: "navigation-et-recherche",
     title: "Navigation, onglets et recherche globale",
     summary: "Comprendre le menu, les onglets, les filtres, le tri et la recherche transverse.",

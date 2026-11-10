@@ -61,6 +61,11 @@ const UsersPage = lazy(() =>
 const AgentsPage = lazy(() =>
   import("@/features/agents/AgentsPage").then((module) => ({ default: module.AgentsPage })),
 );
+const AccountSecurityPage = lazy(() =>
+  import("@/features/auth/AccountSecurityPage").then((module) => ({
+    default: module.AccountSecurityPage,
+  })),
+);
 const AssetsPage = lazy(() =>
   import("@/features/assets/AssetsPage").then((module) => ({ default: module.AssetsPage })),
 );
@@ -352,6 +357,8 @@ export function App() {
               </RequirePermission>
             }
           />
+
+          <Route path="compte/securite" element={<AccountSecurityPage />} />
 
           <Route
             path="telephonie"

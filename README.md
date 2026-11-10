@@ -21,7 +21,10 @@ se configurent depuis l'administration.
 - API FastAPI versionnée (`/api/v1`) documentée par OpenAPI.
 - Authentification locale sécurisée : Argon2id, sessions serveur opaques, cookie `HttpOnly`,
   CSRF, verrouillage après échecs, révocation des sessions.
-- Rôles et permissions : 6 rôles (dont DPO), 107 permissions, portées de données, surcharges utilisateur.
+- **Double authentification TOTP** pour tous les comptes : QR code, application d'authentification,
+  codes de secours à usage unique, réinitialisation par un administrateur, sans dépendance SMTP.
+- Cookies `Secure` automatiques lorsque l'application est servie en HTTPS.
+- Rôles et permissions : 6 rôles (dont DPO), 121 permissions, portées de données, surcharges utilisateur.
 - Journal d'audit append-only avec chaînage de hash.
 - Notifications in-app.
 - Notifications e-mail avec serveur SMTP externe configurable (STARTTLS ou SSL), mot de passe
