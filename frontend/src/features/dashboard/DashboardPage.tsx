@@ -383,8 +383,8 @@ export function DashboardPage() {
       <section className="hero-wine ring-wine relative overflow-hidden rounded-xl border border-primary/30 p-5 sm:p-6">
         <div className="hero-grid pointer-events-none absolute inset-y-0 right-0 w-2/3 opacity-70" aria-hidden="true" />
         <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full border border-accent/20 bg-accent/5 blur-2xl" aria-hidden="true" />
-        <div className="relative grid gap-6 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
-          <div>
+        <div className="relative grid gap-6 xl:grid-cols-[1.2fr_0.8fr] xl:items-center">
+          <div className="flex flex-col justify-center">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-[var(--app-hero-panel)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
                 <Sparkles className="h-3 w-3" />
@@ -438,6 +438,38 @@ export function DashboardPage() {
                   Cybersécurité
                 </Link>
               ) : null}
+            </div>
+            <div className="mt-4 rounded-lg border border-[var(--app-hero-border)] bg-[var(--app-hero-panel)] px-3 py-2 backdrop-blur-[2px]">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--app-hero-soft)]">
+                À suivre aujourd'hui
+              </p>
+              {alerts.length === 0 ? (
+                <p className="mt-1 text-[11px] text-[var(--app-hero-muted)]">
+                  Aucune alerte prioritaire. Le système est à jour.
+                </p>
+              ) : (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {alerts.slice(0, 2).map((alert) => (
+                    <Link
+                      key={alert.id}
+                      to={alert.link ?? "/"}
+                      className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--app-hero-border)] bg-[var(--app-hero-panel-hover)] px-2 py-1 text-[10px] text-[var(--app-hero-foreground)] transition-colors hover:border-accent/30"
+                    >
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 shrink-0 rounded-full",
+                          alert.severity === "critical"
+                            ? "bg-danger"
+                            : alert.severity === "high"
+                              ? "bg-warning"
+                              : "bg-accent",
+                        )}
+                      />
+                      <span className="truncate">{alert.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
