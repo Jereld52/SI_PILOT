@@ -165,6 +165,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       list([
         "Le bouton de repli réduit le menu aux icônes et libère de l'espace.",
+        "L'administration est regroupée en catégories (Comptes & droits, Données & intégrations, Système & IA, Journal d'audit) avec des sous-onglets.",
         "Les pages chargées de données sont organisées en onglets pour limiter le défilement.",
         "Les tableaux se trient en cliquant sur l'en-tête d'une colonne.",
         "Les filtres de recherche, de statut, de type et de site se combinent.",
