@@ -1716,6 +1716,46 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface BackupFileItem {
+  name: string;
+  size: number;
+  created_at: string;
+}
+
+export interface BackupStatus {
+  app_version: string;
+  schema_revision: string;
+  database_name: string;
+  database_host: string;
+  database_port: number | null;
+  dialect: string;
+  pg_dump_available: boolean;
+  pg_dump_path: string;
+  pg_restore_available: boolean;
+  pg_restore_path: string;
+  backup_directory: string;
+  backup_count: number;
+  last_backup_at: string | null;
+  last_backup_name: string | null;
+  last_backup_size: number | null;
+  uploads_directory: string;
+  uploads_size: number;
+  backups: BackupFileItem[];
+}
+
+export interface ConfigImportResult {
+  imported: number;
+  skipped: number;
+  message: string;
+}
+
+export interface RestoreResult {
+  restored: boolean;
+  safety_backup: string | null;
+  message: string;
+  output: string | null;
+}
+
 export interface CommunicationRoleRef {
   id: string;
   code: string;

@@ -20,6 +20,22 @@
    sans elle, les PIN/PUK des lignes mobiles sont irrécupérables.
 4. Journal d'audit : inclus dans la base ; export séparé recommandé.
 
+## 2 bis. Sauvegarde et restauration depuis l'interface
+
+**Administration → Sauvegarde** (permission `admin.backup.manage`) permet de :
+
+- télécharger la configuration en JSON (paramètres et secrets chiffrés) ;
+- télécharger un dump PostgreSQL au format custom ;
+- télécharger une archive ZIP complète : `database.dump`, `config.json`, `manifest.json` et
+  répertoire `uploads/` ;
+- importer une configuration JSON sans toucher aux données métier ;
+- restaurer une base depuis un `.dump`, `.sql` ou une archive ZIP, après saisie de `RESTAURER`.
+
+La restauration crée automatiquement une sauvegarde de sécurité dans `.runtime/backups` avant
+l'opération. Les fichiers produits restent dans ce dossier et sont listés dans la page.
+
+> La clé `FIELD_ENCRYPTION_KEY` n'est jamais incluse dans les exports. Conservez-la séparément.
+
 ## 3. Sauvegarde Windows
 
 ```powershell

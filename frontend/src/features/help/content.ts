@@ -1094,14 +1094,19 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["sauvegarde", "restauration", "dump", "stockage", "backup"],
     blocks: [
       p(
-        "Une sauvegarde complète comprend la base PostgreSQL et le répertoire des fichiers téléversés. Les scripts Windows sont fournis dans scripts/windows.",
+        "Administration → Sauvegarde permet d'exporter et d'importer la configuration et la base sans passer par la ligne de commande. Les scripts Windows restent disponibles dans scripts/windows pour les sauvegardes planifiées.",
       ),
       list([
-        "Sauvegarde de la base : pg_dump au format custom.",
-        "Sauvegarde du répertoire de stockage (documents, images de plans, logos).",
-        "Conservation des fichiers hors du serveur ou sur un support distinct.",
-        "Test périodique de restauration sur une base de recette, jamais directement en production.",
+        "Exporter la configuration en JSON : paramètres, identité, SMTP, WAPT, LDAP et secrets chiffrés.",
+        "Exporter la base PostgreSQL au format custom (pg_dump) ou une archive ZIP complète avec les fichiers utilisateurs.",
+        "Importer une configuration JSON pour restaurer les paramètres.",
+        "Restaurer une base depuis un fichier .dump, .sql ou une archive ZIP, après saisie de la confirmation RESTAURER.",
+        "Une sauvegarde de sécurité est créée automatiquement avant toute restauration.",
       ]),
+      note(
+        "warning",
+        "La restauration remplace la base actuelle. La clé FIELD_ENCRYPTION_KEY n'est pas incluse dans les exports : sans elle, les secrets chiffrés restent illisibles après réinstallation.",
+      ),
       note(
         "warning",
         "Une sauvegarde non testée n'est pas une sauvegarde fiable. Vérifiez régulièrement la restauration et conservez au moins une copie hors site.",

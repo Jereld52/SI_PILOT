@@ -48,6 +48,9 @@ se configurent depuis l'administration.
   mises à jour disponibles par logiciel et par poste, alertes sur le tableau de bord, catalogue
   et installation/désinstallation par équipement. Le déploiement direct nécessite une action
   signée WAPT et reste réalisé depuis la console WAPT lorsque la clé privée n'est pas disponible.
+- **Sauvegarde et restauration** depuis Administration : export de la configuration JSON, dump
+  PostgreSQL, archive ZIP complète (base, configuration, fichiers), import de configuration et
+  restauration de base avec sauvegarde de sécurité automatique.
 - **Communication** : communications ciblées aux utilisateurs (tous, service, rôle ou sélection),
   publication avec notification interne et e-mail optionnel, suivi de lecture et archivage ;
   réunions d'équipe, de service, de projet ou points avec la responsable avec ordre du jour,

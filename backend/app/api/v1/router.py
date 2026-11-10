@@ -6,6 +6,7 @@ from app.api.v1 import (
     assets,
     audit,
     auth,
+    backup,
     branding,
     budget,
     calendar,
@@ -48,6 +49,7 @@ api_router.include_router(dashboard.router)
 api_router.include_router(search.router)
 api_router.include_router(notifications.router)
 api_router.include_router(admin.router)
+api_router.include_router(backup.router)
 api_router.include_router(system.router)
 api_router.include_router(audit.router)
 api_router.include_router(referentials.router)
