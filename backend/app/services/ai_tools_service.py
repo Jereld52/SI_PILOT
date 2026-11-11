@@ -12,9 +12,10 @@ from app.models.auth import User
 from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
 from app.models.network import NetworkShare
-from app.models.organization import Agent
+from app.models.organization import Agent, ChecklistRun
 from app.models.security import Certificate, SecurityIncident
 from app.models.tickets import Ticket, TicketStatus
+from app.services import onboarding_service
 from sqlalchemy import false, func, or_, select
 from sqlalchemy.orm import Session
 
@@ -134,7 +135,13 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
     {
         "key": "agent_lookup",
         "label": "Utilisateurs et agents",
-        "description": "Recherche d'un agent, de ses équipements et de ses demandes.",
+        "description": "Recherche d'un agent, de ses équipements, de ses demandes et de ses dossiers.",
+        "permission": "agents.read",
+    },
+    {
+        "key": "onboarding_briefing",
+        "label": "Arrivées et départs",
+        "description": "Dossiers d'arrivée et de départ, retards et oublis.",
         "permission": "agents.read",
     },
     {
@@ -599,13 +606,47 @@ def agent_lookup(
             )
             .limit(5)
         ).all()
+        runs = db.scalars(
+            select(ChecklistRun)
+            .where(ChecklistRun.agent_id == agent.id)
+            .order_by(ChecklistRun.started_at.desc().nullslast())
+            .limit(4)
+        ).all()
+        dossier_text = (
+            ", ".join(
+                f"{run.type} {run.status} ({run.due_date:%d/%m/%Y})"
+                if run.due_date
+                else f"{run.type} {run.status}"
+                for run in runs
+            )
+            or "aucun"
+        )
         items.append(
             f"{agent.first_name} {agent.last_name} | {agent.email_pro} | "
             f"login: {agent.login or '—'} | service: {agent.service.name if agent.service else '—'} | "
             f"équipements: {', '.join(asset.asset_tag for asset in assets) or 'aucun'} | "
-            f"demandes ouvertes: {', '.join(ticket.reference for ticket in tickets) or 'aucune'}"
+            f"demandes ouvertes: {', '.join(ticket.reference for ticket in tickets) or 'aucune'} | "
+            f"dossiers: {dossier_text}"
         )
     return _result("agent_lookup", items)
+
+
+def onboarding_briefing(db: Session, actor: User) -> dict[str, Any]:
+    data = onboarding_service.briefing(db, actor=actor)
+    counts = data.counts
+    items = [
+        (
+            f"Arrivées à venir: {counts.get('upcoming_arrivals', 0)} | "
+            f"Départs à venir: {counts.get('upcoming_departures', 0)} | "
+            f"Dossiers en cours: {counts.get('in_progress', 0)} | "
+            f"En retard: {counts.get('overdue', 0)} | "
+            f"Arrivées sans dossier: {counts.get('missing_onboarding', 0)} | "
+            f"Départs sans dossier: {counts.get('missing_offboarding', 0)}"
+        )
+    ]
+    for alert in data.items[:25]:
+        items.append(f"[{alert.severity}] {alert.title} — {alert.detail}")
+    return _result("onboarding_briefing", items)
 
 
 def recent_activity(db: Session, actor: User, limit: int = 15) -> dict[str, Any]:
@@ -637,6 +678,7 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "certificates_expiring": certificates_expiring,
     "infrastructure_equipment": infrastructure_equipment,
     "agent_lookup": agent_lookup,
+    "onboarding_briefing": onboarding_briefing,
     "recent_activity": recent_activity,
 }
 
@@ -689,6 +731,8 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("certificates_expiring")
     if any(term in text for term in ("serveur", "switch", "infrastructure", " vm", "baie", "routeur", "firewall")):
         add("infrastructure_equipment", query=query)
+    if any(term in text for term in ("arrivée", "arrivee", "départ", "depart", "onboarding", "offboarding", "intégration", "integration", "dossier", "checklist")):
+        add("onboarding_briefing")
     if any(term in text for term in ("qui est", "qui utilise", "utilisateur", "agent", "affecté", "affecte", "annuaire")):
         add("agent_lookup", query=query)
     if any(term in text for term in ("récent", "recent", "changement", "activité", "activite", "audit", "dernier")):

@@ -144,9 +144,13 @@ class ChecklistRun(Base, UUIDMixin, TimestampMixin):
     type: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="in_progress", nullable=False)
     started_at: Mapped[date | None] = mapped_column(Date)
+    due_date: Mapped[date | None] = mapped_column(Date, index=True)
     completed_at: Mapped[date | None] = mapped_column(Date)
+    notes: Mapped[str | None] = mapped_column(Text)
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
+    template: Mapped[ChecklistTemplate] = relationship(lazy="joined")
+    agent: Mapped[Agent] = relationship(lazy="joined")
     items: Mapped[list[ChecklistRunItem]] = relationship(cascade="all, delete-orphan")
 
 
@@ -160,6 +164,7 @@ class ChecklistRunItem(Base, UUIDMixin):
         ForeignKey("checklist_template_items.id", ondelete="SET NULL")
     )
     label: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_required: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_done: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     done_at: Mapped[date | None] = mapped_column(Date)
     done_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

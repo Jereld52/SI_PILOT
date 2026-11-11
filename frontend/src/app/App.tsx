@@ -66,6 +66,11 @@ const UsersPage = lazy(() =>
 const AgentsPage = lazy(() =>
   import("@/features/agents/AgentsPage").then((module) => ({ default: module.AgentsPage })),
 );
+const OnboardingPage = lazy(() =>
+  import("@/features/onboarding/OnboardingPage").then((module) => ({
+    default: module.OnboardingPage,
+  })),
+);
 const AccountSecurityPage = lazy(() =>
   import("@/features/auth/AccountSecurityPage").then((module) => ({
     default: module.AccountSecurityPage,
@@ -349,6 +354,15 @@ export function App() {
             element={
               <RequirePermission permission="agents.read">
                 <AgentsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="arrivees-departs"
+            element={
+              <RequirePermission permission="agents.read">
+                <OnboardingPage />
               </RequirePermission>
             }
           />

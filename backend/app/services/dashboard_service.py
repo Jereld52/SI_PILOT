@@ -14,7 +14,7 @@ from app.models.common import UserPreference
 from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
 from app.models.network import NetworkShare
-from app.models.organization import Agent
+from app.models.organization import Agent, ChecklistRun
 from app.models.security import SecurityIncident
 from app.models.tickets import Intervention, Ticket, TicketCategory, TicketStatus
 from app.schemas.dashboard import (
@@ -619,6 +619,31 @@ def get_alerts(db: Session) -> DashboardAlerts:
                 detail=detail,
                 link=f"/logiciels?software={quote(package_name)}",
                 category="software",
+            )
+        )
+
+    onboarding_runs = db.scalars(
+        select(ChecklistRun)
+        .where(
+            ChecklistRun.status == "in_progress",
+            ChecklistRun.due_date.is_not(None),
+            ChecklistRun.due_date < today,
+        )
+        .order_by(ChecklistRun.due_date.asc())
+        .limit(5)
+    ).all()
+    for run in onboarding_runs:
+        agent_name = (
+            f"{run.agent.first_name} {run.agent.last_name}" if run.agent else "Agent"
+        )
+        items.append(
+            AlertItem(
+                id=str(run.id),
+                severity="high" if run.type == "offboarding" else "medium",
+                title=f"Dossier {run.type} en retard — {agent_name}",
+                detail=f"Échéance dépassée depuis le {run.due_date:%d/%m/%Y}",
+                link=f"/arrivees-departs?run={run.id}",
+                category="agents",
             )
         )
 

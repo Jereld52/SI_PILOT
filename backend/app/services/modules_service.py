@@ -98,6 +98,14 @@ MODULE_DEFINITIONS: tuple[ModuleDefinition, ...] = (
         "Support & parc",
     ),
     ModuleDefinition(
+        "onboarding",
+        "Arrivées & départs",
+        "Dossiers d'intégration et de sortie, checklists et suivi.",
+        "/arrivees-departs",
+        "agents.read",
+        "Support & parc",
+    ),
+    ModuleDefinition(
         "communications",
         "Communications",
         "Messages aux utilisateurs, ciblage, publication et suivi de lecture.",

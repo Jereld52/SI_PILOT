@@ -26,6 +26,7 @@ from app.api.v1 import (
     modules,
     network_shares,
     notifications,
+    onboarding,
     projects,
     referentials,
     reservations,
@@ -60,6 +61,7 @@ api_router.include_router(system.router)
 api_router.include_router(audit.router)
 api_router.include_router(referentials.router)
 api_router.include_router(agents.router)
+api_router.include_router(onboarding.router)
 api_router.include_router(assets.router)
 api_router.include_router(mobile.router)
 api_router.include_router(imports.router)

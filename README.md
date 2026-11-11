@@ -31,6 +31,10 @@ se configurent depuis l'administration.
   chiffré, test d'envoi et boîte d'envoi interne avec statut.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
+- **Arrivées & départs** : dossiers d'intégration et de sortie, checklists obligatoires ou
+  facultatives, progression, échéances, détection des arrivées/départs sans dossier, dossiers en
+  retard, points d'attention et alertes tableau de bord. L'assistant IA peut résumer les dossiers
+  et les oublis.
 - Parc enrichi par l'export WAPT : système, IP, dernier utilisateur, dernière connexion, groupes
   et données source complètes ; fiche détaillée et QR code par équipement.
 - Téléphonie mobile : inventaire des 82 lignes, titulaires, forfaits et terminaux ; PIN/PUK
@@ -202,6 +206,7 @@ configurée.
 - **Docker** : voir [`docs/DOCKER.md`](docs/DOCKER.md).
 - **Sauvegarde / restauration** : voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 - **Assistant IA et fournisseurs** : voir [`docs/ASSISTANT_IA.md`](docs/ASSISTANT_IA.md).
+- **Arrivées et départs** : voir [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 - **Sécurité** : voir [`docs/SECURITY.md`](docs/SECURITY.md).
 - **Centre d'aide** : voir [`docs/HELP.md`](docs/HELP.md).
 - **Architecture** : voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

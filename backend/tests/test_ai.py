@@ -254,13 +254,24 @@ def test_tool_router_selects_relevant_tools():
         )]
         assert "agent_lookup" in user or "search_assets" in user
 
+        onboarding = [call[0] for call in ai_tools_service.select_tools(
+            "Quelles arrivées sont incomplètes ?", actor
+        )]
+        assert "onboarding_briefing" in onboarding
+
 
 def test_ai_tools_endpoint(admin_client):
     client, _ = admin_client
     response = client.get("/api/v1/ai/tools")
     assert response.status_code == 200, response.text
     keys = {tool["key"] for tool in response.json()}
-    assert {"assets_broken", "tickets_overdue", "software_updates", "contracts_expiring"} <= keys
+    assert {
+        "assets_broken",
+        "tickets_overdue",
+        "software_updates",
+        "contracts_expiring",
+        "onboarding_briefing",
+    } <= keys
 
 
 def test_ai_chat_uses_tools(admin_client, csrf_headers, monkeypatch):

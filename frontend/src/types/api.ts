@@ -1735,6 +1735,72 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface ChecklistTemplateItem {
+  id: string;
+  position: number;
+  label: string;
+  description: string | null;
+  responsible_role: string | null;
+  is_required: boolean;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  description: string | null;
+  is_active: boolean;
+  items: ChecklistTemplateItem[];
+}
+
+export interface ChecklistRunItem {
+  id: string;
+  label: string;
+  is_required: boolean;
+  is_done: boolean;
+  done_at: string | null;
+  notes: string | null;
+}
+
+export interface ChecklistRun {
+  id: string;
+  template_id: string;
+  template_name: string;
+  agent_id: string;
+  agent_name: string;
+  agent_service: string;
+  type: string;
+  status: string;
+  started_at: string | null;
+  due_date: string | null;
+  completed_at: string | null;
+  notes: string | null;
+  total_items: number;
+  done_items: number;
+  required_total: number;
+  required_done: number;
+  progress_percent: number;
+  is_overdue: boolean;
+  items: ChecklistRunItem[];
+}
+
+export interface OnboardingAlert {
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  title: string;
+  detail: string;
+  agent_id: string | null;
+  run_id: string | null;
+  link: string | null;
+}
+
+export interface OnboardingBriefing {
+  generated_at: string;
+  counts: Record<string, number>;
+  items: OnboardingAlert[];
+  runs: ChecklistRun[];
+}
+
 export interface ModuleSettingItem {
   key: string;
   label: string;

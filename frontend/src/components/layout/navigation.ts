@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Smartphone,
   Truck,
+  UserPlus,
   Users,
   Wallet,
 } from "lucide-react";
@@ -137,6 +138,13 @@ export const navigationSections: NavSection[] = [
         icon: Users,
         permission: "agents.read",
         moduleKey: "agents",
+      },
+      {
+        label: "Arrivées & départs",
+        to: "/arrivees-departs",
+        icon: UserPlus,
+        permission: "agents.read",
+        moduleKey: "onboarding",
       },
     ],
   },

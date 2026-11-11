@@ -333,6 +333,36 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "arrivees-departs",
+    title: "Arrivées et départs",
+    summary: "Suivre l'intégration et la sortie des agents avec des checklists.",
+    category: "parc",
+    tags: ["arrivée", "départ", "onboarding", "offboarding", "checklist", "suivi"],
+    blocks: [
+      p(
+        "Support & parc → Arrivées & départs permet d'ouvrir un dossier d'intégration ou de sortie pour un agent et de suivre chaque tâche.",
+      ),
+      list([
+        "Création d'un dossier depuis un modèle d'arrivée ou de départ.",
+        "Échéance reprise automatiquement de la date d'arrivée ou de départ de l'agent.",
+        "Checklist avec tâches obligatoires ou facultatives, cochage et date de réalisation.",
+        "Progression calculée sur les tâches obligatoires.",
+        "Détection des arrivées ou départs à venir sans dossier.",
+        "Points d'attention sur les dossiers en retard ou peu avancés.",
+        "Alerte sur le tableau de bord lorsqu'un dossier dépasse son échéance.",
+        "L'assistant IA peut résumer les dossiers, les retards et les oublis.",
+      ]),
+      note(
+        "info",
+        "Un dossier terminé peut être rouvert si une tâche a été oubliée. Un dossier annulé reste conservé.",
+      ),
+      note(
+        "warning",
+        "La Vague 1 suit les tâches mais ne crée pas encore automatiquement les comptes Active Directory ni les affectations de matériel. Ces actions restent manuelles ou assistées.",
+      ),
+    ],
+  },
+  {
     slug: "parc-informatique",
     title: "Parc informatique",
     summary: "Exploiter les fiches équipements, les statuts, le QR code et les données WAPT.",
