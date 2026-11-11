@@ -11,8 +11,9 @@ from app.schemas.ai import (
     AiConfigUpdate,
     AiStatusRead,
     AiTestResponse,
+    AiToolInfo,
 )
-from app.services import ai_service
+from app.services import ai_service, ai_tools_service
 
 router = APIRouter(prefix="/ai", tags=["Assistant IA"])
 admin_router = APIRouter(prefix="/admin/ai", tags=["Administration assistant IA"])
@@ -24,6 +25,13 @@ def get_status(
     db: Session = Depends(get_db),
 ) -> AiStatusRead:
     return ai_service.get_status(db)
+
+
+@router.get("/tools", response_model=list[AiToolInfo])
+def list_tools(
+    actor: User = Depends(require_permission("ai.use")),
+) -> list[dict[str, str]]:
+    return ai_tools_service.list_tools(actor)
 
 
 @router.post("/chat", response_model=AiChatResponse)

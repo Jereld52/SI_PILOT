@@ -28,6 +28,7 @@ from app.schemas.ai import (
     AiStatusRead,
     AiTestResponse,
 )
+from app.services import ai_tools_service
 from app.services.audit_service import write_audit
 from fastapi import Request
 from sqlalchemy import func, select
@@ -864,6 +865,7 @@ def _record_run(
     status: str,
     duration_ms: int,
     context: AiContext | None = None,
+    tools_used: list[str] | None = None,
     response_text: str | None = None,
     http_status: int | None = None,
     error_code: str | None = None,
@@ -875,6 +877,7 @@ def _record_run(
             {
                 "include_fleet_context": include_context,
                 "context": context.model_dump(mode="json") if context else None,
+                "tools_used": tools_used or [],
             }
         ),
         request_summary=request_summary[:500],
@@ -942,21 +945,37 @@ def chat(
     use_context = (
         config.include_fleet_context if include_context is None else include_context
     )
+    summary = next(
+        (message.content for message in messages if message.role == "user"),
+        "Question assistant",
+    )
+    last_user_message = next(
+        (
+            message.content
+            for message in reversed(messages)
+            if message.role == "user"
+        ),
+        summary,
+    )
+    tool_results, tools_used = ai_tools_service.run_tools(
+        db, actor, last_user_message
+    )
     system_content = SYSTEM_PROMPT
     if use_context:
         system_content = f"{SYSTEM_PROMPT}\n\n{_fleet_context(db)}"
     context_text = _context_block(db, context, actor)
     if context_text:
         system_content = f"{system_content}\n\n{context_text}"
+    if tool_results:
+        system_content = (
+            f"{system_content}\n\nRésultats d'outils (lecture seule, extraits) :\n"
+            f"{ai_tools_service.format_tool_results(tool_results)}"
+        )
     payload_messages: list[dict[str, str]] = [
         {"role": "system", "content": system_content}
     ]
     for message in messages[-12:]:
         payload_messages.append({"role": message.role, "content": message.content})
-    summary = next(
-        (message.content for message in messages if message.role == "user"),
-        "Question assistant",
-    )
     started = time.perf_counter()
     try:
         answer, usage = _complete(config, payload_messages)
@@ -970,6 +989,7 @@ def chat(
             status="error",
             duration_ms=duration,
             context=context,
+            tools_used=tools_used,
             error_code=type(exc).__name__,
         )
         raise
@@ -982,6 +1002,7 @@ def chat(
         status="success",
         duration_ms=duration,
         context=context,
+        tools_used=tools_used,
         response_text=answer,
         http_status=200,
     )
@@ -991,4 +1012,5 @@ def chat(
         provider=config.provider,
         duration_ms=duration,
         usage=usage,
+        tools_used=tools_used,
     )

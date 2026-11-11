@@ -1,6 +1,7 @@
 from app.db.session import SessionLocal
 from app.models.ai import AiRun
-from app.services import ai_service
+from app.models.auth import User
+from app.services import ai_service, ai_tools_service
 from sqlalchemy import select
 
 
@@ -226,6 +227,91 @@ def test_ollama_adapter_disables_thinking(monkeypatch):
     assert captured["payload"]["stream"] is False
     assert text == "Bonjour"
     assert usage == {"prompt_tokens": 10, "completion_tokens": 3, "total_tokens": 13}
+
+
+def test_tool_router_selects_relevant_tools():
+    with SessionLocal() as db:
+        actor = db.scalar(select(User).where(User.email == "admin.test@example.org"))
+        assert actor is not None
+
+        broken = [call[0] for call in ai_tools_service.select_tools(
+            "Quels postes sont en panne ?", actor
+        )]
+        assert "assets_broken" in broken
+
+        overdue = [call[0] for call in ai_tools_service.select_tools(
+            "Quels tickets sont en retard ?", actor
+        )]
+        assert "tickets_overdue" in overdue
+
+        updates = [call[0] for call in ai_tools_service.select_tools(
+            "Quelles mises à jour WAPT sont en attente ?", actor
+        )]
+        assert "software_updates" in updates
+
+        user = [call[0] for call in ai_tools_service.select_tools(
+            "Qui utilise le poste PORT-PN001 ?", actor
+        )]
+        assert "agent_lookup" in user or "search_assets" in user
+
+
+def test_ai_tools_endpoint(admin_client):
+    client, _ = admin_client
+    response = client.get("/api/v1/ai/tools")
+    assert response.status_code == 200, response.text
+    keys = {tool["key"] for tool in response.json()}
+    assert {"assets_broken", "tickets_overdue", "software_updates", "contracts_expiring"} <= keys
+
+
+def test_ai_chat_uses_tools(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    client.put(
+        "/api/v1/admin/ai/config",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "provider": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4.1-mini",
+            "api_key": None,
+            "include_fleet_context": True,
+        },
+    )
+    categories = client.get("/api/v1/asset-categories").json()
+    desktop = next(item for item in categories if item["code"] == "desktop")
+    created = client.post(
+        "/api/v1/assets",
+        headers=csrf_headers(csrf),
+        json={
+            "name": "Poste en panne IA",
+            "hostname": "IA-BROKEN-01",
+            "category_id": desktop["id"],
+            "status": "broken",
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    captured: dict = {}
+
+    def fake_complete(config, messages, max_tokens=None):  # noqa: ANN001, ARG001
+        captured["messages"] = messages
+        return ("Un poste est en panne.", None)
+
+    monkeypatch.setattr(ai_service, "_complete", fake_complete)
+    response = client.post(
+        "/api/v1/ai/chat",
+        headers=csrf_headers(csrf),
+        json={
+            "messages": [{"role": "user", "content": "Quels postes sont en panne ?"}],
+            "include_context": True,
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "assets_broken" in body["tools_used"]
+    system = captured["messages"][0]["content"]
+    assert "Équipements en panne" in system
+    assert "IA-BROKEN-01" in system
 
 
 def test_fleet_context_contains_sections():

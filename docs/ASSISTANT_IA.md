@@ -40,6 +40,20 @@ Lorsque l'option est active, SI PILOT ajoute au prompt un résumé agrégé :
 
 Les secrets, clés d'API, mots de passe et données personnelles détaillées ne sont pas inclus.
 
+### 3 bis. Outils de lecture
+
+L'assistant sélectionne automatiquement des outils en lecture seule selon la question :
+
+- vue d'ensemble du parc, recherche d'équipements, pannes, renouvellements, garanties ;
+- demandes ouvertes, demandes en retard, recherche de demandes ;
+- mises à jour WAPT, logiciels installés sur un poste ;
+- contrats à échéance, partages réseau, incidents de sécurité, certificats ;
+- infrastructure, utilisateurs et agents, activité récente.
+
+Chaque outil vérifie les permissions et applique la portée de données (`all`, `service`, `own`)
+pour les équipements et les demandes. Les résultats sont tronqués et les outils utilisés sont
+affichés dans la réponse.
+
 ## 4. Usages pour la gestion du parc
 
 - Bilan mensuel du parc et synthèse pour la direction.
@@ -62,6 +76,7 @@ Les secrets, clés d'API, mots de passe et données personnelles détaillées ne
 ## 6. API
 
 - `GET /api/v1/ai/status` : état de l'intégration (`ai.use`).
+- `GET /api/v1/ai/tools` : outils disponibles selon les permissions (`ai.use`).
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
 - `GET /api/v1/admin/ai/config` : configuration (`ai.configure`).
 - `PUT /api/v1/admin/ai/config` : mise à jour (`ai.configure`).

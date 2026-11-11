@@ -26,7 +26,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { ApiError, apiFetch } from "@/lib/api";
-import type { AiChatResponse, AiContextRef, AiStatus } from "@/types/api";
+import type {
+  AiChatResponse,
+  AiContextRef,
+  AiStatus,
+  AiToolInfo,
+} from "@/types/api";
 
 interface AiDialogProps {
   open: boolean;
@@ -38,14 +43,17 @@ interface AiDialogProps {
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  tools?: string[];
 }
 
 const genericPrompts = [
   "Fais-moi un bilan du parc informatique.",
-  "Quels postes sont en panne ou à renouveler ?",
+  "Quels postes sont en panne ?",
+  "Quels équipements sont à renouveler ou hors garantie ?",
   "Quelles mises à jour WAPT sont en attente ?",
+  "Quels tickets sont en retard ?",
   "Quels contrats arrivent à échéance ?",
-  "Quelles demandes IT sont prioritaires ?",
+  "Quels incidents de sécurité sont ouverts ?",
   "Prépare un bilan mensuel pour la direction.",
 ];
 
@@ -179,7 +187,15 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     queryFn: () => apiFetch<AiStatus>("/ai/status"),
     enabled: open && canUse,
   });
+  const toolsQuery = useQuery({
+    queryKey: ["ai", "tools"],
+    queryFn: () => apiFetch<AiToolInfo[]>("/ai/tools"),
+    enabled: open && canUse,
+    staleTime: 5 * 60_000,
+  });
   const status = statusQuery.data;
+  const tools = toolsQuery.data ?? [];
+  const toolLabels = new Map(tools.map((tool) => [tool.key, tool.label]));
 
   useEffect(() => {
     if (!open) return;
@@ -218,7 +234,14 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     setSending(true);
     try {
       const result = await complete([userMessage]);
-      setMessages([userMessage, { role: "assistant", content: result.message }]);
+      setMessages([
+        userMessage,
+        {
+          role: "assistant",
+          content: result.message,
+          tools: result.tools_used,
+        },
+      ]);
     } catch (caught) {
       setError(
         caught instanceof ApiError ? caught.message : "L'assistant IA est indisponible.",
@@ -247,7 +270,14 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     setSending(true);
     try {
       const result = await complete(next);
-      setMessages([...next, { role: "assistant", content: result.message }]);
+      setMessages([
+        ...next,
+        {
+          role: "assistant",
+          content: result.message,
+          tools: result.tools_used,
+        },
+      ]);
     } catch (caught) {
       setError(
         caught instanceof ApiError ? caught.message : "L'assistant IA est indisponible.",
@@ -418,6 +448,29 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                       </button>
                     ))}
                   </div>
+                  {tools.length > 0 ? (
+                    <details className="rounded-lg border border-border-soft bg-background/40 px-2.5 py-2">
+                      <summary className="cursor-pointer text-[10px] font-medium text-muted">
+                        Outils de lecture disponibles ({tools.length})
+                      </summary>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {tools.map((tool) => (
+                          <Badge
+                            key={tool.key}
+                            tone="neutral"
+                            className="text-[9px]"
+                            title={tool.description}
+                          >
+                            {tool.label}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-[9px] leading-4 text-muted-2">
+                        L'assistant choisit automatiquement les outils utiles et respecte vos
+                        permissions. Aucune donnée n'est modifiée.
+                      </p>
+                    </details>
+                  ) : null}
                 </div>
               ) : (
                 messages.map((message, index) => (
@@ -435,21 +488,35 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                       message.content
                     )}
                     {message.role === "assistant" ? (
-                      <div className="mt-1.5 flex justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-1.5 text-[10px] text-muted-2"
-                          onClick={() => void copyMessage(message.content, index)}
-                        >
-                          {copiedIndex === index ? (
-                            <Check className="h-3 w-3" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
-                          )}
-                          Copier
-                        </Button>
-                      </div>
+                      <>
+                        {message.tools && message.tools.length > 0 ? (
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1 border-t border-border-soft/60 pt-1.5">
+                            <span className="text-[9px] uppercase tracking-wide text-muted-2">
+                              Outils :
+                            </span>
+                            {message.tools.map((key) => (
+                              <Badge key={key} tone="neutral" className="text-[9px]">
+                                {toolLabels.get(key) ?? key}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="mt-1.5 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-1.5 text-[10px] text-muted-2"
+                            onClick={() => void copyMessage(message.content, index)}
+                          >
+                            {copiedIndex === index ? (
+                              <Check className="h-3 w-3" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                            Copier
+                          </Button>
+                        </div>
+                      </>
                     ) : null}
                   </div>
                 ))

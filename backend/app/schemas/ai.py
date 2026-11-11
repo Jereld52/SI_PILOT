@@ -78,3 +78,11 @@ class AiChatResponse(BaseModel):
     provider: str
     duration_ms: int
     usage: dict[str, int] | None = None
+    tools_used: list[str] = Field(default_factory=list)
+
+
+class AiToolInfo(BaseModel):
+    key: str
+    label: str
+    description: str
+    permission: str

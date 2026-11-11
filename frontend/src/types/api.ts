@@ -1800,6 +1800,14 @@ export interface AiChatResponse {
   provider: string;
   duration_ms: number;
   usage: Record<string, number> | null;
+  tools_used: string[];
+}
+
+export interface AiToolInfo {
+  key: string;
+  label: string;
+  description: string;
+  permission: string;
 }
 
 export interface BackupFileItem {

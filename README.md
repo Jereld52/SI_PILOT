@@ -278,6 +278,11 @@ npm run build
   IT ou un poste de la page Logiciels. Contexte ciblé (état, garantie, affectation, mises à jour
   WAPT, description, commentaires, équipements liés), actions rapides, réponses mises en forme et
   copie.
+- **Outils IA de lecture** : l'assistant interroge réellement le parc, les équipements en panne ou
+  à renouveler, les garanties, les demandes ouvertes ou en retard, les mises à jour WAPT, les
+  logiciels d'un poste, les contrats, les partages réseau, les incidents, les certificats,
+  l'infrastructure, les utilisateurs et l'activité récente. Les outils respectent les permissions
+  et les portées de données, et restent en lecture seule.
 - Toute mutation est auditée.
 
 ## 9. Feuille de route

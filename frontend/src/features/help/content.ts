@@ -1038,6 +1038,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Actions rapides : bilan du parc, synthèse du support, mises à jour WAPT, échéances contrats, sécurité.",
         "Analyse d'un poste : risques, renouvellement, mises à jour prioritaires et points d'attention.",
         "Analyse d'une demande : résumé, qualification, priorité, informations manquantes et réponse suggérée.",
+        "Outils de lecture : recherche d'équipements, pannes, renouvellements, garanties, demandes ouvertes ou en retard, mises à jour WAPT, logiciels d'un poste, contrats, partages réseau, incidents, certificats, infrastructure, utilisateurs et activité récente.",
+        "L'assistant choisit automatiquement les outils adaptés à la question, respecte vos permissions et affiche les outils utilisés.",
         "Réponses mises en forme (titres, listes, gras) et bouton de copie.",
       ]),
       note(
