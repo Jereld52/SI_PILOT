@@ -1735,6 +1735,71 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface VeeamConfig {
+  enabled: boolean;
+  base_url: string;
+  username: string;
+  api_version: string;
+  verify_tls: boolean;
+  timeout_seconds: number;
+  password_set: boolean;
+  configured: boolean;
+}
+
+export interface VeeamTestResponse {
+  ok: boolean;
+  message: string;
+  job_count: number;
+}
+
+export interface VeeamJob {
+  id: string;
+  name: string;
+  type: string;
+  disabled: boolean;
+  last_result: string;
+  last_session_at: string | null;
+  last_duration_seconds: number | null;
+  last_message: string | null;
+}
+
+export interface VeeamSession {
+  id: string;
+  name: string;
+  job_id: string;
+  job_name: string;
+  session_type: string;
+  state: string;
+  result: string;
+  message: string | null;
+  creation_time: string | null;
+  end_time: string | null;
+  duration_seconds: number | null;
+  progress_percent: number | null;
+}
+
+export interface VeeamRepository {
+  id: string;
+  name: string;
+  type: string;
+  host: string;
+  path: string;
+  state: string;
+  capacity_bytes: number | null;
+  free_bytes: number | null;
+  used_bytes: number | null;
+  free_percent: number | null;
+}
+
+export interface VeeamOverview {
+  generated_at: string;
+  summary: Record<string, number | string | null>;
+  jobs: VeeamJob[];
+  sessions: VeeamSession[];
+  repositories: VeeamRepository[];
+  notes: string[];
+}
+
 export interface ChecklistTemplateItem {
   id: string;
   position: number;

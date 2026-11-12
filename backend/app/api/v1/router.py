@@ -39,6 +39,7 @@ from app.api.v1 import (
     suppliers,
     system,
     tickets,
+    veeam,
     wapt,
     wapt_software,
 )
@@ -83,6 +84,8 @@ api_router.include_router(documents.router)
 api_router.include_router(calendar.router)
 api_router.include_router(communication.router)
 api_router.include_router(ldap.router)
+api_router.include_router(veeam.router)
+api_router.include_router(veeam.admin_router)
 api_router.include_router(wapt.router)
 api_router.include_router(wapt_software.router)
 api_router.include_router(statistics.router)

@@ -1104,6 +1104,43 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "veeam",
+    title: "Sauvegardes Veeam",
+    summary: "Connecter Veeam Backup & Replication 12 et suivre les jobs, sessions et dépôts.",
+    category: "administration",
+    tags: ["Veeam", "sauvegarde", "backup", "API REST", "jobs", "dépôts", "VBR"],
+    blocks: [
+      p(
+        "Administration → Connexion Veeam raccorde SI PILOT à l'API REST de Veeam Backup & Replication 12. La page Infrastructure → Sauvegardes affiche ensuite les jobs, les sessions et les dépôts en lecture seule.",
+      ),
+      steps([
+        "Vérifier que le service API REST est démarré sur le serveur VBR (port 9419 par défaut).",
+        "Créer un compte de service Veeam disposant au minimum du rôle Veeam Backup Viewer.",
+        "Dans Administration → Connexion Veeam, saisir l'URL `https://serveur-veeam:9419`, l'identifiant et le mot de passe.",
+        "Choisir la version d'API : `1.2-rev1` pour VBR 12.0, `1.3-rev1` pour VBR 12.1 et 12.3.",
+        "Enregistrer, tester la connexion, puis ouvrir Infrastructure → Sauvegardes.",
+      ]),
+      list([
+        "Jobs : nom, type, dernier résultat, date et durée de la dernière session, message d'erreur.",
+        "Sessions : historique des 25 dernières exécutions avec état, durée et message.",
+        "Dépôts : capacité, espace libre et taux d'occupation.",
+        "Points d'attention : jobs en échec ou en avertissement, dépôts dont l'espace libre est inférieur à 15 %.",
+        "L'assistant IA peut répondre aux questions de sauvegarde grâce à l'outil `veeam_backup_status`.",
+      ]),
+      p(
+        "Les données sont mises en cache quelques minutes pour éviter d'interroger Veeam à chaque ouverture. Le bouton Actualiser force une nouvelle lecture.",
+      ),
+      note(
+        "warning",
+        "Cette intégration est strictement en lecture seule : aucun lancement, arrêt ou restauration de job depuis SI PILOT. Les actions restent à réaliser dans la console Veeam.",
+      ),
+      note(
+        "info",
+        "Un compte Veeam Backup Viewer peut se voir refuser la lecture des dépôts. La page reste utilisable : seuls les jobs et sessions sont affichés, avec une note explicative.",
+      ),
+    ],
+  },
+  {
     slug: "ldap-rdm",
     title: "LDAP, Active Directory et RDM",
     summary: "Importer et enrichir les agents et l'infrastructure depuis vos sources.",

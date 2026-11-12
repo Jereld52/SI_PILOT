@@ -15,7 +15,7 @@ from app.models.network import NetworkShare
 from app.models.organization import Agent, ChecklistRun
 from app.models.security import Certificate, SecurityIncident
 from app.models.tickets import Ticket, TicketStatus
-from app.services import onboarding_service
+from app.services import onboarding_service, veeam_service
 from sqlalchemy import false, func, or_, select
 from sqlalchemy.orm import Session
 
@@ -143,6 +143,12 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "label": "Arrivées et départs",
         "description": "Dossiers d'arrivée et de départ, retards et oublis.",
         "permission": "agents.read",
+    },
+    {
+        "key": "veeam_backup_status",
+        "label": "Sauvegardes Veeam",
+        "description": "Jobs, sessions, échecs et dépôts Veeam.",
+        "permission": "security.read",
     },
     {
         "key": "recent_activity",
@@ -649,6 +655,41 @@ def onboarding_briefing(db: Session, actor: User) -> dict[str, Any]:
     return _result("onboarding_briefing", items)
 
 
+def veeam_backup_status(db: Session, actor: User) -> dict[str, Any]:
+    try:
+        overview = veeam_service.get_overview(db)
+    except Exception as exc:  # noqa: BLE001 - le contexte doit rester exploitable
+        return _result(
+            "veeam_backup_status",
+            [],
+            note=f"Veeam indisponible ou non configuré : {exc}",
+        )
+    summary = overview.summary
+    items = [
+        (
+            f"Jobs: {summary.get('jobs', 0)} | "
+            f"Succès: {summary.get('success_jobs', 0)} | "
+            f"Avertissements: {summary.get('warning_jobs', 0)} | "
+            f"Échecs: {summary.get('failed_jobs', 0)} | "
+            f"Dépôts: {summary.get('repositories', 0)} | "
+            f"Dernière session: {summary.get('last_session_at') or '—'}"
+        )
+    ]
+    for job in overview.jobs:
+        if job.last_result.lower() in {"failed", "warning"}:
+            items.append(
+                f"{job.name} | {job.last_result} | "
+                f"{job.last_session_at or '—'} | {job.last_message or ''}"
+            )
+    for repository in overview.repositories:
+        if repository.free_percent is not None and repository.free_percent < 15:
+            items.append(
+                f"Dépôt {repository.name} | {repository.free_percent}% libre"
+            )
+    items.extend(overview.notes)
+    return _result("veeam_backup_status", items)
+
+
 def recent_activity(db: Session, actor: User, limit: int = 15) -> dict[str, Any]:
     rows = db.scalars(
         select(AuditLog).order_by(AuditLog.occurred_at.desc()).limit(limit)
@@ -679,6 +720,7 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "infrastructure_equipment": infrastructure_equipment,
     "agent_lookup": agent_lookup,
     "onboarding_briefing": onboarding_briefing,
+    "veeam_backup_status": veeam_backup_status,
     "recent_activity": recent_activity,
 }
 
@@ -733,6 +775,8 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("infrastructure_equipment", query=query)
     if any(term in text for term in ("arrivée", "arrivee", "départ", "depart", "onboarding", "offboarding", "intégration", "integration", "dossier", "checklist")):
         add("onboarding_briefing")
+    if any(term in text for term in ("sauvegarde", "veeam", "backup", "restauration")):
+        add("veeam_backup_status")
     if any(term in text for term in ("qui est", "qui utilise", "utilisateur", "agent", "affecté", "affecte", "annuaire")):
         add("agent_lookup", query=query)
     if any(term in text for term in ("récent", "recent", "changement", "activité", "activite", "audit", "dernier")):

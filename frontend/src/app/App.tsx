@@ -29,6 +29,11 @@ const AdminWaptPage = lazy(() =>
     default: module.AdminWaptPage,
   })),
 );
+const AdminVeeamPage = lazy(() =>
+  import("@/features/admin/AdminVeeamPage").then((module) => ({
+    default: module.AdminVeeamPage,
+  })),
+);
 const AdminBackupPage = lazy(() =>
   import("@/features/admin/AdminBackupPage").then((module) => ({
     default: module.AdminBackupPage,
@@ -173,6 +178,11 @@ const SecurityPage = lazy(() =>
     default: module.SecurityPage,
   })),
 );
+const VeeamBackupsPage = lazy(() =>
+  import("@/features/backups/VeeamBackupsPage").then((module) => ({
+    default: module.VeeamBackupsPage,
+  })),
+);
 const StatisticsPage = lazy(() =>
   import("@/features/statistics/StatisticsPage").then((module) => ({
     default: module.StatisticsPage,
@@ -296,6 +306,14 @@ export function App() {
               element={
                 <RequirePermission permission="admin.settings.read">
                   <AdminWaptPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="veeam"
+              element={
+                <RequirePermission permission="admin.settings.read">
+                  <AdminVeeamPage />
                 </RequirePermission>
               }
             />
@@ -517,6 +535,15 @@ export function App() {
             element={
               <RequirePermission permission="security.read">
                 <SecurityPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="sauvegardes"
+            element={
+              <RequirePermission permission="security.read">
+                <VeeamBackupsPage />
               </RequirePermission>
             }
           />

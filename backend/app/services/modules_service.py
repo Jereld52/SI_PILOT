@@ -170,6 +170,14 @@ MODULE_DEFINITIONS: tuple[ModuleDefinition, ...] = (
         "Infrastructure",
     ),
     ModuleDefinition(
+        "backups",
+        "Sauvegardes",
+        "Suivi des jobs, sessions et dépôts Veeam.",
+        "/sauvegardes",
+        "security.read",
+        "Infrastructure",
+    ),
+    ModuleDefinition(
         "suppliers",
         "Fournisseurs & licences",
         "Fournisseurs, contacts, licences et sièges.",

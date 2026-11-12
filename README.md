@@ -58,6 +58,9 @@ se configurent depuis l'administration.
 - **Sauvegarde et restauration** depuis Administration : export de la configuration JSON, dump
   PostgreSQL, archive ZIP complète (base, configuration, fichiers), import de configuration et
   restauration de base avec sauvegarde de sécurité automatique.
+- **Sauvegardes Veeam** : connexion en lecture seule à l'API REST de Veeam Backup & Replication 12
+  (jobs, sessions, dépôts, alertes), page Infrastructure → Sauvegardes, cache court et outil IA
+  `veeam_backup_status`. Voir [`docs/VEEAM.md`](docs/VEEAM.md).
 - **Modules activables** : chaque module du menu peut être désactivé depuis Administration → Modules.
   Un module désactivé disparaît du menu, son URL directe affiche un écran dédié et le tableau de
   bord masque sa tuile. Tous les modules sont actifs par défaut et les données sont conservées.
