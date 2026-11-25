@@ -11,6 +11,7 @@ from app.api.v1 import (
     branding,
     budget,
     calendar,
+    commercial,
     communication,
     contracts,
     dashboard,
@@ -77,6 +78,7 @@ api_router.include_router(tickets.router)
 api_router.include_router(interventions.router)
 api_router.include_router(rgpd.router)
 api_router.include_router(contracts.router)
+api_router.include_router(commercial.router)
 api_router.include_router(budget.router)
 api_router.include_router(infrastructure.router)
 api_router.include_router(network_shares.router)

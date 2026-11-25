@@ -221,6 +221,11 @@ const SuppliersPage = lazy(() =>
     default: module.SuppliersPage,
   })),
 );
+const CommercialDocumentsPage = lazy(() =>
+  import("@/features/commercial/CommercialDocumentsPage").then((module) => ({
+    default: module.CommercialDocumentsPage,
+  })),
+);
 const TicketsPage = lazy(() =>
   import("@/features/tickets/TicketsPage").then((module) => ({
     default: module.TicketsPage,
@@ -469,6 +474,24 @@ export function App() {
             element={
               <RequirePermission permission="suppliers.read">
                 <SuppliersPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="devis"
+            element={
+              <RequirePermission permission="suppliers.read">
+                <CommercialDocumentsPage kind="quote" />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="bons-commande"
+            element={
+              <RequirePermission permission="suppliers.read">
+                <CommercialDocumentsPage kind="purchase_order" />
               </RequirePermission>
             }
           />

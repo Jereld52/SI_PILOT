@@ -4,8 +4,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-DocumentKind = Literal["contract", "quote", "invoice", "license", "other"]
-DocumentTarget = Literal["documentation", "contract", "license", "invoice"]
+DocumentKind = Literal[
+    "contract", "quote", "purchase_order", "invoice", "license", "other"
+]
+DocumentTarget = Literal[
+    "documentation", "quote", "purchase_order", "contract", "license", "invoice"
+]
 
 
 class DocumentAnalysisRead(BaseModel):

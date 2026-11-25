@@ -6,7 +6,7 @@ import time
 from datetime import UTC, date, datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from app.core.config import settings
@@ -16,6 +16,7 @@ from app.models.assets import Supplier
 from app.models.auth import User
 from app.models.budget import BudgetLine
 from app.schemas.budget import BudgetInvoiceCreate
+from app.schemas.commercial import CommercialDocumentCreate
 from app.schemas.contracts import ContractCreate
 from app.schemas.document_ai import (
     DocumentAnalysisRead,
@@ -28,6 +29,7 @@ from app.schemas.suppliers import SupplierCreate
 from app.services import (
     ai_service,
     budget_service,
+    commercial_service,
     contracts_service,
     documents_service,
     licenses_service,
@@ -127,12 +129,20 @@ def _number(value: Any) -> float | None:
 def _suggested_targets(kind: str, raw: Any) -> list[str]:
     defaults = {
         "contract": ["contract", "documentation"],
-        "quote": ["documentation", "invoice"],
+        "quote": ["quote", "documentation"],
+        "purchase_order": ["purchase_order", "documentation"],
         "invoice": ["invoice", "documentation"],
         "license": ["license", "documentation"],
         "other": ["documentation"],
     }
-    allowed = {"documentation", "contract", "license", "invoice"}
+    allowed = {
+        "documentation",
+        "quote",
+        "purchase_order",
+        "contract",
+        "license",
+        "invoice",
+    }
     values = [str(item) for item in raw] if isinstance(raw, list) else []
     result = [item for item in values if item in allowed]
     for item in defaults.get(kind, ["documentation"]):
@@ -165,11 +175,11 @@ def analyze(
     system = (
         "Tu analyses un document administratif ou informatique pour SI PILOT. "
         "Réponds UNIQUEMENT avec un objet JSON, sans texte autour. Champs attendus : "
-        '"document_type" (contract, quote, invoice, license ou other), '
+        '"document_type" (contract, quote, purchase_order, invoice, license ou other), '
         '"title", "supplier", "reference", "start_date" (AAAA-MM-JJ ou null), '
         '"end_date", "amount_ht" (nombre ou null), "amount_ttc", "vat_rate", '
-        '"summary" (2 à 4 phrases), "suggested_targets" (documentation, contract, '
-        'license, invoice), "confidence" (0 à 1), "warnings" (liste). '
+        '"summary" (2 à 4 phrases), "suggested_targets" (documentation, quote, '
+        'purchase_order, contract, license, invoice), "confidence" (0 à 1), "warnings" (liste). '
         "N'invente pas de montant, de date ou de référence. Si une information est "
         "absente, mets null. Le document peut être un contrat, un devis, une facture, "
         "une licence logicielle ou un autre document."
@@ -200,7 +210,14 @@ def analyze(
         raise
     payload = _extract_json(answer)
     kind = str(payload.get("document_type") or "other").lower()
-    if kind not in {"contract", "quote", "invoice", "license", "other"}:
+    if kind not in {
+        "contract",
+        "quote",
+        "purchase_order",
+        "invoice",
+        "license",
+        "other",
+    }:
         kind = "other"
     warnings = payload.get("warnings")
     warning_list = (
@@ -350,11 +367,46 @@ def integrate(
     if meta.get("created_by") != str(actor.id) and not has_permission(actor, "admin.settings.manage"):
         raise PermissionDeniedError("Cet import ne vous appartient pas.")
     supplier_id = None
-    if payload.target in {"contract", "invoice"}:
+    if payload.target in {"contract", "invoice", "quote", "purchase_order"}:
         supplier_id = _supplier_id(db, payload.supplier, actor, request)
     link = "/documentation"
     message = "Document enregistré dans la documentation."
-    if payload.target == "contract":
+    commercial_document_id: UUID | None = None
+    if payload.target in {"quote", "purchase_order"}:
+        if not has_permission(actor, "suppliers.manage"):
+            raise PermissionDeniedError("Vous ne pouvez pas créer de devis ou de bon de commande.")
+        if supplier_id is None:
+            raise ValidationAppError("Renseignez le fournisseur du document.")
+        kind: Literal["quote", "purchase_order"] = (
+            "quote" if payload.target == "quote" else "purchase_order"
+        )
+        created = commercial_service.create_document(
+            db,
+            CommercialDocumentCreate(
+                kind=kind,
+                supplier_id=supplier_id,
+                reference=payload.reference or "",
+                object=payload.title,
+                status="draft",
+                issue_date=payload.start_date or date.today(),
+                valid_until=payload.end_date if kind == "quote" else None,
+                expected_date=payload.end_date if kind == "purchase_order" else None,
+                amount_ht=payload.amount_ht,
+                amount_ttc=payload.amount_ttc,
+                vat_rate=payload.vat_rate,
+                notes=payload.summary,
+            ),
+            actor=actor,
+            request=request,
+        )
+        commercial_document_id = created.id
+        link = "/devis" if kind == "quote" else "/bons-commande"
+        message = (
+            f"Devis {created.reference} créé."
+            if kind == "quote"
+            else f"Bon de commande {created.reference} créé."
+        )
+    elif payload.target == "contract":
         if not has_permission(actor, "contracts.create"):
             raise PermissionDeniedError("Vous ne pouvez pas créer de contrat.")
         if supplier_id is None:
@@ -442,6 +494,10 @@ def integrate(
     for item in token_dir.iterdir():
         item.unlink(missing_ok=True)
     token_dir.rmdir()
+    if commercial_document_id is not None:
+        document_row = commercial_service.get_document(db, commercial_document_id)
+        document_row.document_id = document_id
+        db.commit()
     return DocumentIntegrationRead(
         message=f"{message} Fichier source archivé dans la documentation.",
         link=link,

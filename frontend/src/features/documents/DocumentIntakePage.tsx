@@ -36,6 +36,7 @@ import type {
 const typeLabels: Record<DocumentAiKind, string> = {
   contract: "Contrat",
   quote: "Devis",
+  purchase_order: "Bon de commande",
   invoice: "Facture",
   license: "Licence",
   other: "Autre document",
@@ -43,6 +44,8 @@ const typeLabels: Record<DocumentAiKind, string> = {
 
 const targetLabels: Record<DocumentAiTarget, string> = {
   documentation: "Documentation",
+  quote: "Devis",
+  purchase_order: "Bon de commande",
   contract: "Contrat",
   license: "Licence",
   invoice: "Facture budgétaire",
@@ -66,6 +69,7 @@ export function DocumentIntakePage() {
   const canCreateContract = hasPermission("contracts.create");
   const canCreateLicense = hasPermission("licenses.manage");
   const canCreateInvoice = hasPermission("budget.update");
+  const canManageCommercial = hasPermission("suppliers.manage");
   const canReadBudget = hasPermission("budget.read");
 
   const [file, setFile] = useState<File | null>(null);
@@ -103,6 +107,8 @@ export function DocumentIntakePage() {
   const availableTargets = (analysis?.suggested_targets ?? ["documentation"]).filter(
     (item) =>
       (item === "documentation" && canCreate) ||
+      (item === "quote" && canManageCommercial) ||
+      (item === "purchase_order" && canManageCommercial) ||
       (item === "contract" && canCreateContract) ||
       (item === "license" && canCreateLicense) ||
       (item === "invoice" && canCreateInvoice && canReadBudget),
@@ -135,6 +141,8 @@ export function DocumentIntakePage() {
       setSummary(data.summary);
       const firstTarget = data.suggested_targets.find((item) =>
         item === "documentation" && canCreate ||
+        item === "quote" && canManageCommercial ||
+        item === "purchase_order" && canManageCommercial ||
         item === "contract" && canCreateContract ||
         item === "license" && canCreateLicense ||
         item === "invoice" && canCreateInvoice && canReadBudget,

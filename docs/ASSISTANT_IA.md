@@ -86,7 +86,7 @@ affichés dans la réponse.
 - `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action : `actions.create`, `tickets.create`, `meetings.manage` ou `communications.manage`).
 - `GET /api/v1/admin/ai/models` : liste des modèles du fournisseur (`ai.configure`).
 - `POST /api/v1/documents/analyze` : analyse IA d'un document (`documents.create` + `ai.use`).
-- `POST /api/v1/documents/intake/{token}/integrate` : intégration du document analysé (`documents.create` + permission du module cible).
+- `POST /api/v1/documents/intake/{token}/integrate` : intégration du document analysé vers la documentation, un devis, un bon de commande, un contrat, une licence ou une facture budgétaire (`documents.create` + permission du module cible).
 - `POST /api/v1/tickets/{id}/ai/triage` : résumé, qualification, doublons et réponse suggérée (`tickets.read`).
 - `GET /api/v1/admin/ai/config` : configuration (`ai.configure`).
 - `PUT /api/v1/admin/ai/config` : mise à jour (`ai.configure`).

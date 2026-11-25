@@ -1174,6 +1174,29 @@ export interface ContractCategoryItem {
   is_active: boolean;
 }
 
+export interface CommercialDocumentItem {
+  id: string;
+  kind: "quote" | "purchase_order";
+  reference: string;
+  object: string;
+  supplier_id: string;
+  supplier: { id: string; name: string };
+  status: string;
+  issue_date: string;
+  valid_until: string | null;
+  expected_date: string | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  vat_rate: number | null;
+  budget_line_id: string | null;
+  contract_id: string | null;
+  document_id: string | null;
+  source_document_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ContractItem {
   id: string;
   supplier_id: string;
@@ -1669,8 +1692,20 @@ export interface DocumentDetailItem extends DocumentItem {
   versions: DocumentVersionItem[];
 }
 
-export type DocumentAiKind = "contract" | "quote" | "invoice" | "license" | "other";
-export type DocumentAiTarget = "documentation" | "contract" | "license" | "invoice";
+export type DocumentAiKind =
+  | "contract"
+  | "quote"
+  | "purchase_order"
+  | "invoice"
+  | "license"
+  | "other";
+export type DocumentAiTarget =
+  | "documentation"
+  | "quote"
+  | "purchase_order"
+  | "contract"
+  | "license"
+  | "invoice";
 
 export interface DocumentAiAnalysis {
   token: string;

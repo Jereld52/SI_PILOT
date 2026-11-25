@@ -40,6 +40,9 @@ se configurent depuis l'administration.
 - Téléphonie mobile : inventaire des 82 lignes, titulaires, forfaits et terminaux ; PIN/PUK
   chiffrés avec accès contrôlé et audité. Création, modification et suppression des lignes.
 - Fournisseurs, licences, sièges et coûts annuels.
+- **Achats** : devis et bons de commande rattachés aux fournisseurs, avec références DEV/BC,
+  montants HT/TTC, TVA, statuts, conversion d'un devis accepté en bon de commande et suivi des
+  livraisons.
 - **Stock IT** dédié : claviers, souris, écrans, casques, stations d'accueil, câbles et
   consommables, avec quantités, seuils d'alerte, valeur, mouvements et historique.
 - **Réservations de matériel** : vidéoprojecteurs, sonorisation, écrans de projection, mallette
@@ -107,9 +110,9 @@ se configurent depuis l'administration.
   propose une catégorie et une priorité, détecte les doublons et rédige une réponse.
 - **Actions IA assistées** : création d'une action de suivi, d'une demande IT, d'une réunion ou
   d'un brouillon de communication, avec aperçu et confirmation.
-- **Import intelligent de documents** : analyse IA de contrats, devis, factures et licences,
-  extraction des dates et montants, création du contrat, de la licence ou de la facture
-  budgétaire, et archivage du fichier source dans la documentation.
+- **Import intelligent de documents** : analyse IA de contrats, devis, bons de commande, factures
+  et licences, extraction des dates et montants, création du contrat, du devis, du bon de commande,
+  de la licence ou de la facture budgétaire, et archivage du fichier source dans la documentation.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
   répartitions et détail.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, sécurité,

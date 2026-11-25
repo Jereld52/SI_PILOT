@@ -37,6 +37,7 @@ from app.models.budget import (
     BudgetLine,
 )
 from app.models.calendar import ActionItem, CalendarEvent
+from app.models.commercial import CommercialDocument
 from app.models.common import Attachment, Comment, DocumentSequence, UserPreference
 from app.models.communication import (
     Communication,
@@ -137,6 +138,7 @@ __all__ = [
     "BudgetInvoice",
     "BudgetLine",
     "CalendarEvent",
+    "CommercialDocument",
     "Certificate",
     "ChecklistRun",
     "ChecklistRunItem",

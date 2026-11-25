@@ -676,6 +676,34 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "devis-bons-commande",
+    title: "Devis et bons de commande",
+    summary: "Préparer un devis, le convertir en bon de commande et suivre les achats.",
+    category: "gestion",
+    tags: ["devis", "bon de commande", "achat", "fournisseur", "commande", "budget"],
+    blocks: [
+      p(
+        "La section Achats & contrats regroupe les fournisseurs, les devis, les bons de commande et les contrats.",
+      ),
+      list([
+        "Devis : référence DEV-AAAA-NNNN, fournisseur, objet, date, validité, montants HT/TTC et TVA.",
+        "Bon de commande : référence BC-AAAA-NNNN, fournisseur, objet, date, livraison prévue et montants.",
+        "Statuts des devis : brouillon, envoyé, accepté, refusé, expiré, converti, annulé.",
+        "Statuts des bons de commande : brouillon, envoyé, confirmé, livré, annulé.",
+        "Un devis accepté peut être converti en bon de commande en un clic, avec copie des montants et du fournisseur.",
+        "Les documents peuvent être créés manuellement ou importés depuis Gestion → Import intelligent.",
+      ]),
+      note(
+        "info",
+        "Les permissions utilisées sont suppliers.read pour consulter et suppliers.manage pour créer, modifier, convertir ou annuler.",
+      ),
+      note(
+        "warning",
+        "Un devis converti reste conservé avec le statut Converti. Le bon de commande créé est indépendant et peut être modifié séparément.",
+      ),
+    ],
+  },
+  {
     slug: "fournisseurs-et-licences",
     title: "Fournisseurs et licences",
     summary: "Centraliser les contacts, les contrats fournisseurs et les sièges logiciels.",
