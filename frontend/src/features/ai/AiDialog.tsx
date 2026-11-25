@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
+  CalendarPlus,
   Check,
   Copy,
   LockKeyhole,
   RefreshCw,
   Send,
   Sparkles,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +28,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { ApiError, apiFetch } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import type {
+  AiActionExecuteResponse,
+  AiActionProposal,
   AiChatResponse,
   AiContextRef,
   AiStatus,
@@ -44,9 +49,15 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   tools?: string[];
+  suggestions?: string[];
+  actions?: AiActionProposal[];
+  actionsDone?: boolean;
+  actionsIgnored?: boolean;
 }
 
 const genericPrompts = [
+  "Fais-moi le briefing du jour.",
+  "Prépare le bilan mensuel pour la direction.",
   "Fais-moi un bilan du parc informatique.",
   "Quels postes sont en panne ?",
   "Quels équipements sont à renouveler ou hors garantie ?",
@@ -54,7 +65,7 @@ const genericPrompts = [
   "Quels tickets sont en retard ?",
   "Quels contrats arrivent à échéance ?",
   "Quels incidents de sécurité sont ouverts ?",
-  "Prépare un bilan mensuel pour la direction.",
+  "Prépare une synthèse pour la direction.",
 ];
 
 const contextPrompts: Record<string, string[]> = {
@@ -93,6 +104,13 @@ const contextLabels: Record<string, string> = {
   meeting: "Réunion",
   training: "Formation",
   communication: "Communication",
+};
+
+const actionPriorityLabels: Record<string, string> = {
+  low: "Basse",
+  medium: "Moyenne",
+  high: "Haute",
+  critical: "Critique",
 };
 
 function InlineText({ text }: { text: string }) {
@@ -175,11 +193,13 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [executingAction, setExecutingAction] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoStarted = useRef<string>("");
 
   const canUse = hasPermission("ai.use");
   const canConfigure = hasPermission("ai.configure");
+  const canCreateAction = hasPermission("actions.create");
   const contextKey = context ? `${context.type}:${context.id}` : "general";
 
   const statusQuery = useQuery({
@@ -240,6 +260,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
           role: "assistant",
           content: result.message,
           tools: result.tools_used,
+          suggestions: result.suggestions,
+          actions: result.actions,
         },
       ]);
     } catch (caught) {
@@ -276,6 +298,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
           role: "assistant",
           content: result.message,
           tools: result.tools_used,
+          suggestions: result.suggestions,
+          actions: result.actions,
         },
       ]);
     } catch (caught) {
@@ -303,6 +327,29 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
       window.setTimeout(() => setCopiedIndex(null), 1500);
     } catch {
       toast.error("Copie impossible.");
+    }
+  };
+
+  const executeAction = async (action: AiActionProposal, index: number) => {
+    const key = `${index}-${action.title}`;
+    setExecutingAction(key);
+    try {
+      const result = await apiFetch<AiActionExecuteResponse>("/ai/actions/execute", {
+        method: "POST",
+        body: JSON.stringify(action),
+      });
+      setMessages((current) =>
+        current.map((message, messageIndex) =>
+          messageIndex === index ? { ...message, actionsDone: true } : message,
+        ),
+      );
+      toast.success(result.message);
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Création de l'action impossible.",
+      );
+    } finally {
+      setExecutingAction(null);
     }
   };
 
@@ -466,8 +513,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                         ))}
                       </div>
                       <p className="mt-2 text-[9px] leading-4 text-muted-2">
-                        L'assistant choisit automatiquement les outils utiles et respecte vos
-                        permissions. Aucune donnée n'est modifiée.
+                        Les outils de lecture respectent vos permissions. Les actions proposées
+                        ne sont créées qu'après votre confirmation.
                       </p>
                     </details>
                   ) : null}
@@ -487,6 +534,93 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                     ) : (
                       message.content
                     )}
+                    {message.role === "assistant" &&
+                    message.actions?.length &&
+                    !message.actionsIgnored ? (
+                      <div className="mt-2 space-y-2">
+                        {message.actions.map((action) => (
+                          <div
+                            key={action.title}
+                            className="rounded-lg border border-accent/30 bg-accent/5 p-2"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <p className="text-[11px] font-semibold text-foreground">
+                                  {action.title}
+                                </p>
+                                {action.description ? (
+                                  <p className="mt-0.5 text-[10px] leading-4 text-muted">
+                                    {action.description}
+                                  </p>
+                                ) : null}
+                                <p className="mt-1 text-[9px] text-muted-2">
+                                  Priorité{" "}
+                                  {actionPriorityLabels[action.priority] ?? action.priority}
+                                  {action.due_date
+                                    ? ` · échéance ${formatDate(action.due_date)}`
+                                    : ""}
+                                </p>
+                              </div>
+                              <Badge tone={message.actionsDone ? "success" : "info"}>
+                                {message.actionsDone ? "Action créée" : "Action proposée"}
+                              </Badge>
+                            </div>
+                            {!message.actionsDone ? (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {canCreateAction ? (
+                                  <Button
+                                    size="sm"
+                                    loading={
+                                      executingAction === `${index}-${action.title}`
+                                    }
+                                    onClick={() => void executeAction(action, index)}
+                                  >
+                                    <CalendarPlus className="h-3.5 w-3.5" />
+                                    Créer l'action
+                                  </Button>
+                                ) : (
+                                  <span className="text-[10px] text-warning">
+                                    Permission actions.create requise.
+                                  </span>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    setMessages((current) =>
+                                      current.map((item, itemIndex) =>
+                                        itemIndex === index
+                                          ? { ...item, actionsIgnored: true }
+                                          : item,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  Ignorer
+                                </Button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                    {message.role === "assistant" &&
+                    message.suggestions?.length &&
+                    !sending ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5 border-t border-border-soft/60 pt-2">
+                        {message.suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => void send(suggestion)}
+                            className="rounded-full border border-border-soft bg-background/60 px-2 py-1 text-[10px] text-muted transition-colors hover:border-primary/35 hover:text-foreground"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                     {message.role === "assistant" ? (
                       <>
                         {message.tools && message.tools.length > 0 ? (
@@ -560,7 +694,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
               </div>
               <p className="flex items-start gap-1.5 text-[10px] leading-4 text-muted-2">
                 <LockKeyhole className="mt-0.5 h-3 w-3 shrink-0" />
-                L'assistant ne modifie pas les données. Vérifiez ses réponses avant toute action.
+                L'assistant peut proposer des actions. Elles ne sont créées qu'après votre
+                confirmation. Vérifiez ses réponses avant toute action.
               </p>
             </div>
           </>

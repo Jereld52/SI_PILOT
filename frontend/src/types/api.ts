@@ -1990,6 +1990,25 @@ export interface AiTestResponse {
   latency_ms: number;
 }
 
+export interface AiModelsResponse {
+  provider: string;
+  models: string[];
+  message: string;
+}
+
+export interface AiActionProposal {
+  type: "create_action";
+  title: string;
+  description: string | null;
+  priority: "low" | "medium" | "high" | "critical";
+  due_date: string | null;
+}
+
+export interface AiActionExecuteResponse {
+  message: string;
+  link: string;
+}
+
 export type AiContextType =
   | "asset"
   | "ticket"
@@ -2010,6 +2029,8 @@ export interface AiChatResponse {
   duration_ms: number;
   usage: Record<string, number> | null;
   tools_used: string[];
+  suggestions: string[];
+  actions: AiActionProposal[];
 }
 
 export interface AiToolInfo {

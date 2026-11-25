@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -11,6 +12,7 @@ AiProvider = Literal[
     "openrouter",
     "gemini",
     "anthropic",
+    "albert",
     "ollama",
     "openwebui",
     "custom",
@@ -56,6 +58,12 @@ class AiTestResponse(BaseModel):
     latency_ms: int = 0
 
 
+class AiModelsResponse(BaseModel):
+    provider: str
+    models: list[str] = Field(default_factory=list)
+    message: str = ""
+
+
 class AiChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=8000)
@@ -72,6 +80,14 @@ class AiChatRequest(BaseModel):
     context: AiContext | None = None
 
 
+class AiActionProposal(BaseModel):
+    type: Literal["create_action"] = "create_action"
+    title: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=4000)
+    priority: Literal["low", "medium", "high", "critical"] = "medium"
+    due_date: date | None = None
+
+
 class AiChatResponse(BaseModel):
     message: str
     model: str
@@ -79,6 +95,13 @@ class AiChatResponse(BaseModel):
     duration_ms: int
     usage: dict[str, int] | None = None
     tools_used: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    actions: list[AiActionProposal] = Field(default_factory=list)
+
+
+class AiActionExecuteResponse(BaseModel):
+    message: str
+    link: str = ""
 
 
 class AiToolInfo(BaseModel):

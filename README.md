@@ -298,17 +298,20 @@ npm run build
 - Aucun mot de passe en clair, aucun secret dans le dépôt.
 - Aucun scan réseau ou action administrative sans autorisation explicite.
 - L'assistant IA est facultatif et configurable : OpenAI, Azure OpenAI, Mistral, Groq,
-  OpenRouter, Gemini, Anthropic, Ollama, Open WebUI ou tout endpoint compatible OpenAI. La clé
-  est chiffrée, le contexte du parc est optionnel et l'assistant ne modifie jamais les données.
+  OpenRouter, Gemini, Anthropic, Albert API, Ollama, Open WebUI ou tout endpoint compatible
+  OpenAI. La clé est chiffrée, le contexte du parc est optionnel et les modèles disponibles
+  peuvent être chargés depuis le fournisseur.
 - **Assistant IA contextuel** : bouton « Analyser avec l'IA » sur une fiche équipement, une demande
   IT ou un poste de la page Logiciels. Contexte ciblé (état, garantie, affectation, mises à jour
-  WAPT, description, commentaires, équipements liés), actions rapides, réponses mises en forme et
-  copie.
+  WAPT, description, commentaires, équipements liés), actions rapides, suggestions de suivi,
+  réponses mises en forme et copie.
 - **Outils IA de lecture** : l'assistant interroge réellement le parc, les équipements en panne ou
   à renouveler, les garanties, les demandes ouvertes ou en retard, les mises à jour WAPT, les
   logiciels d'un poste, les contrats, les partages réseau, les incidents, les certificats,
-  l'infrastructure, les utilisateurs et l'activité récente. Les outils respectent les permissions
-  et les portées de données, et restent en lecture seule.
+  l'infrastructure, les utilisateurs, Veeam, la découverte réseau, le briefing du jour et le bilan
+  mensuel. Les outils respectent les permissions et les portées de données.
+- **Actions assistées** : l'assistant peut proposer une action de suivi ; elle n'est créée qu'après
+  confirmation dans l'interface et si l'utilisateur possède la permission requise.
 - Toute mutation est auditée.
 
 ## 9. Feuille de route

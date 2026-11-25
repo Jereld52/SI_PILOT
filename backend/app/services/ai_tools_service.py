@@ -15,7 +15,15 @@ from app.models.network import NetworkShare
 from app.models.organization import Agent, ChecklistRun
 from app.models.security import Certificate, SecurityIncident
 from app.models.tickets import Ticket, TicketStatus
-from app.services import network_scan_service, onboarding_service, veeam_service
+from app.services import (
+    backup_service,
+    dashboard_service,
+    network_scan_service,
+    onboarding_service,
+    scheduler_service,
+    statistics_service,
+    veeam_service,
+)
 from sqlalchemy import false, func, or_, select
 from sqlalchemy.orm import Session
 
@@ -155,6 +163,18 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "label": "Découverte réseau",
         "description": "Hôtes détectés sur un sous-réseau privé et rapprochement avec le parc.",
         "permission": "infrastructure.read",
+    },
+    {
+        "key": "daily_briefing",
+        "label": "Briefing du jour",
+        "description": "Contrôles, sauvegardes, Veeam, alertes et dernières exécutions.",
+        "permission": "dashboard.read",
+    },
+    {
+        "key": "monthly_report_summary",
+        "label": "Bilan mensuel",
+        "description": "Indicateurs du mois précédent pour préparer une synthèse.",
+        "permission": "statistics.read",
     },
     {
         "key": "recent_activity",
@@ -736,6 +756,75 @@ def network_discovery(
     return _result("network_discovery", items, note=note)
 
 
+def daily_briefing(db: Session, actor: User) -> dict[str, Any]:
+    items: list[str] = []
+    checks = scheduler_service.checks_snapshot(db)
+    items.append(
+        f"Contrôles : {checks['up']} OK, {len(checks['down'])} en échec, "
+        f"{checks['unknown']} inconnu(s) sur {checks['total']}."
+    )
+    for failure in checks["down"][:8]:
+        items.append(
+            f"Échec {failure['infrastructure'] or 'équipement'} "
+            f"[{failure['type']}] : {failure['message'] or '—'}"
+        )
+    backup = backup_service.status(db)
+    if backup.last_backup_at:
+        items.append(
+            f"Sauvegarde SI PILOT : {backup.last_backup_name} "
+            f"({round((backup.last_backup_size or 0) / (1024 * 1024), 1)} Mo), "
+            f"le {backup.last_backup_at:%d/%m/%Y %H:%M}."
+        )
+    else:
+        items.append("Sauvegarde SI PILOT : aucune archive enregistrée.")
+    runs = scheduler_service.list_runs(db, limit=20)
+    for job, label in (
+        ("veeam", "Veeam"),
+        ("backup", "Sauvegarde"),
+        ("report", "Rapport mensuel"),
+    ):
+        latest = next((run for run in runs if run.job == job), None)
+        if latest:
+            items.append(
+                f"{label} : {latest.status} — {latest.summary or 'sans détail'} "
+                f"({latest.started_at:%d/%m/%Y %H:%M})."
+            )
+    alerts = dashboard_service.get_alerts(db).items[:8]
+    for alert in alerts:
+        items.append(f"Alerte [{alert.severity}] {alert.title} — {alert.detail}")
+    if not alerts:
+        items.append("Aucune alerte du tableau de bord.")
+    return _result("daily_briefing", items)
+
+
+def monthly_report_summary(db: Session, actor: User) -> dict[str, Any]:
+    today = date.today()
+    previous_end = today.replace(day=1) - timedelta(days=1)
+    start = previous_end.replace(day=1)
+    overview = statistics_service.get_overview(
+        db, start=start, end=previous_end, granularity="week"
+    )
+    items = [
+        f"Période : {start:%d/%m/%Y} → {previous_end:%d/%m/%Y}.",
+        *[
+            f"{kpi.label} : {kpi.value} {kpi.unit or ''}".strip()
+            for kpi in overview.kpis
+        ],
+    ]
+    for point in overview.ticket_periods:
+        items.append(
+            f"{point.label} : {point.created} ticket(s) créé(s), "
+            f"{point.resolved} résolu(s), {point.closed} clos."
+        )
+    if overview.budget is not None:
+        items.append(
+            f"Budget {overview.budget.year} : voté {overview.budget.voted}, "
+            f"engagé {overview.budget.committed}, facturé {overview.budget.invoiced}, "
+            f"disponible {overview.budget.available}."
+        )
+    return _result("monthly_report_summary", items)
+
+
 def recent_activity(db: Session, actor: User, limit: int = 15) -> dict[str, Any]:
     rows = db.scalars(
         select(AuditLog).order_by(AuditLog.occurred_at.desc()).limit(limit)
@@ -768,6 +857,8 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "onboarding_briefing": onboarding_briefing,
     "veeam_backup_status": veeam_backup_status,
     "network_discovery": network_discovery,
+    "daily_briefing": daily_briefing,
+    "monthly_report_summary": monthly_report_summary,
     "recent_activity": recent_activity,
 }
 
@@ -824,6 +915,32 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("onboarding_briefing")
     if any(term in text for term in ("sauvegarde", "veeam", "backup", "restauration")):
         add("veeam_backup_status")
+    if any(
+        term in text
+        for term in (
+            "briefing",
+            "ma journée",
+            "ma journee",
+            "du jour",
+            "point du jour",
+            "état général",
+            "etat general",
+            "quoi de neuf",
+        )
+    ):
+        add("daily_briefing")
+    if any(
+        term in text
+        for term in (
+            "bilan mensuel",
+            "rapport mensuel",
+            "synthèse mensuelle",
+            "synthese mensuelle",
+            "mois précédent",
+            "mois precedent",
+        )
+    ):
+        add("monthly_report_summary")
     if any(
         term in text
         for term in (

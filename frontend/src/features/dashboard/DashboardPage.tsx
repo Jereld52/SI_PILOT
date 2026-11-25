@@ -38,6 +38,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
 import { apiFetch } from "@/lib/api";
@@ -268,6 +269,7 @@ function DeadlineRow({ deadline }: { deadline: CockpitDeadline }) {
 
 export function DashboardPage() {
   const { user, hasPermission } = useAuth();
+  const { open: openAssistant } = useAiAssistant();
   const { isEnabled } = useModules();
   const [tab, setTab] = useState<"cockpit" | "analyses" | "veille" | "week">("cockpit");
   const [showAllCharts, setShowAllCharts] = useState(false);
@@ -418,6 +420,18 @@ export function DashboardPage() {
               risques de sécurité. Les indicateurs sont calculés à partir des données réelles.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
+              {hasPermission("ai.use") ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openAssistant(null, "Fais-moi le briefing du jour.")
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-[11px] font-medium text-[var(--app-hero-foreground)] transition-colors hover:bg-accent/20"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-accent" />
+                  Briefing IA
+                </button>
+              ) : null}
               {hasPermission("assets.read") ? (
                 <Link
                   to="/parc"

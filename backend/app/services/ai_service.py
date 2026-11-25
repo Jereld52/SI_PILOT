@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -20,11 +21,13 @@ from app.models.organization import Agent
 from app.models.setting import Setting
 from app.models.tickets import Ticket, TicketAsset, TicketComment, TicketStatus
 from app.schemas.ai import (
+    AiActionProposal,
     AiChatMessage,
     AiChatResponse,
     AiConfigRead,
     AiConfigUpdate,
     AiContext,
+    AiModelsResponse,
     AiStatusRead,
     AiTestResponse,
 )
@@ -42,6 +45,7 @@ DEFAULT_BASE_URLS = {
     "openrouter": "https://openrouter.ai/api/v1",
     "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
     "anthropic": "https://api.anthropic.com/v1",
+    "albert": "https://albert.api.etalab.gouv.fr/v1",
     "ollama": "http://127.0.0.1:11434/v1",
     "openwebui": "https://ai.example.org/api",
     "custom": "",
@@ -55,6 +59,7 @@ DEFAULT_MODELS = {
     "openrouter": "openai/gpt-4.1-mini",
     "gemini": "gemini-2.5-flash",
     "anthropic": "claude-sonnet-4-5",
+    "albert": "",
     "ollama": "llama3.2",
     "openwebui": "",
     "custom": "",
@@ -659,7 +664,15 @@ SYSTEM_PROMPT = (
     "Si une information manque, dis-le clairement et indique où la trouver dans l'application. "
     "Tu ne modifies jamais les données : tu peux proposer des actions, mais l'utilisateur doit "
     "les valider dans SI PILOT. Ne divulgue aucun secret, mot de passe ou clé d'API. "
-    "Pour les listes de postes, cite les noms machine et numéros d'inventaire fournis."
+    "Pour les listes de postes, cite les noms machine et numéros d'inventaire fournis. "
+    "Lorsque l'utilisateur demande explicitement de créer une action de suivi, un rappel "
+    "ou une tâche, tu peux joindre à la fin de ta réponse un bloc de ce type :\n"
+    "```action\n"
+    '{"type": "create_action", "title": "...", "description": "...", '
+    '"priority": "medium", "due_date": "AAAA-MM-JJ"}\n'
+    "```\n"
+    "Tu ne dois jamais affirmer que l'action est créée : l'utilisateur devra la confirmer. "
+    "Ne propose qu'une seule action par réponse et n'invente pas d'échéance précise."
 )
 
 
@@ -891,6 +904,73 @@ def _record_run(
     db.commit()
 
 
+def list_models(db: Session) -> AiModelsResponse:
+    config = get_config(db)
+    if not config.ready:
+        raise ValidationAppError(
+            "Renseignez l'URL, le modèle et la clé d'API avant de charger les modèles."
+        )
+    provider = config.provider
+    if provider == "azure_openai":
+        return AiModelsResponse(
+            provider=provider,
+            models=[config.model] if config.model else [],
+            message=(
+                "Azure OpenAI expose les déploiements : saisissez le nom du déploiement "
+                "dans le champ Modèle."
+            ),
+        )
+    base = config.base_url.rstrip("/")
+    headers = {"Accept": "application/json"}
+    url = f"{base}/models"
+    if provider == "ollama":
+        root = base[:-3] if base.endswith("/v1") else base
+        url = f"{root}/api/tags"
+    elif provider == "anthropic":
+        headers["x-api-key"] = config.api_key
+        headers["anthropic-version"] = "2023-06-01"
+    elif provider == "azure_openai":
+        headers["api-key"] = config.api_key
+    else:
+        headers["Authorization"] = f"Bearer {config.api_key}"
+    try:
+        with httpx.Client(timeout=20, follow_redirects=True) as client:
+            response = client.get(url, headers=headers)
+    except httpx.HTTPError as exc:
+        raise ValidationAppError(f"Impossible de charger les modèles : {exc}") from exc
+    if response.status_code >= 400:
+        raise ValidationAppError(
+            f"Le fournisseur a refusé la liste des modèles ({response.status_code}) : "
+            f"{response.text[:300].strip()}"
+        )
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise ValidationAppError("Le fournisseur a renvoyé une réponse non JSON.") from exc
+    models: list[str] = []
+    if isinstance(payload, dict):
+        if isinstance(payload.get("data"), list):
+            for item in payload["data"]:
+                if isinstance(item, dict):
+                    value = item.get("id") or item.get("name") or item.get("model")
+                    if value:
+                        models.append(str(value))
+        if isinstance(payload.get("models"), list):
+            for item in payload["models"]:
+                if isinstance(item, dict):
+                    value = item.get("name") or item.get("model") or item.get("id")
+                    if value:
+                        models.append(str(value))
+                elif isinstance(item, str):
+                    models.append(item)
+    unique = sorted({model for model in models if model})
+    return AiModelsResponse(
+        provider=provider,
+        models=unique[:200],
+        message=f"{len(unique)} modèle(s) disponible(s).",
+    )
+
+
 def test_connection(
     db: Session, *, actor: User, request: Request | None = None
 ) -> AiTestResponse:
@@ -928,6 +1008,80 @@ def test_connection(
         model=config.model,
         latency_ms=latency,
     )
+
+
+ACTION_PATTERN = re.compile(r"```action\s*(\{.*?\})\s*```", re.DOTALL)
+
+SUGGESTION_MAP: dict[str, list[str]] = {
+    "daily_briefing": [
+        "Détaille les contrôles en échec.",
+        "Quels tickets sont en retard ?",
+        "Prépare un plan d'action pour aujourd'hui.",
+    ],
+    "monthly_report_summary": [
+        "Rédige une synthèse pour la direction.",
+        "Quels sont les points d'attention du mois ?",
+        "Prépare le rapport d'exploitation PDF.",
+    ],
+    "veeam_backup_status": [
+        "Quels jobs sont en échec ?",
+        "Reste-t-il assez d'espace sur les dépôts ?",
+        "Quelles sauvegardes sont trop anciennes ?",
+    ],
+    "tickets_overdue": [
+        "Propose une priorisation des demandes en retard.",
+        "Rédige un message de relance.",
+    ],
+    "tickets_open": [
+        "Quelles demandes sont les plus urgentes ?",
+        "Rédige une réponse pour la demande principale.",
+    ],
+    "assets_renewal": [
+        "Prépare un plan de renouvellement.",
+        "Quels postes sont hors garantie ?",
+    ],
+    "network_discovery": [
+        "Quels équipements ajouter en priorité ?",
+        "Quels hôtes sont déjà connus ?",
+    ],
+    "onboarding_briefing": [
+        "Quelles arrivées sont incomplètes ?",
+        "Prépare la checklist d'arrivée.",
+    ],
+}
+
+DEFAULT_SUGGESTIONS = [
+    "Fais-moi le briefing du jour.",
+    "Quels sont les points d'attention cette semaine ?",
+    "Prépare une synthèse pour la direction.",
+]
+
+
+def _extract_actions(answer: str) -> tuple[str, list[AiActionProposal]]:
+    actions: list[AiActionProposal] = []
+    blocks = ACTION_PATTERN.findall(answer)
+    clean = ACTION_PATTERN.sub("", answer).strip()
+    for raw in blocks[:2]:
+        try:
+            payload = json.loads(raw)
+            actions.append(AiActionProposal.model_validate(payload))
+        except (json.JSONDecodeError, ValueError, TypeError):
+            continue
+    if not clean and actions:
+        clean = "Je peux créer cette action de suivi. Confirmez-vous la création ?"
+    return clean or answer.strip(), actions
+
+
+def _suggestions(tools_used: list[str]) -> list[str]:
+    suggestions: list[str] = []
+    for tool in tools_used:
+        suggestions.extend(SUGGESTION_MAP.get(tool, []))
+    suggestions.extend(DEFAULT_SUGGESTIONS)
+    unique: list[str] = []
+    for item in suggestions:
+        if item not in unique:
+            unique.append(item)
+    return unique[:3]
 
 
 def chat(
@@ -994,6 +1148,7 @@ def chat(
         )
         raise
     duration = round((time.perf_counter() - started) * 1000)
+    clean_answer, actions = _extract_actions(answer)
     _record_run(
         db,
         actor=actor,
@@ -1003,14 +1158,16 @@ def chat(
         duration_ms=duration,
         context=context,
         tools_used=tools_used,
-        response_text=answer,
+        response_text=clean_answer,
         http_status=200,
     )
     return AiChatResponse(
-        message=answer,
+        message=clean_answer,
         model=config.model,
         provider=config.provider,
         duration_ms=duration,
         usage=usage,
         tools_used=tools_used,
+        suggestions=_suggestions(tools_used),
+        actions=actions,
     )

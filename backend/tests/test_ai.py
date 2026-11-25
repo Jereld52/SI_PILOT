@@ -1,6 +1,7 @@
 from app.db.session import SessionLocal
 from app.models.ai import AiRun
 from app.models.auth import User
+from app.models.calendar import ActionItem
 from app.services import ai_service, ai_tools_service
 from sqlalchemy import select
 
@@ -79,6 +80,102 @@ def test_ai_chat_records_run(admin_client, csrf_headers, monkeypatch):
         assert run is not None
         assert run.status == "success"
         assert "bilan du parc" in (run.request_summary or "").lower()
+
+
+def test_ai_action_proposal_and_execution(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    client.put(
+        "/api/v1/admin/ai/config",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "provider": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4.1-mini",
+            "api_key": "sk-test-secret",
+        },
+    )
+
+    def fake_complete(config, messages, max_tokens=None):  # noqa: ANN001, ARG001
+        return (
+            "Je peux préparer cette action de suivi.\n"
+            "```action\n"
+            '{"type": "create_action", "title": "Vérifier les sauvegardes Veeam", '
+            '"description": "Contrôler les jobs en échec signalés par le briefing.", '
+            '"priority": "high", "due_date": "2026-12-01"}\n'
+            "```",
+            None,
+        )
+
+    monkeypatch.setattr(ai_service, "_complete", fake_complete)
+    response = client.post(
+        "/api/v1/ai/chat",
+        headers=csrf_headers(csrf),
+        json={"messages": [{"role": "user", "content": "Crée une action de suivi."}]},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "```action" not in body["message"]
+    assert len(body["actions"]) == 1
+    action = body["actions"][0]
+    assert action["title"] == "Vérifier les sauvegardes Veeam"
+    assert action["priority"] == "high"
+
+    executed = client.post(
+        "/api/v1/ai/actions/execute",
+        headers=csrf_headers(csrf),
+        json=action,
+    )
+    assert executed.status_code == 200, executed.text
+    assert "Action créée" in executed.json()["message"]
+
+    with SessionLocal() as db:
+        row = db.scalar(
+            select(ActionItem).where(ActionItem.title == action["title"])
+        )
+        assert row is not None
+        db.delete(row)
+        db.commit()
+
+
+def test_ai_model_discovery(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    client.put(
+        "/api/v1/admin/ai/config",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "provider": "openai",
+            "base_url": "https://api.example.test/v1",
+            "model": "gpt-test",
+            "api_key": "sk-test-secret",
+        },
+    )
+
+    class FakeResponse:
+        status_code = 200
+        text = ""
+
+        def json(self):
+            return {"data": [{"id": "gpt-a"}, {"id": "gpt-b"}]}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):  # noqa: ANN002
+            return False
+
+        def get(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            return FakeResponse()
+
+    monkeypatch.setattr(ai_service.httpx, "Client", FakeClient)
+    response = client.get("/api/v1/admin/ai/models")
+    assert response.status_code == 200, response.text
+    assert response.json()["models"] == ["gpt-a", "gpt-b"]
 
 
 def test_ai_chat_disabled_is_explicit(admin_client, csrf_headers):
@@ -258,6 +355,16 @@ def test_tool_router_selects_relevant_tools():
             "Quelles arrivées sont incomplètes ?", actor
         )]
         assert "onboarding_briefing" in onboarding
+
+        briefing = [call[0] for call in ai_tools_service.select_tools(
+            "Fais-moi le briefing du jour.", actor
+        )]
+        assert "daily_briefing" in briefing
+
+        monthly = [call[0] for call in ai_tools_service.select_tools(
+            "Prépare le rapport mensuel pour la direction.", actor
+        )]
+        assert "monthly_report_summary" in monthly
 
 
 def test_ai_tools_endpoint(admin_client):

@@ -11,6 +11,7 @@
 | OpenRouter | Compatible OpenAI | `https://openrouter.ai/api/v1` | Oui |
 | Google Gemini | Compatible OpenAI | `https://generativelanguage.googleapis.com/v1beta/openai` | Oui |
 | Anthropic Claude | API Messages | `https://api.anthropic.com/v1` | Oui |
+| Albert API | Compatible OpenAI | `https://albert.api.etalab.gouv.fr/v1` | Oui |
 | Ollama | Compatible OpenAI | `http://127.0.0.1:11434/v1` | Non |
 | Open WebUI | Compatible OpenAI | `https://ai.example.org/api` | Selon l'instance |
 | Autre | Compatible OpenAI | URL personnalisée | Selon le service |
@@ -50,7 +51,9 @@ L'assistant sélectionne automatiquement des outils en lecture seule selon la qu
 - contrats à échéance, partages réseau, incidents de sécurité, certificats ;
 - infrastructure, utilisateurs et agents, activité récente ;
 - jobs, sessions et dépôts de sauvegarde Veeam (`veeam_backup_status`) ;
-- découverte réseau limitée aux plages privées et rapprochement avec le parc (`network_discovery`).
+- découverte réseau limitée aux plages privées et rapprochement avec le parc (`network_discovery`) ;
+- briefing du jour : contrôles, sauvegardes, Veeam, dernières exécutions et alertes (`daily_briefing`) ;
+- bilan du mois précédent pour préparer une synthèse (`monthly_report_summary`).
 
 Chaque outil vérifie les permissions et applique la portée de données (`all`, `service`, `own`)
 pour les équipements et les demandes. Les résultats sont tronqués et les outils utilisés sont
@@ -69,8 +72,8 @@ affichés dans la réponse.
 
 ## 5. Garde-fous
 
-- L'assistant ne modifie aucune donnée.
-- Les actions proposées doivent être réalisées dans l'application par un utilisateur habilité.
+- L'assistant ne modifie aucune donnée sans confirmation.
+- Les actions proposées doivent être confirmées dans l'interface et sont soumises aux permissions.
 - Chaque échange est journalisé dans `ai_runs` (demande, statut, durée, modèle), sans clé d'API.
 - L'intégration est facultative : SI PILOT fonctionne sans assistant IA.
 - Pour un usage souverain, privilégier Ollama ou une instance interne compatible OpenAI.
@@ -80,6 +83,8 @@ affichés dans la réponse.
 - `GET /api/v1/ai/status` : état de l'intégration (`ai.use`).
 - `GET /api/v1/ai/tools` : outils disponibles selon les permissions (`ai.use`).
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
+- `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action).
+- `GET /api/v1/admin/ai/models` : liste des modèles du fournisseur (`ai.configure`).
 - `GET /api/v1/admin/ai/config` : configuration (`ai.configure`).
 - `PUT /api/v1/admin/ai/config` : mise à jour (`ai.configure`).
 - `POST /api/v1/admin/ai/test` : test de connexion (`ai.configure`).

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
   KeyRound,
+  RefreshCw,
   Save,
   ShieldCheck,
   Sparkles,
@@ -20,7 +21,7 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
-import type { AiConfig, AiTestResponse } from "@/types/api";
+import type { AiConfig, AiModelsResponse, AiTestResponse } from "@/types/api";
 
 interface ProviderPreset {
   value: string;
@@ -90,6 +91,15 @@ const providers: ProviderPreset[] = [
     requiresKey: true,
   },
   {
+    value: "albert",
+    label: "Albert API (cloud de l'État)",
+    baseUrl: "https://albert.api.etalab.gouv.fr/v1",
+    model: "",
+    description:
+      "API souveraine de l'État, compatible OpenAI. Chargez la liste des modèles après avoir saisi la clé.",
+    requiresKey: true,
+  },
+  {
     value: "ollama",
     label: "Ollama (local)",
     baseUrl: "http://127.0.0.1:11434/v1",
@@ -126,6 +136,8 @@ const capabilities = [
   "Préparer un plan d'action sécurité ou RGPD",
 ];
 
+const localProviders = new Set(["ollama", "openwebui"]);
+
 export function AdminAiPage() {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("ai.configure");
@@ -141,6 +153,8 @@ export function AdminAiPage() {
   const [includeContext, setIncludeContext] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [testResult, setTestResult] = useState<AiTestResponse | null>(null);
 
   const configQuery = useQuery({
@@ -170,7 +184,11 @@ export function AdminAiPage() {
     setProvider(value);
     if (preset) {
       if (preset.baseUrl) setBaseUrl(preset.baseUrl);
-      if (preset.model) setModel(preset.model);
+      if (value === "albert") {
+        setModel("");
+      } else if (preset.model) {
+        setModel(preset.model);
+      }
     }
   };
 
@@ -217,6 +235,21 @@ export function AdminAiPage() {
     }
   };
 
+  const loadModels = async () => {
+    setLoadingModels(true);
+    try {
+      const result = await apiFetch<AiModelsResponse>("/admin/ai/models");
+      setModelOptions(result.models);
+      toast.success(result.message || "Modèles chargés.");
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError ? error.message : "Chargement des modèles impossible.",
+      );
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
   if (!canManage) {
     return (
       <EmptyState
@@ -253,14 +286,32 @@ export function AdminAiPage() {
                 value={provider}
                 onChange={(event) => applyPreset(event.target.value)}
               >
-                {providers.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
+                <optgroup label="Fournisseurs cloud">
+                  {providers
+                    .filter((item) => !localProviders.has(item.value))
+                    .map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Local / auto-hébergé">
+                  {providers
+                    .filter((item) => localProviders.has(item.value))
+                    .map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                </optgroup>
               </Select>
               {activePreset ? (
-                <p className="mt-1 text-[10px] text-muted-2">{activePreset.description}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-2">
+                  <Badge tone={localProviders.has(provider) ? "neutral" : "info"}>
+                    {localProviders.has(provider) ? "Local" : "Cloud"}
+                  </Badge>
+                  {activePreset.description}
+                </p>
               ) : null}
             </div>
             <div className="sm:col-span-2">
@@ -274,13 +325,34 @@ export function AdminAiPage() {
               />
             </div>
             <div>
-              <Label htmlFor="ai-model">Modèle</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="ai-model">Modèle</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1.5 text-[10px]"
+                  loading={loadingModels}
+                  onClick={() => void loadModels()}
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Charger les modèles
+                </Button>
+              </div>
               <Input
                 id="ai-model"
+                list="ai-model-options"
                 value={model}
                 onChange={(event) => setModel(event.target.value)}
                 placeholder="gpt-4.1-mini"
               />
+              <datalist id="ai-model-options">
+                {modelOptions.map((option) => (
+                  <option key={option} value={option} />
+                ))}
+              </datalist>
+              <p className="mt-1 text-[10px] text-muted-2">
+                Enregistrez d'abord la clé d'API, puis chargez la liste des modèles du fournisseur.
+              </p>
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="ai-api-key">Clé d'API</Label>

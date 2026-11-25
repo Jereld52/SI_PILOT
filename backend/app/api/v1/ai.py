@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
@@ -5,15 +7,19 @@ from app.api.deps import require_permission
 from app.db.session import get_db
 from app.models.auth import User
 from app.schemas.ai import (
+    AiActionExecuteResponse,
+    AiActionProposal,
     AiChatRequest,
     AiChatResponse,
     AiConfigRead,
     AiConfigUpdate,
+    AiModelsResponse,
     AiStatusRead,
     AiTestResponse,
     AiToolInfo,
 )
-from app.services import ai_service, ai_tools_service
+from app.schemas.calendar import ActionItemCreate
+from app.services import ai_service, ai_tools_service, calendar_service
 
 router = APIRouter(prefix="/ai", tags=["Assistant IA"])
 admin_router = APIRouter(prefix="/admin/ai", tags=["Administration assistant IA"])
@@ -51,6 +57,38 @@ def chat(
     )
 
 
+@router.post("/actions/execute", response_model=AiActionExecuteResponse)
+def execute_action(
+    payload: AiActionProposal,
+    request: Request,
+    _: User = Depends(require_permission("ai.use")),
+    actor: User = Depends(require_permission("actions.create")),
+    db: Session = Depends(get_db),
+) -> AiActionExecuteResponse:
+    due_at = None
+    if payload.due_date:
+        due_at = datetime.combine(
+            payload.due_date, datetime.min.time(), tzinfo=UTC
+        ).replace(hour=9)
+    action = calendar_service.create_action(
+        db,
+        ActionItemCreate(
+            title=payload.title,
+            description=payload.description,
+            module="ai",
+            priority=payload.priority,
+            due_date=due_at,
+            owner_user_id=actor.id,
+        ),
+        actor=actor,
+        request=request,
+    )
+    return AiActionExecuteResponse(
+        message=f"Action créée : {action.title}",
+        link="/calendrier?tab=actions",
+    )
+
+
 @admin_router.get("/config", response_model=AiConfigRead)
 def get_config(
     _: User = Depends(require_permission("ai.configure")),
@@ -67,6 +105,14 @@ def update_config(
     db: Session = Depends(get_db),
 ) -> AiConfigRead:
     return ai_service.update_settings(db, payload, actor=actor, request=request)
+
+
+@admin_router.get("/models", response_model=AiModelsResponse)
+def list_models(
+    _: User = Depends(require_permission("ai.configure")),
+    db: Session = Depends(get_db),
+) -> AiModelsResponse:
+    return ai_service.list_models(db)
 
 
 @admin_router.post("/test", response_model=AiTestResponse)
