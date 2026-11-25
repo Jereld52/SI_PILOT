@@ -144,12 +144,32 @@ def update_settings(
     return get_settings(db)
 
 
-def _send(config: SmtpConfig, to_email: str, subject: str, body: str) -> None:
+EmailAttachment = tuple[str, bytes, str]
+
+
+def _send(
+    config: SmtpConfig,
+    to_email: str,
+    subject: str,
+    body: str,
+    attachments: list[EmailAttachment] | None = None,
+) -> None:
     message = EmailMessage()
     message["From"] = formataddr((config.from_name, config.from_email))
     message["To"] = to_email
     message["Subject"] = subject
     message.set_content(body)
+    for filename, content, mime_type in attachments or []:
+        if "/" in mime_type:
+            maintype, subtype = mime_type.split("/", 1)
+        else:
+            maintype, subtype = "application", "octet-stream"
+        message.add_attachment(
+            content,
+            maintype=maintype,
+            subtype=subtype,
+            filename=filename,
+        )
     if config.use_ssl:
         server: smtplib.SMTP = smtplib.SMTP_SSL(
             config.host, config.port, timeout=20
@@ -173,6 +193,7 @@ def send_email(
     body: str,
     *,
     force: bool = False,
+    attachments: list[EmailAttachment] | None = None,
 ) -> bool:
     config = get_config(db)
     if not force and not config.enabled:
@@ -191,7 +212,7 @@ def send_email(
         outbox.error = "Configuration SMTP incomplète."
         return False
     try:
-        _send(config, to_email, subject, body)
+        _send(config, to_email, subject, body, attachments)
     except Exception as exc:  # noqa: BLE001 - le détail est conservé dans l'outbox
         outbox.status = "error"
         outbox.error = str(exc)[:2000]

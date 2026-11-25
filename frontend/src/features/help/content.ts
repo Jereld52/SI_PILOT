@@ -1153,6 +1153,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Vérification Veeam quotidienne : jobs en échec, sauvegardes anciennes et dépôts presque pleins.",
         "Sauvegarde complète de SI PILOT, quotidienne ou hebdomadaire, avec rétention des archives.",
         "Digest quotidien par e-mail : contrôles, Veeam, sauvegarde et alertes du tableau de bord.",
+        "Rapport mensuel d'exploitation en PDF : synthèse du mois précédent envoyée automatiquement ou téléchargeable depuis Statistiques.",
         "Journal des exécutions et lancement manuel de chaque tâche.",
       ]),
       p(

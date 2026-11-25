@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import threading
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from app.core.config import settings as app_settings
@@ -16,6 +16,7 @@ from app.models.infrastructure import MonitoringCheck, MonitoringResult
 from app.schemas.scheduler import SchedulerConfigRead, SchedulerConfigUpdate, SchedulerRunRead
 from app.services import (
     backup_service,
+    branding_service,
     dashboard_service,
     email_service,
     monitoring_runner,
@@ -36,6 +37,7 @@ JOB_LABELS = {
     "veeam": "Vérification Veeam",
     "backup": "Sauvegarde SI PILOT",
     "digest": "Digest quotidien",
+    "report": "Rapport mensuel",
 }
 JOBS = tuple(JOB_LABELS)
 
@@ -64,10 +66,20 @@ class SchedulerConfig:
     digest_hour: int
     digest_minute: int
     digest_emails: str
+    report_enabled: bool
+    report_day: int
+    report_hour: int
+    report_minute: int
+    report_emails: str
 
     @property
     def digest_recipients(self) -> list[str]:
         raw = self.digest_emails.replace(";", ",").replace("\n", ",")
+        return [item.strip() for item in raw.split(",") if item.strip() and "@" in item]
+
+    @property
+    def report_recipients(self) -> list[str]:
+        raw = self.report_emails.replace(";", ",").replace("\n", ",")
         return [item.strip() for item in raw.split(",") if item.strip() and "@" in item]
 
 
@@ -94,6 +106,11 @@ def get_config(db: Session) -> SchedulerConfig:
         digest_hour=int(str(_value(db, "scheduler.digest_hour", 7))),
         digest_minute=int(str(_value(db, "scheduler.digest_minute", 30))),
         digest_emails=str(_value(db, "scheduler.digest_emails", "") or ""),
+        report_enabled=bool(_value(db, "scheduler.report_enabled", True)),
+        report_day=int(str(_value(db, "scheduler.report_day", 1))),
+        report_hour=int(str(_value(db, "scheduler.report_hour", 8))),
+        report_minute=int(str(_value(db, "scheduler.report_minute", 0))),
+        report_emails=str(_value(db, "scheduler.report_emails", "") or ""),
     )
 
 
@@ -118,6 +135,11 @@ def get_settings(db: Session) -> SchedulerConfigRead:
         digest_hour=config.digest_hour,
         digest_minute=config.digest_minute,
         digest_emails=config.digest_emails,
+        report_enabled=config.report_enabled,
+        report_day=config.report_day,
+        report_hour=config.report_hour,
+        report_minute=config.report_minute,
+        report_emails=config.report_emails,
         smtp_configured=bool(smtp.configured and smtp.email_enabled),
     )
 
@@ -396,7 +418,7 @@ def run_due_checks(db: Session | None = None) -> SchedulerRun | None:
         _CHECK_LOCK.release()
 
 
-def _veeam_alerts(
+def veeam_alerts(
     db: Session, config: SchedulerConfig
 ) -> tuple[Any, list[dict[str, str]]]:
     overview = veeam_service.get_overview(db, force=True)
@@ -464,7 +486,7 @@ def _veeam_alerts(
 
 def _run_veeam(db: Session, config: SchedulerConfig) -> tuple[str, str, dict[str, Any]]:
     try:
-        overview, alerts = _veeam_alerts(db, config)
+        overview, alerts = veeam_alerts(db, config)
     except ValidationAppError as exc:
         return "skipped", f"Veeam non disponible : {exc}", {}
     except Exception as exc:  # noqa: BLE001 - l'erreur est enregistrée dans le journal
@@ -510,7 +532,7 @@ def _run_backup(db: Session, config: SchedulerConfig) -> tuple[str, str, dict[st
     )
 
 
-def _checks_snapshot(db: Session) -> dict[str, Any]:
+def checks_snapshot(db: Session) -> dict[str, Any]:
     checks = db.scalars(
         select(MonitoringCheck)
         .where(
@@ -548,9 +570,9 @@ def _checks_snapshot(db: Session) -> dict[str, Any]:
 
 
 def _digest_body(db: Session, config: SchedulerConfig) -> dict[str, Any]:
-    checks = _checks_snapshot(db)
+    checks = checks_snapshot(db)
     try:
-        _, veeam_alerts = _veeam_alerts(db, config)
+        _, veeam_alerts = veeam_alerts(db, config)
         veeam_note = (
             f"{len(veeam_alerts)} alerte(s)."
             if veeam_alerts
@@ -654,6 +676,71 @@ def _run_digest(
     return status, summary, {"recipients": recipients, "sent": sent, "failed": failed}
 
 
+def _run_report(
+    db: Session, config: SchedulerConfig
+) -> tuple[str, str, dict[str, Any]]:
+    smtp = email_service.get_settings(db)
+    if not (smtp.configured and smtp.email_enabled):
+        return "skipped", "SMTP non configuré ou envoi désactivé.", {}
+    recipients = config.report_recipients or config.digest_recipients
+    if not recipients:
+        recipients = [user.email for user in _admin_users(db) if user.email]
+    if not recipients:
+        return "skipped", "Aucun destinataire pour le rapport mensuel.", {}
+
+    today = date.today()
+    previous_end = today.replace(day=1) - timedelta(days=1)
+    start = previous_end.replace(day=1)
+    from app.exports import operations as operations_export
+
+    content = operations_export.operations_report_pdf(
+        db,
+        start=start,
+        end=previous_end,
+        branding=branding_service.get_pdf_branding(db),
+    )
+    filename = f"rapport-exploitation-{start.strftime('%Y-%m')}.pdf"
+    subject = f"[SI PILOT] Rapport d'exploitation — {start.strftime('%m/%Y')}"
+    body = (
+        f"Bonjour,\n\nVeuillez trouver ci-joint le rapport d'exploitation de "
+        f"{start.strftime('%m/%Y')}.\n\n"
+        "Il regroupe les indicateurs du parc et du support, les interventions, "
+        "la sécurité, la supervision, les sauvegardes, les contrats, les projets "
+        "et le budget.\n\n"
+        "Ce message est généré automatiquement par SI PILOT."
+    )
+    sent = 0
+    failed: list[str] = []
+    for recipient in recipients:
+        if email_service.send_email(
+            db,
+            recipient,
+            subject,
+            body,
+            attachments=[(filename, content, "application/pdf")],
+        ):
+            sent += 1
+        else:
+            failed.append(recipient)
+    db.commit()
+    status = "success" if sent and not failed else "warning" if sent else "error"
+    summary = f"Rapport mensuel envoyé à {sent} destinataire(s)."
+    if failed:
+        summary += f" Échec pour : {', '.join(failed)}."
+    return (
+        status,
+        summary,
+        {
+            "period": f"{start.isoformat()} → {previous_end.isoformat()}",
+            "filename": filename,
+            "size_bytes": len(content),
+            "recipients": recipients,
+            "sent": sent,
+            "failed": failed,
+        },
+    )
+
+
 def execute_job(
     db: Session,
     job: str,
@@ -693,8 +780,10 @@ def execute_job(
             status, summary, details = _run_veeam(db, config)
         elif job == "backup":
             status, summary, details = _run_backup(db, config)
-        else:
+        elif job == "digest":
             status, summary, details = _run_digest(db, config)
+        else:
+            status, summary, details = _run_report(db, config)
     except Exception as exc:  # noqa: BLE001 - l'erreur est conservée dans le journal
         _finish_run(
             db,
@@ -804,6 +893,18 @@ def reconfigure(db: Session | None = None) -> None:
                 CronTrigger(hour=config.digest_hour, minute=config.digest_minute),
                 args=["digest"],
                 id="digest",
+                replace_existing=True,
+            )
+        if config.report_enabled:
+            scheduler.add_job(
+                _scheduled_job,
+                CronTrigger(
+                    day=config.report_day,
+                    hour=config.report_hour,
+                    minute=config.report_minute,
+                ),
+                args=["report"],
+                id="report",
                 replace_existing=True,
             )
         if not scheduler.running:

@@ -369,6 +369,20 @@ export function StatisticsPage() {
                   <FileText className="h-3.5 w-3.5" />
                   Rapport PDF
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(
+                      `/api/v1/exports/operations?${buildQuery({
+                        start: range.start,
+                        end: range.end,
+                      })}`,
+                      "_blank",
+                    )
+                  }
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Rapport d'exploitation (PDF)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>

@@ -74,7 +74,6 @@ La tâche vérifie aussi la disponibilité de `pg_dump`. En cas d'échec, l'erre
 le journal et le digest suivant.
 
 ## 5. Digest quotidien
-
 Le digest est envoyé aux destinataires configurés, ou aux administrateurs actifs si le champ est
 vide. Il contient :
 
@@ -86,7 +85,28 @@ vide. Il contient :
 Le SMTP doit être activé dans **Administration → Paramètres → Serveur SMTP**. Les envois sont
 tracés dans la boîte d'envoi interne.
 
-## 6. Journal et exécution manuelle
+## 6. Rapport mensuel d'exploitation
+
+Un rapport PDF du mois précédent peut être généré et envoyé automatiquement :
+
+- **Administration → Veille & planification → Rapport mensuel d'exploitation** ;
+- jour du mois (1 à 28), heure et destinataires ;
+- destinataires vides : ceux du digest, puis les administrateurs actifs.
+
+Le rapport rassemble les indicateurs clés, l'activité du support, les interventions, le parc,
+la sécurité, la supervision, la dernière vérification Veeam, la sauvegarde SI PILOT, les
+contrats, les projets et le budget.
+
+Il peut aussi être téléchargé à la demande depuis **Statistiques → Exporter → Rapport
+d'exploitation (PDF)** ou via :
+
+```text
+GET /api/v1/exports/operations?start=2026-11-01&end=2026-11-30
+```
+
+Sans dates, l'export couvre le mois précédent.
+
+## 7. Journal et exécution manuelle
 
 La page affiche les 25 dernières exécutions : tâche, déclencheur, durée, statut et résumé.
 
@@ -94,7 +114,7 @@ Chaque tâche peut être lancée manuellement avec **Exécuter maintenant**. Les
 manuelles sont auditées et n'attendent pas l'heure planifiée. Pour les contrôles, le lancement
 manuel force l'exécution de tous les contrôles activés et autorisés.
 
-## 7. API
+## 8. API
 
 | Route | Permission |
 |---|---|
@@ -103,9 +123,9 @@ manuel force l'exécution de tous les contrôles activés et autorisés.
 | `GET /api/v1/admin/scheduler/runs` | `admin.settings.read` |
 | `POST /api/v1/admin/scheduler/run/{job}` | `admin.settings.manage` |
 
-Tâches : `checks`, `veeam`, `backup`, `digest`.
+Tâches : `checks`, `veeam`, `backup`, `digest`, `report`.
 
-## 8. Dépannage
+## 9. Dépannage
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
@@ -115,7 +135,7 @@ Tâches : `checks`, `veeam`, `backup`, `digest`.
 | Sauvegarde en erreur | `pg_dump` introuvable | Vérifier le chemin PostgreSQL ou `PG_BIN_DIR` |
 | Veeam ignoré | Connexion Veeam désactivée ou incomplète | Vérifier Administration → Connexion Veeam |
 
-## 9. Limites
+## 10. Limites
 
 - Un seul processus d'application est supposé. Avec plusieurs workers, les tâches pourraient
   être exécutées plusieurs fois.

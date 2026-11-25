@@ -17,7 +17,7 @@ from app.services.audit_service import write_audit
 
 router = APIRouter(prefix="/admin/scheduler", tags=["Veille et planification"])
 
-SchedulerJob = Literal["checks", "veeam", "backup", "digest"]
+SchedulerJob = Literal["checks", "veeam", "backup", "digest", "report"]
 
 
 @router.get("/config", response_model=SchedulerConfigRead)

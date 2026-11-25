@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
@@ -14,6 +14,7 @@ from app.exports import assets as assets_export
 from app.exports import custom as custom_export
 from app.exports import infrastructure as infrastructure_export
 from app.exports import mobile as mobile_export
+from app.exports import operations as operations_export
 from app.exports import rgpd as rgpd_export
 from app.exports import statistics as statistics_export
 from app.exports import tickets as tickets_export
@@ -184,6 +185,47 @@ def export_tickets(
                 f'attachment; filename="tickets-{start.isoformat()}-{end.isoformat()}-{granularity}.{format}"'
             )
         },
+    )
+
+
+@router.get("/operations")
+def export_operations(
+    request: Request,
+    start: date | None = None,
+    end: date | None = None,
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "statistics.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter le rapport d'exploitation.")
+    if start is None or end is None:
+        today = date.today()
+        previous_end = today.replace(day=1) - timedelta(days=1)
+        default_start = previous_end.replace(day=1)
+        start = start or default_start
+        end = end or previous_end
+    content = operations_export.operations_report_pdf(
+        db,
+        start=start,
+        end=end,
+        branding=branding_service.get_pdf_branding(db),
+    )
+    filename = f"rapport-exploitation-{start.strftime('%Y-%m')}.pdf"
+    write_audit(
+        db,
+        module="exports",
+        action="operations_report_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label="operations.pdf",
+        after={"start": start.isoformat(), "end": end.isoformat()},
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

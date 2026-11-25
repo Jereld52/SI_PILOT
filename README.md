@@ -64,6 +64,9 @@ se configurent depuis l'administration.
 - **Veille automatique** : planificateur intégré pour les contrôles de supervision, la
   vérification Veeam, la sauvegarde complète de SI PILOT et un digest quotidien par e-mail, avec
   journal des exécutions et lancement manuel. Voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).
+- **Rapport mensuel d'exploitation** : PDF du mois précédent (parc, support, sécurité,
+  supervision, sauvegardes, contrats, projets, budget), téléchargeable depuis Statistiques ou
+  envoyé automatiquement par e-mail.
 - **Déploiement serveur** : export en kit, installation Windows avec service de démarrage
   automatique, ou pile Docker avec PostgreSQL, Nginx et volumes persistants. Voir
   [`docs/SERVER_DEPLOYMENT.md`](docs/SERVER_DEPLOYMENT.md).

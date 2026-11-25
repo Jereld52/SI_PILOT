@@ -1788,6 +1788,11 @@ export interface SchedulerConfig {
   digest_hour: number;
   digest_minute: number;
   digest_emails: string;
+  report_enabled: boolean;
+  report_day: number;
+  report_hour: number;
+  report_minute: number;
+  report_emails: string;
   smtp_configured: boolean;
 }
 

@@ -192,7 +192,7 @@ def test_scheduler_digest_run(admin_client, csrf_headers, monkeypatch):
     )
     monkeypatch.setattr(
         scheduler_service,
-        "_veeam_alerts",
+        "veeam_alerts",
         lambda db, config: (None, []),
     )
     monkeypatch.setattr(
@@ -232,6 +232,62 @@ def test_scheduler_digest_run(admin_client, csrf_headers, monkeypatch):
     )
 
 
+def test_scheduler_report_run(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    sent: list[tuple[str, str, list[tuple[str, bytes, str]] | None]] = []
+    monkeypatch.setattr(
+        email_service,
+        "get_settings",
+        lambda db: SmtpSettingsRead(
+            host="smtp.example.org",
+            from_email="si-pilot@example.org",
+            email_enabled=True,
+            configured=True,
+            password_set=True,
+        ),
+    )
+
+    def fake_send(db, to_email, subject, body, force=False, attachments=None):
+        sent.append((to_email, subject, attachments))
+        return True
+
+    monkeypatch.setattr(email_service, "send_email", fake_send)
+
+    updated = client.put(
+        "/api/v1/admin/scheduler/config",
+        headers=csrf_headers(csrf),
+        json={
+            **CONFIG_PAYLOAD,
+            "report_enabled": True,
+            "report_day": 1,
+            "report_hour": 8,
+            "report_minute": 0,
+            "report_emails": "rapport@example.org",
+        },
+    )
+    assert updated.status_code == 200, updated.text
+
+    response = client.post(
+        "/api/v1/admin/scheduler/run/report", headers=csrf_headers(csrf)
+    )
+    assert response.status_code == 200, response.text
+    run = response.json()["run"]
+    assert run["status"] == "success"
+    assert len(sent) == 1
+    recipient, subject, attachments = sent[0]
+    assert recipient == "rapport@example.org"
+    assert "Rapport d'exploitation" in subject
+    assert attachments is not None
+    assert attachments[0][0].endswith(".pdf")
+    assert attachments[0][1].startswith(b"%PDF")
+
+    client.put(
+        "/api/v1/admin/scheduler/config",
+        headers=csrf_headers(csrf),
+        json={**CONFIG_PAYLOAD, "enabled": False},
+    )
+
+
 def test_scheduler_registers_jobs(monkeypatch):
     monkeypatch.setattr(
         scheduler_service, "app_settings", SimpleNamespace(app_env="production")
@@ -247,6 +303,7 @@ def test_scheduler_registers_jobs(monkeypatch):
             "veeam",
             "backup",
             "digest",
+            "report",
         }
         scheduler_service.stop()
         settings_service.set_value(db, "scheduler.enabled", False, category="scheduler")

@@ -25,6 +25,11 @@ class SchedulerConfigRead(BaseModel):
     digest_hour: int = 7
     digest_minute: int = 30
     digest_emails: str = ""
+    report_enabled: bool = True
+    report_day: int = 1
+    report_hour: int = 8
+    report_minute: int = 0
+    report_emails: str = ""
     smtp_configured: bool = False
 
 
@@ -46,6 +51,11 @@ class SchedulerConfigUpdate(BaseModel):
     digest_hour: int = Field(default=7, ge=0, le=23)
     digest_minute: int = Field(default=30, ge=0, le=59)
     digest_emails: str = Field(default="", max_length=1000)
+    report_enabled: bool = True
+    report_day: int = Field(default=1, ge=1, le=28)
+    report_hour: int = Field(default=8, ge=0, le=23)
+    report_minute: int = Field(default=0, ge=0, le=59)
+    report_emails: str = Field(default="", max_length=1000)
 
 
 class SchedulerRunRead(BaseModel):

@@ -3,6 +3,7 @@ import {
   Activity,
   Clock,
   DatabaseBackup,
+  FileText,
   Mail,
   Play,
   RefreshCw,
@@ -35,6 +36,7 @@ const jobLabels: Record<string, string> = {
   veeam: "Veeam",
   backup: "Sauvegarde",
   digest: "Digest",
+  report: "Rapport mensuel",
 };
 
 const triggerLabels: Record<string, string> = {
@@ -109,6 +111,10 @@ export function AdminAutomationPage() {
   const [digestEnabled, setDigestEnabled] = useState(true);
   const [digestTime, setDigestTime] = useState("07:30");
   const [digestEmails, setDigestEmails] = useState("");
+  const [reportEnabled, setReportEnabled] = useState(true);
+  const [reportDay, setReportDay] = useState("1");
+  const [reportTime, setReportTime] = useState("08:00");
+  const [reportEmails, setReportEmails] = useState("");
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -142,6 +148,10 @@ export function AdminAutomationPage() {
     setDigestEnabled(config.digest_enabled);
     setDigestTime(toTime(config.digest_hour, config.digest_minute));
     setDigestEmails(config.digest_emails);
+    setReportEnabled(config.report_enabled);
+    setReportDay(String(config.report_day));
+    setReportTime(toTime(config.report_hour, config.report_minute));
+    setReportEmails(config.report_emails);
     setTestResult(null);
   }, [config]);
 
@@ -151,6 +161,7 @@ export function AdminAutomationPage() {
       const veeam = fromTime(veeamTime);
       const backup = fromTime(backupTime);
       const digest = fromTime(digestTime);
+      const report = fromTime(reportTime);
       const updated = await apiFetch<SchedulerConfig>("/admin/scheduler/config", {
         method: "PUT",
         body: JSON.stringify({
@@ -171,6 +182,11 @@ export function AdminAutomationPage() {
           digest_hour: digest.hour,
           digest_minute: digest.minute,
           digest_emails: digestEmails,
+          report_enabled: reportEnabled,
+          report_day: Number(reportDay) || 1,
+          report_hour: report.hour,
+          report_minute: report.minute,
+          report_emails: reportEmails,
         }),
       });
       toast.success(
@@ -573,6 +589,96 @@ export function AdminAutomationPage() {
                 envoyer le digest.
               </p>
             ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <div>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <FileText className="h-4 w-4 text-accent" />
+                Rapport mensuel d'exploitation
+              </CardTitle>
+              <CardDescription>
+                Synthèse PDF du mois précédent : parc, support, sécurité, supervision,
+                sauvegardes, contrats, projets et budget.
+              </CardDescription>
+            </div>
+            <label className="flex items-center gap-2 text-[11px] text-muted">
+              <Switch
+                checked={reportEnabled}
+                onCheckedChange={setReportEnabled}
+                disabled={!canManage}
+              />
+              Activé
+            </label>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <Label htmlFor="scheduler-report-day">Jour du mois</Label>
+                <Select
+                  id="scheduler-report-day"
+                  value={reportDay}
+                  onChange={(event) => setReportDay(event.target.value)}
+                  disabled={!canManage}
+                >
+                  {Array.from({ length: 28 }, (_, index) => index + 1).map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="scheduler-report-time">Heure d'envoi</Label>
+                <Input
+                  id="scheduler-report-time"
+                  type="time"
+                  value={reportTime}
+                  onChange={(event) => setReportTime(event.target.value)}
+                  disabled={!canManage}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="scheduler-report-emails">Destinataires</Label>
+                <Input
+                  id="scheduler-report-emails"
+                  value={reportEmails}
+                  onChange={(event) => setReportEmails(event.target.value)}
+                  placeholder="vide = digest / administrateurs"
+                  disabled={!canManage}
+                />
+                <p className="mt-1 text-[10px] text-muted-2">
+                  Vide : destinataires du digest, puis administrateurs actifs.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {canManage ? (
+                <Button
+                  variant="secondary"
+                  loading={running === "report"}
+                  onClick={() => void runJob("report")}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  Générer et envoyer maintenant
+                </Button>
+              ) : null}
+              <a
+                href="/api/v1/exports/operations"
+                target="_blank"
+                rel="noreferrer"
+                className={buttonVariants({ variant: "ghost", size: "md" })}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Télécharger le dernier rapport
+              </a>
+            </div>
+            <p className="text-[10px] leading-4 text-muted-2">
+              Le rapport planifié couvre le mois précédent. Le bouton de téléchargement
+              génère le rapport du mois précédent à la demande.
+            </p>
           </CardContent>
         </Card>
       </div>
