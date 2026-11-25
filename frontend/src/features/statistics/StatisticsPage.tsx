@@ -17,6 +17,7 @@ import {
   RefreshCw,
   ShieldAlert,
   ShoppingCart,
+  Sparkles,
   Target,
   Wallet,
   Wrench,
@@ -50,6 +51,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { apiFetch, buildQuery } from "@/lib/api";
 import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 import type {
@@ -347,6 +349,7 @@ function ActivityChart({ overview }: { overview: StatisticsOverview }) {
 
 export function StatisticsPage() {
   const { hasPermission } = useAuth();
+  const { open: openAi } = useAiAssistant();
   const [tab, setTab] = useState<"overview" | "distributions" | "budget" | "achats">(
     "overview",
   );
@@ -433,6 +436,40 @@ export function StatisticsPage() {
         description="Tickets, interventions, parc, contrats, budget, sécurité, projets, téléphonie et documentation."
         actions={
           <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (tab === "achats") {
+                  const parts = [
+                    `du ${formatDate(range.start)} au ${formatDate(range.end)}`,
+                    commercialKind === "quote"
+                      ? "uniquement les devis"
+                      : commercialKind === "purchase_order"
+                        ? "uniquement les bons de commande"
+                        : "devis et bons de commande",
+                    commercialStatus ? `statut ${statusLabels[commercialStatus] ?? commercialStatus}` : "",
+                    commercialEngagement === "without"
+                      ? "sans numéro d'engagement"
+                      : commercialEngagement === "with"
+                        ? "avec numéro d'engagement"
+                        : "",
+                  ].filter(Boolean);
+                  openAi(
+                    null,
+                    `Analyse les achats ${parts.join(", ")}. Donne les points d'attention, les livraisons en retard, les devis à convertir et propose des actions concrètes.`,
+                  );
+                  return;
+                }
+                openAi(
+                  null,
+                  `Analyse les statistiques du ${formatDate(range.start)} au ${formatDate(range.end)} et propose une synthèse avec les points d'attention et les actions prioritaires.`,
+                );
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Analyse IA
+            </Button>
             <Button
               variant="secondary"
               size="sm"
