@@ -165,6 +165,11 @@ const NetworkSharesPage = lazy(() =>
     default: module.NetworkSharesPage,
   })),
 );
+const NetworkDiscoveryPage = lazy(() =>
+  import("@/features/infrastructure/NetworkDiscoveryPage").then((module) => ({
+    default: module.NetworkDiscoveryPage,
+  })),
+);
 const ReferentialsPage = lazy(() =>
   import("@/features/referentials/ReferentialsPage").then((module) => ({
     default: module.ReferentialsPage,
@@ -544,6 +549,15 @@ export function App() {
             element={
               <RequirePermission permission="infrastructure.read">
                 <NetworkSharesPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="decouverte-reseau"
+            element={
+              <RequirePermission permission="infrastructure.read">
+                <NetworkDiscoveryPage />
               </RequirePermission>
             }
           />

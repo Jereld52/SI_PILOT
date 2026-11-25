@@ -845,7 +845,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["scan", "réseau", "découverte", "IP", "MAC", "ARP", "ports", "assistant IA"],
     blocks: [
       p(
-        "Infrastructure → Découverte lance un balayage en lecture seule d'un sous-réseau privé pour repérer les équipements non recensés. L'assistant IA peut aussi lancer ce scan avec une question du type « scanne 192.168.1.0/24 ».",
+        "Infrastructure → Découverte réseau (ou onglet Découverte de la page Infrastructure) lance un balayage en lecture seule d'un sous-réseau privé pour repérer les équipements non recensés. L'assistant IA peut aussi lancer ce scan avec une question du type « scanne 192.168.1.0/24 ».",
       ),
       list([
         "Sous-réseaux privés uniquement : 10.0.0.0/8, 172.16.0.0/12 ou 192.168.0.0/16, avec 1024 adresses maximum.",

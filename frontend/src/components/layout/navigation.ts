@@ -32,6 +32,7 @@ import {
   UserPlus,
   Users,
   Wallet,
+  Wifi,
 } from "lucide-react";
 
 export interface NavItem {
@@ -194,6 +195,13 @@ export const navigationSections: NavSection[] = [
         label: "Infrastructure",
         to: "/infrastructure",
         icon: Server,
+        permission: "infrastructure.read",
+        moduleKey: "infrastructure",
+      },
+      {
+        label: "Découverte réseau",
+        to: "/decouverte-reseau",
+        icon: Wifi,
         permission: "infrastructure.read",
         moduleKey: "infrastructure",
       },
