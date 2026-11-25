@@ -65,6 +65,17 @@ const STATUS_OPTIONS: Record<string, { value: string; label: string }[]> = {
     { value: "expired", label: "Expiré" },
     { value: "terminated", label: "Résilié" },
   ],
+  commercial_documents: [
+    { value: "draft", label: "Brouillon" },
+    { value: "sent", label: "Envoyé" },
+    { value: "accepted", label: "Accepté" },
+    { value: "refused", label: "Refusé" },
+    { value: "expired", label: "Expiré" },
+    { value: "converted", label: "Converti" },
+    { value: "confirmed", label: "Confirmé" },
+    { value: "delivered", label: "Livré" },
+    { value: "cancelled", label: "Annulé" },
+  ],
   projects: [
     { value: "idea", label: "Idée" },
     { value: "planned", label: "Planifié" },
@@ -87,6 +98,10 @@ const STATUS_OPTIONS: Record<string, { value: string; label: string }[]> = {
 };
 
 const TYPE_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  commercial_documents: [
+    { value: "quote", label: "Devis" },
+    { value: "purchase_order", label: "Bon de commande" },
+  ],
   infrastructure: [
     { value: "server", label: "Serveur" },
     { value: "vm", label: "Machine virtuelle" },
@@ -214,7 +229,8 @@ export function ExportsPage() {
       : (STATUS_OPTIONS[datasetKey] ?? []);
   const typeOptions = TYPE_OPTIONS[datasetKey] ?? [];
   const supportsLocations = LOCATION_DATASETS.has(datasetKey);
-  const supportsDates = datasetKey === "tickets";
+  const supportsDates =
+    datasetKey === "tickets" || datasetKey === "commercial_documents";
 
   const filteredColumns = useMemo(() => {
     if (!dataset) return [];
