@@ -80,6 +80,7 @@ export function DocumentIntakePage() {
   const [kind, setKind] = useState<DocumentAiKind>("other");
   const [supplier, setSupplier] = useState("");
   const [reference, setReference] = useState("");
+  const [engagementNumber, setEngagementNumber] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [amountHt, setAmountHt] = useState("");
@@ -133,6 +134,7 @@ export function DocumentIntakePage() {
       setKind(data.document_type);
       setSupplier(data.supplier ?? "");
       setReference(data.reference ?? "");
+      setEngagementNumber(data.engagement_number ?? "");
       setStartDate(data.start_date ?? "");
       setEndDate(data.end_date ?? "");
       setAmountHt(data.amount_ht != null ? String(data.amount_ht) : "");
@@ -158,6 +160,10 @@ export function DocumentIntakePage() {
 
   const integrate = async () => {
     if (!analysis) return;
+    if (target === "purchase_order" && !engagementNumber.trim()) {
+      toast.error("Le numéro d'engagement est obligatoire pour un bon de commande.");
+      return;
+    }
     setIntegrating(true);
     setResult(null);
     try {
@@ -171,6 +177,7 @@ export function DocumentIntakePage() {
             document_type: kind,
             supplier: nullable(supplier),
             reference: nullable(reference),
+            engagement_number: nullable(engagementNumber),
             start_date: startDate || null,
             end_date: endDate || null,
             amount_ht: numberOrNull(amountHt),
@@ -305,6 +312,17 @@ export function DocumentIntakePage() {
                   onChange={(event) => setReference(event.target.value)}
                 />
               </div>
+              {target === "purchase_order" ? (
+                <div>
+                  <Label htmlFor="doc-ai-engagement">N° d'engagement *</Label>
+                  <Input
+                    id="doc-ai-engagement"
+                    value={engagementNumber}
+                    onChange={(event) => setEngagementNumber(event.target.value)}
+                    placeholder="Obligatoire pour un bon de commande"
+                  />
+                </div>
+              ) : null}
               <div>
                 <Label htmlFor="doc-ai-start">Date de début / facture</Label>
                 <Input
@@ -315,7 +333,13 @@ export function DocumentIntakePage() {
                 />
               </div>
               <div>
-                <Label htmlFor="doc-ai-end">Date de fin</Label>
+                <Label htmlFor="doc-ai-end">
+                  {target === "quote"
+                    ? "Valable jusqu'au"
+                    : target === "purchase_order"
+                      ? "Livraison prévue"
+                      : "Date de fin"}
+                </Label>
                 <Input
                   id="doc-ai-end"
                   type="date"
@@ -431,7 +455,11 @@ export function DocumentIntakePage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
                   loading={integrating}
-                  disabled={!title.trim() || (target === "invoice" && !budgetLineId)}
+                  disabled={
+                    !title.trim() ||
+                    (target === "invoice" && !budgetLineId) ||
+                    (target === "purchase_order" && !engagementNumber.trim())
+                  }
                   onClick={() => void integrate()}
                 >
                   <ArrowRight className="h-3.5 w-3.5" />

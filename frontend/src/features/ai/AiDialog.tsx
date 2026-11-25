@@ -4,9 +4,11 @@ import {
   CalendarPlus,
   Check,
   Copy,
+  FileText,
   LockKeyhole,
   RefreshCw,
   Send,
+  ShoppingCart,
   Sparkles,
   X,
 } from "lucide-react";
@@ -28,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import type {
   AiActionExecuteResponse,
   AiActionProposal,
@@ -64,6 +66,9 @@ const genericPrompts = [
   "Quelles mises à jour WAPT sont en attente ?",
   "Quels tickets sont en retard ?",
   "Quels contrats arrivent à échéance ?",
+  "Quels devis sont en attente ?",
+  "Quels bons de commande n'ont pas de numéro d'engagement ?",
+  "Quelles livraisons sont en retard ?",
   "Quels incidents de sécurité sont ouverts ?",
   "Prépare une synthèse pour la direction.",
 ];
@@ -118,6 +123,8 @@ const actionTypeLabels: Record<string, string> = {
   create_ticket: "Demande IT",
   create_meeting: "Réunion",
   create_communication: "Communication",
+  create_quote: "Devis",
+  create_purchase_order: "Bon de commande",
 };
 
 const actionButtonLabels: Record<string, string> = {
@@ -125,6 +132,8 @@ const actionButtonLabels: Record<string, string> = {
   create_ticket: "Créer la demande",
   create_meeting: "Créer la réunion",
   create_communication: "Créer le brouillon",
+  create_quote: "Créer le devis",
+  create_purchase_order: "Créer le bon de commande",
 };
 
 const actionIcons: Record<string, typeof CalendarPlus> = {
@@ -132,6 +141,8 @@ const actionIcons: Record<string, typeof CalendarPlus> = {
   create_ticket: Sparkles,
   create_meeting: CalendarPlus,
   create_communication: Send,
+  create_quote: FileText,
+  create_purchase_order: ShoppingCart,
 };
 
 function InlineText({ text }: { text: string }) {
@@ -224,6 +235,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
   const canCreateTicket = hasPermission("tickets.create");
   const canCreateMeeting = hasPermission("meetings.manage");
   const canCreateCommunication = hasPermission("communications.manage");
+  const canManageCommercial = hasPermission("suppliers.manage");
   const canExecuteAction = (type: string) =>
     type === "create_ticket"
       ? canCreateTicket
@@ -231,7 +243,9 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
         ? canCreateMeeting
         : type === "create_communication"
           ? canCreateCommunication
-          : canCreateAction;
+          : type === "create_quote" || type === "create_purchase_order"
+            ? canManageCommercial
+            : canCreateAction;
   const contextKey = context ? `${context.type}:${context.id}` : "general";
 
   const statusQuery = useQuery({
@@ -600,6 +614,26 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                                     : ""}
                                   {action.type === "create_action" && action.due_date
                                     ? ` · échéance ${formatDate(action.due_date)}`
+                                    : ""}
+                                  {action.type === "create_quote" ||
+                                  action.type === "create_purchase_order"
+                                    ? `${
+                                        action.supplier_name
+                                          ? ` · ${action.supplier_name}`
+                                          : ""
+                                      }${
+                                        action.engagement_number
+                                          ? ` · engagement ${action.engagement_number}`
+                                          : ""
+                                      }${
+                                        action.amount_ttc != null
+                                          ? ` · ${formatCurrency(action.amount_ttc, 2)} TTC`
+                                          : ""
+                                      }${
+                                        action.source_quote_reference
+                                          ? ` · depuis ${action.source_quote_reference}`
+                                          : ""
+                                      }`
                                     : ""}
                                 </p>
                               </div>

@@ -176,7 +176,8 @@ def analyze(
         "Tu analyses un document administratif ou informatique pour SI PILOT. "
         "Réponds UNIQUEMENT avec un objet JSON, sans texte autour. Champs attendus : "
         '"document_type" (contract, quote, purchase_order, invoice, license ou other), '
-        '"title", "supplier", "reference", "start_date" (AAAA-MM-JJ ou null), '
+        '"title", "supplier", "reference", "engagement_number", '
+        '"start_date" (AAAA-MM-JJ ou null), '
         '"end_date", "amount_ht" (nombre ou null), "amount_ttc", "vat_rate", '
         '"summary" (2 à 4 phrases), "suggested_targets" (documentation, quote, '
         'purchase_order, contract, license, invoice), "confidence" (0 à 1), "warnings" (liste). '
@@ -264,6 +265,7 @@ def analyze(
         title=str(payload.get("title") or Path(filename).stem or "Document importé"),
         supplier=str(payload.get("supplier") or "").strip() or None,
         reference=str(payload.get("reference") or "").strip() or None,
+        engagement_number=str(payload.get("engagement_number") or "").strip() or None,
         start_date=_date(payload.get("start_date")),
         end_date=_date(payload.get("end_date")),
         amount_ht=_number(payload.get("amount_ht")),
@@ -366,6 +368,10 @@ def integrate(
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     if meta.get("created_by") != str(actor.id) and not has_permission(actor, "admin.settings.manage"):
         raise PermissionDeniedError("Cet import ne vous appartient pas.")
+    if payload.target == "purchase_order" and not (payload.engagement_number or "").strip():
+        raise ValidationAppError(
+            "Le numéro d'engagement est obligatoire pour un bon de commande."
+        )
     supplier_id = None
     if payload.target in {"contract", "invoice", "quote", "purchase_order"}:
         supplier_id = _supplier_id(db, payload.supplier, actor, request)
@@ -380,12 +386,18 @@ def integrate(
         kind: Literal["quote", "purchase_order"] = (
             "quote" if payload.target == "quote" else "purchase_order"
         )
+        engagement_number = (payload.engagement_number or "").strip() or None
+        if kind == "purchase_order" and engagement_number is None:
+            raise ValidationAppError(
+                "Le numéro d'engagement est obligatoire pour un bon de commande."
+            )
         created = commercial_service.create_document(
             db,
             CommercialDocumentCreate(
                 kind=kind,
                 supplier_id=supplier_id,
                 reference=payload.reference or "",
+                engagement_number=engagement_number,
                 object=payload.title,
                 status="draft",
                 issue_date=payload.start_date or date.today(),

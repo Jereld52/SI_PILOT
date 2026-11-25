@@ -19,6 +19,7 @@ class DocumentAnalysisRead(BaseModel):
     title: str
     supplier: str | None = None
     reference: str | None = None
+    engagement_number: str | None = None
     start_date: date | None = None
     end_date: date | None = None
     amount_ht: float | None = None
@@ -37,6 +38,7 @@ class DocumentIntegrationRequest(BaseModel):
     document_type: DocumentKind = "other"
     supplier: str | None = Field(default=None, max_length=150)
     reference: str | None = Field(default=None, max_length=80)
+    engagement_number: str | None = Field(default=None, max_length=80)
     start_date: date | None = None
     end_date: date | None = None
     amount_ht: float | None = Field(default=None, ge=0)

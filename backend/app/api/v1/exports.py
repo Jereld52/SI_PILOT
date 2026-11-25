@@ -11,6 +11,7 @@ from app.core.errors import NotFoundError, PermissionDeniedError, ValidationAppE
 from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.exports import assets as assets_export
+from app.exports import commercial as commercial_export
 from app.exports import custom as custom_export
 from app.exports import infrastructure as infrastructure_export
 from app.exports import mobile as mobile_export
@@ -279,6 +280,79 @@ def export_statistics(
             "Content-Disposition": (
                 f'attachment; filename="statistiques-{overview.start.isoformat()}-'
                 f'{overview.end.isoformat()}-{granularity}.{format}"'
+            )
+        },
+    )
+
+
+@router.get("/commercial-documents")
+def export_commercial_documents(
+    request: Request,
+    format: Literal["xlsx", "pdf"] = Query("xlsx"),
+    start: date | None = None,
+    end: date | None = None,
+    granularity: Granularity = Query("month"),
+    kind: Literal["quote", "purchase_order"] | None = None,
+    status: str | None = Query(None, max_length=30),
+    supplier_id: UUID | None = None,
+    with_engagement: bool | None = None,
+    q: str | None = Query(None, max_length=120),
+    actor: User = Depends(require_permission("exports.run")),
+    db: Session = Depends(get_db),
+):
+    if not has_permission(actor, "suppliers.read"):
+        raise PermissionDeniedError("Vous ne pouvez pas exporter les achats.")
+    stats = statistics_service.get_commercial_overview(
+        db,
+        start=start,
+        end=end,
+        granularity=granularity,
+        kind=kind,
+        status=status,
+        supplier_id=supplier_id,
+        with_engagement=with_engagement,
+        q=q,
+    )
+    content = (
+        commercial_export.commercial_xlsx(stats)
+        if format == "xlsx"
+        else commercial_export.commercial_pdf(
+            stats, branding=branding_service.get_pdf_branding(db)
+        )
+    )
+    media_type = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if format == "xlsx"
+        else "application/pdf"
+    )
+    write_audit(
+        db,
+        module="exports",
+        action="commercial_documents_exported",
+        actor=actor,
+        entity_type="export",
+        entity_label=f"commercial.{format}",
+        after={
+            "format": format,
+            "count": len(stats.documents),
+            "kind": kind,
+            "status": status,
+            "supplier_id": str(supplier_id) if supplier_id else None,
+            "with_engagement": with_engagement,
+            "filtered": bool(kind or status or supplier_id or with_engagement is not None or q),
+            "start": stats.start.isoformat(),
+            "end": stats.end.isoformat(),
+        },
+        request=request,
+    )
+    db.commit()
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="'
+                f'{_filename("achats", format)}"'
             )
         },
     )

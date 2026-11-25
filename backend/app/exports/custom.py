@@ -19,6 +19,7 @@ from app.core.permissions import has_permission
 from app.exports.pdf_utils import PdfBranding, create_document, make_table, meta_line
 from app.models.assets import Asset, License, Supplier
 from app.models.auth import User
+from app.models.commercial import CommercialDocument
 from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
 from app.models.mobile import MobileLine
@@ -30,6 +31,19 @@ from app.models.tickets import Ticket, TicketStatus
 
 HEADER_FILL = PatternFill("solid", fgColor="772B2F")
 HEADER_FONT = Font(color="F3EFE2", bold=True)
+
+COMMERCIAL_KIND_LABELS = {"quote": "Devis", "purchase_order": "Bon de commande"}
+COMMERCIAL_STATUS_LABELS = {
+    "draft": "Brouillon",
+    "sent": "Envoyé",
+    "accepted": "Accepté",
+    "refused": "Refusé",
+    "expired": "Expiré",
+    "converted": "Converti",
+    "confirmed": "Confirmé",
+    "delivered": "Livré",
+    "cancelled": "Annulé",
+}
 
 
 @dataclass(frozen=True)
@@ -253,6 +267,31 @@ DATASETS: dict[str, DatasetSpec] = {
             ColumnSpec("contact_name", "Contact", False),
             ColumnSpec("contact_email", "E-mail contact", False),
             ColumnSpec("comments", "Commentaires", False),
+        ),
+    ),
+    "commercial_documents": DatasetSpec(
+        key="commercial_documents",
+        label="Devis et bons de commande",
+        description="Achats, fournisseurs, montants, statuts, engagement et livraison.",
+        permission="suppliers.read",
+        columns=(
+            ColumnSpec("kind", "Type"),
+            ColumnSpec("reference", "Référence"),
+            ColumnSpec("engagement_number", "N° engagement"),
+            ColumnSpec("object", "Objet"),
+            ColumnSpec("supplier", "Fournisseur"),
+            ColumnSpec("status", "Statut"),
+            ColumnSpec("issue_date", "Date"),
+            ColumnSpec("valid_until", "Valable jusqu'au", False),
+            ColumnSpec("expected_date", "Livraison prévue", False),
+            ColumnSpec("amount_ht", "Montant HT", False),
+            ColumnSpec("amount_ttc", "Montant TTC"),
+            ColumnSpec("vat_rate", "TVA", False),
+            ColumnSpec("budget_line", "Ligne budgétaire", False),
+            ColumnSpec("contract", "Contrat", False),
+            ColumnSpec("source_document", "Devis d'origine", False),
+            ColumnSpec("notes", "Notes", False),
+            ColumnSpec("created_at", "Créé le", False),
         ),
     ),
     "projects": DatasetSpec(
@@ -577,6 +616,28 @@ def _contract_row(contract: Contract) -> dict[str, Any]:
     }
 
 
+def _commercial_row(document: CommercialDocument) -> dict[str, Any]:
+    return {
+        "kind": COMMERCIAL_KIND_LABELS.get(document.kind, document.kind),
+        "reference": document.reference,
+        "engagement_number": document.engagement_number or "",
+        "object": document.object,
+        "supplier": document.supplier.name if document.supplier else "",
+        "status": COMMERCIAL_STATUS_LABELS.get(document.status, document.status),
+        "issue_date": _date(document.issue_date),
+        "valid_until": _date(document.valid_until),
+        "expected_date": _date(document.expected_date),
+        "amount_ht": document.amount_ht,
+        "amount_ttc": document.amount_ttc,
+        "vat_rate": document.vat_rate,
+        "budget_line": document.budget_line.label if document.budget_line else "",
+        "contract": document.contract.reference if document.contract else "",
+        "source_document": str(document.source_document_id or ""),
+        "notes": document.notes or "",
+        "created_at": _date(document.created_at),
+    }
+
+
 def _project_row(project: Project) -> dict[str, Any]:
     return {
         "code": project.code,
@@ -781,6 +842,33 @@ def load_rows(
             statement = statement.where(Contract.status == status)
         contract_rows = db.scalars(statement.order_by(Contract.reference)).unique().all()
         return [_contract_row(row) for row in contract_rows]
+
+    if dataset_key == "commercial_documents":
+        statement = select(CommercialDocument)
+        if pattern:
+            statement = statement.where(
+                or_(
+                    CommercialDocument.reference.ilike(pattern),
+                    CommercialDocument.engagement_number.ilike(pattern),
+                    CommercialDocument.object.ilike(pattern),
+                    CommercialDocument.supplier.has(Supplier.name.ilike(pattern)),
+                )
+            )
+        if status:
+            statement = statement.where(CommercialDocument.status == status)
+        if type_:
+            statement = statement.where(CommercialDocument.kind == type_)
+        if start:
+            statement = statement.where(CommercialDocument.issue_date >= start)
+        if end:
+            statement = statement.where(CommercialDocument.issue_date <= end)
+        commercial_rows = db.scalars(
+            statement.order_by(
+                CommercialDocument.issue_date.desc(),
+                CommercialDocument.reference.desc(),
+            )
+        ).unique().all()
+        return [_commercial_row(row) for row in commercial_rows]
 
     if dataset_key == "projects":
         statement = select(Project)

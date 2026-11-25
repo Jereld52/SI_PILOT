@@ -716,6 +716,41 @@ export interface StatisticsOverview {
   budget: StatsBudget | null;
 }
 
+export interface StatsCommercialRow {
+  id: string;
+  kind: "quote" | "purchase_order";
+  reference: string;
+  object: string;
+  supplier: string;
+  status: string;
+  issue_date: string;
+  due_date: string | null;
+  engagement_number: string | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  budget_line: string | null;
+  contract_reference: string | null;
+  document_id: string | null;
+  created_at: string;
+}
+
+export interface StatsCommercial {
+  start: string;
+  end: string;
+  generated_at: string;
+  kind: string | null;
+  status: string | null;
+  supplier_id: string | null;
+  with_engagement: boolean | null;
+  q: string | null;
+  kpis: StatsKpi[];
+  by_status: StatsPoint[];
+  by_supplier: StatsPoint[];
+  by_kind: StatsPoint[];
+  periods: StatsPeriodPoint[];
+  documents: StatsCommercialRow[];
+}
+
 export interface MobileLineItem {
   id: string;
   line_number: string;
@@ -1178,6 +1213,7 @@ export interface CommercialDocumentItem {
   id: string;
   kind: "quote" | "purchase_order";
   reference: string;
+  engagement_number: string | null;
   object: string;
   supplier_id: string;
   supplier: { id: string; name: string };
@@ -1714,6 +1750,7 @@ export interface DocumentAiAnalysis {
   title: string;
   supplier: string | null;
   reference: string | null;
+  engagement_number: string | null;
   start_date: string | null;
   end_date: string | null;
   amount_ht: number | null;
@@ -2082,7 +2119,13 @@ export interface AiModelsResponse {
 }
 
 export interface AiActionProposal {
-  type: "create_action" | "create_ticket" | "create_meeting" | "create_communication";
+  type:
+    | "create_action"
+    | "create_ticket"
+    | "create_meeting"
+    | "create_communication"
+    | "create_quote"
+    | "create_purchase_order";
   title: string;
   description: string | null;
   priority: "low" | "medium" | "high" | "critical";
@@ -2091,6 +2134,14 @@ export interface AiActionProposal {
   scheduled_at: string | null;
   duration_minutes: number | null;
   location: string | null;
+  supplier_name: string | null;
+  engagement_number: string | null;
+  reference: string | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  vat_rate: number | null;
+  expected_date: string | null;
+  source_quote_reference: string | null;
 }
 
 export interface AiActionExecuteResponse {

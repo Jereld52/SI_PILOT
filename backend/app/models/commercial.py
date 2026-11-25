@@ -9,6 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
 from app.models.assets import Supplier
+from app.models.budget import BudgetLine
+from app.models.contracts import Contract
 
 
 class CommercialDocument(Base, UUIDMixin, TimestampMixin):
@@ -17,6 +19,9 @@ class CommercialDocument(Base, UUIDMixin, TimestampMixin):
     kind: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
     reference: Mapped[str] = mapped_column(
         String(80), unique=True, index=True, nullable=False
+    )
+    engagement_number: Mapped[str | None] = mapped_column(
+        String(80), unique=True, index=True
     )
     object: Mapped[str] = mapped_column(String(255), nullable=False)
     supplier_id: Mapped[UUID] = mapped_column(
@@ -52,6 +57,8 @@ class CommercialDocument(Base, UUIDMixin, TimestampMixin):
     )
 
     supplier: Mapped[Supplier] = relationship(lazy="joined")
+    budget_line: Mapped[BudgetLine | None] = relationship(lazy="joined")
+    contract: Mapped[Contract | None] = relationship(lazy="joined")
 
     __table_args__ = (
         CheckConstraint(

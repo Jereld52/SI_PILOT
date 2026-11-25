@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
@@ -8,7 +8,9 @@ from app.api.deps import require_permission
 from app.core.errors import PermissionDeniedError, ValidationAppError
 from app.core.permissions import has_permission
 from app.db.session import get_db
+from app.models.assets import Supplier
 from app.models.auth import User
+from app.models.commercial import CommercialDocument
 from app.models.tickets import TicketCategory, TicketPriority
 from app.schemas.ai import (
     AiActionExecuteResponse,
@@ -23,13 +25,17 @@ from app.schemas.ai import (
     AiToolInfo,
 )
 from app.schemas.calendar import ActionItemCreate
+from app.schemas.commercial import CommercialDocumentCreate
 from app.schemas.communication import CommunicationCreate, MeetingCreate
+from app.schemas.suppliers import SupplierCreate
 from app.schemas.tickets import TicketCreate
 from app.services import (
     ai_service,
     ai_tools_service,
     calendar_service,
+    commercial_service,
     communication_service,
+    suppliers_service,
     tickets_service,
 )
 
@@ -107,6 +113,28 @@ def _ticket_priority(db: Session, code: str):
     return priority
 
 
+def _commercial_supplier_id(
+    db: Session, name: str | None, actor: User, request: Request
+):
+    cleaned = (name or "").strip()
+    if not cleaned:
+        raise ValidationAppError("Renseignez le fournisseur du document.")
+    existing = db.scalar(select(Supplier).where(Supplier.name.ilike(cleaned)))
+    if existing is not None:
+        return existing.id
+    if not has_permission(actor, "suppliers.manage"):
+        raise PermissionDeniedError(
+            "Le fournisseur est inconnu et vous n'avez pas la permission de le créer."
+        )
+    supplier = suppliers_service.create_supplier(
+        db,
+        SupplierCreate(name=cleaned, type="Fournisseur"),
+        actor=actor,
+        request=request,
+    )
+    return supplier.id
+
+
 @router.post("/actions/execute", response_model=AiActionExecuteResponse)
 def execute_action(
     payload: AiActionProposal,
@@ -177,6 +205,100 @@ def execute_action(
         return AiActionExecuteResponse(
             message=f"Brouillon de communication créé : {communication.title}",
             link="/communication/communications",
+        )
+
+    if payload.type == "create_quote":
+        if not has_permission(actor, "suppliers.manage"):
+            raise PermissionDeniedError("Vous ne pouvez pas créer de devis.")
+        supplier_id = _commercial_supplier_id(
+            db, payload.supplier_name, actor, request
+        )
+        quote = commercial_service.create_document(
+            db,
+            CommercialDocumentCreate(
+                kind="quote",
+                supplier_id=supplier_id,
+                reference=payload.reference or "",
+                object=payload.title,
+                status="draft",
+                issue_date=date.today(),
+                valid_until=payload.expected_date,
+                amount_ht=payload.amount_ht,
+                amount_ttc=payload.amount_ttc,
+                vat_rate=payload.vat_rate,
+                notes=payload.description,
+            ),
+            actor=actor,
+            request=request,
+        )
+        return AiActionExecuteResponse(
+            message=f"Devis {quote.reference} créé en brouillon.",
+            link="/devis",
+        )
+
+    if payload.type == "create_purchase_order":
+        if not has_permission(actor, "suppliers.manage"):
+            raise PermissionDeniedError("Vous ne pouvez pas créer de bon de commande.")
+        engagement = (payload.engagement_number or "").strip()
+        if not engagement:
+            raise ValidationAppError(
+                "Le numéro d'engagement est obligatoire pour créer un bon de commande."
+            )
+        if payload.source_quote_reference:
+            quote = db.scalar(
+                select(CommercialDocument).where(
+                    CommercialDocument.kind == "quote",
+                    CommercialDocument.reference == payload.source_quote_reference,
+                )
+            )
+            if quote is None:
+                raise ValidationAppError(
+                    "Le devis indiqué est introuvable. Précisez sa référence exacte."
+                )
+            order = commercial_service.convert_quote(
+                db,
+                quote,
+                engagement_number=engagement,
+                expected_date=payload.expected_date,
+                notes=payload.description,
+                actor=actor,
+                request=request,
+            )
+            return AiActionExecuteResponse(
+                message=(
+                    f"Bon de commande {order.reference} créé depuis le devis "
+                    f"{quote.reference} (engagement {order.engagement_number})."
+                ),
+                link="/bons-commande",
+            )
+        supplier_id = _commercial_supplier_id(
+            db, payload.supplier_name, actor, request
+        )
+        order = commercial_service.create_document(
+            db,
+            CommercialDocumentCreate(
+                kind="purchase_order",
+                supplier_id=supplier_id,
+                reference=payload.reference or "",
+                engagement_number=engagement,
+                object=payload.title,
+                status="draft",
+                issue_date=date.today(),
+                expected_date=payload.expected_date,
+                amount_ht=payload.amount_ht,
+                amount_ttc=payload.amount_ttc,
+                vat_rate=payload.vat_rate,
+                notes=payload.description,
+            ),
+            actor=actor,
+            request=request,
+        )
+        return AiActionExecuteResponse(
+            message=(
+                f"Bon de commande {order.reference} créé avec l'engagement "
+                f"{order.engagement_number}."
+            ),
+            link="/bons-commande",
         )
 
     if not has_permission(actor, "actions.create"):

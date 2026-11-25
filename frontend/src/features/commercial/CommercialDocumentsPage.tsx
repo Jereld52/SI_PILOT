@@ -6,6 +6,7 @@ import {
   FileText,
   Pencil,
   ShoppingCart,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -33,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { CommercialDocumentItem, SupplierItem } from "@/types/api";
@@ -86,6 +88,7 @@ interface FormState {
   supplierId: string;
   object: string;
   reference: string;
+  engagementNumber: string;
   status: string;
   issueDate: string;
   endDate: string;
@@ -99,6 +102,7 @@ const emptyForm = (): FormState => ({
   supplierId: "",
   object: "",
   reference: "",
+  engagementNumber: "",
   status: "draft",
   issueDate: new Date().toISOString().slice(0, 10),
   endDate: "",
@@ -110,6 +114,7 @@ const emptyForm = (): FormState => ({
 
 export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
   const { hasPermission } = useAuth();
+  const { open: openAi } = useAiAssistant();
   const canRead = hasPermission("suppliers.read");
   const canManage = hasPermission("suppliers.manage");
   const label = kindLabels[kind];
@@ -122,7 +127,10 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
   const [saving, setSaving] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<CommercialDocumentItem | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [convertTarget, setConvertTarget] = useState<CommercialDocumentItem | null>(null);
+  const [convertEngagement, setConvertEngagement] = useState("");
+  const [convertExpectedDate, setConvertExpectedDate] = useState("");
+  const [converting, setConverting] = useState(false);
 
   const documentsQuery = useQuery({
     queryKey: ["commercial", kind, search, statusFilter],
@@ -150,6 +158,7 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
         supplierId: editing.supplier_id,
         object: editing.object,
         reference: editing.reference,
+        engagementNumber: editing.engagement_number ?? "",
         status: editing.status,
         issueDate: editing.issue_date,
         endDate: (kind === "quote" ? editing.valid_until : editing.expected_date) ?? "",
@@ -178,12 +187,18 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
       toast.error("Sélectionnez un fournisseur et renseignez l'objet.");
       return;
     }
+    if (kind === "purchase_order" && !form.engagementNumber.trim()) {
+      toast.error("Le numéro d'engagement est obligatoire pour un bon de commande.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
         kind,
         supplier_id: form.supplierId,
         reference: nullable(form.reference) ?? "",
+        engagement_number:
+          kind === "purchase_order" ? nullable(form.engagementNumber) : null,
         object: form.object.trim(),
         status: form.status,
         issue_date: form.issueDate,
@@ -231,19 +246,39 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
     }
   };
 
-  const convert = async (document: CommercialDocumentItem) => {
-    setConvertingId(document.id);
+  const openConvert = (document: CommercialDocumentItem) => {
+    setConvertTarget(document);
+    setConvertEngagement("");
+    setConvertExpectedDate(document.valid_until ?? "");
+  };
+
+  const convert = async () => {
+    if (!convertTarget) return;
+    if (!convertEngagement.trim()) {
+      toast.error("Saisissez le numéro d'engagement.");
+      return;
+    }
+    setConverting(true);
     try {
       const created = await apiFetch<CommercialDocumentItem>(
-        `/commercial-documents/${document.id}/convert`,
-        { method: "POST" },
+        `/commercial-documents/${convertTarget.id}/convert`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            engagement_number: convertEngagement.trim(),
+            expected_date: convertExpectedDate || null,
+          }),
+        },
       );
-      toast.success(`Bon de commande ${created.reference} créé.`);
+      toast.success(
+        `Bon de commande ${created.reference} créé avec l'engagement ${created.engagement_number}.`,
+      );
+      setConvertTarget(null);
       void documentsQuery.refetch();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Conversion impossible.");
     } finally {
-      setConvertingId(null);
+      setConverting(false);
     }
   };
 
@@ -271,6 +306,21 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
         }
         actions={
           <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                openAi(
+                  null,
+                  kind === "quote"
+                    ? "Analyse les devis : devis en attente, montants, taux de conversion et devis à relancer. Propose les prochaines actions."
+                    : "Analyse les bons de commande : engagement, montants, livraisons en retard et commandes à relancer. Propose les prochaines actions.",
+                )
+              }
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Assistant achats
+            </Button>
             {canManage ? (
               <Button size="sm" onClick={openCreate} disabled={suppliers.length === 0}>
                 <FilePlus2 className="h-3.5 w-3.5" />
@@ -373,6 +423,9 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
                   <TableHead>Objet</TableHead>
                   <TableHead>Fournisseur</TableHead>
                   <TableHead>Date</TableHead>
+                  {kind === "purchase_order" ? (
+                    <TableHead>Engagement</TableHead>
+                  ) : null}
                   <TableHead>Montant TTC</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="w-32 text-right">Actions</TableHead>
@@ -393,6 +446,15 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
                     <TableCell className="whitespace-nowrap text-[11px] text-muted">
                       {formatDate(document.issue_date)}
                     </TableCell>
+                    {kind === "purchase_order" ? (
+                      <TableCell className="font-mono text-[11px]">
+                        {document.engagement_number ? (
+                          <span className="text-foreground">{document.engagement_number}</span>
+                        ) : (
+                          <span className="text-danger">À compléter</span>
+                        )}
+                      </TableCell>
+                    ) : null}
                     <TableCell className="whitespace-nowrap text-[11px] text-foreground">
                       {formatCurrency(document.amount_ttc ?? 0, 2)}
                     </TableCell>
@@ -408,8 +470,8 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
                             variant="ghost"
                             size="icon"
                             aria-label="Convertir en bon de commande"
-                            loading={convertingId === document.id}
-                            onClick={() => void convert(document)}
+                            loading={converting && convertTarget?.id === document.id}
+                            onClick={() => openConvert(document)}
                           >
                             <ArrowRightLeft className="h-3.5 w-3.5 text-success" />
                           </Button>
@@ -453,6 +515,9 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
             <DialogDescription>
               Fournisseur, montants, statut et dates. La référence peut être laissée vide pour
               une génération automatique.
+              {kind === "purchase_order"
+                ? " Le numéro d'engagement est obligatoire."
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
@@ -504,6 +569,19 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
                   placeholder="Automatique"
                 />
               </div>
+              {kind === "purchase_order" ? (
+                <div>
+                  <Label htmlFor="commercial-engagement">N° d'engagement *</Label>
+                  <Input
+                    id="commercial-engagement"
+                    value={form.engagementNumber}
+                    onChange={(event) =>
+                      setForm({ ...form, engagementNumber: event.target.value })
+                    }
+                    placeholder="Numéro d'engagement budgétaire"
+                  />
+                </div>
+              ) : null}
               <div>
                 <Label htmlFor="commercial-issue">Date d'émission</Label>
                 <Input
@@ -568,6 +646,63 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
             </Button>
             <Button loading={saving} onClick={() => void save()}>
               Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(convertTarget)}
+        onOpenChange={(open) => !open && setConvertTarget(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Créer le bon de commande</DialogTitle>
+            <DialogDescription>
+              Le devis {convertTarget?.reference ?? ""} ne sera pas transformé
+              automatiquement. Vérifiez les informations et saisissez le numéro
+              d'engagement obligatoire pour votre suivi interne.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border-soft bg-background/40 p-3 text-[11px] text-muted">
+              <p className="font-medium text-foreground">{convertTarget?.object}</p>
+              <p className="mt-1">
+                {convertTarget?.supplier.name} ·{" "}
+                {formatCurrency(convertTarget?.amount_ttc ?? 0, 2)} TTC
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="convert-engagement">N° d'engagement *</Label>
+              <Input
+                id="convert-engagement"
+                value={convertEngagement}
+                onChange={(event) => setConvertEngagement(event.target.value)}
+                placeholder="Numéro d'engagement budgétaire"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label htmlFor="convert-expected">Livraison prévue</Label>
+              <Input
+                id="convert-expected"
+                type="date"
+                value={convertExpectedDate}
+                onChange={(event) => setConvertExpectedDate(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConvertTarget(null)}>
+              Annuler
+            </Button>
+            <Button
+              loading={converting}
+              disabled={!convertEngagement.trim()}
+              onClick={() => void convert()}
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+              Créer le bon de commande
             </Button>
           </DialogFooter>
         </DialogContent>

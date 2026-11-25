@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from app.schemas.commercial import (
     CommercialDocumentCreate,
     CommercialDocumentRead,
     CommercialDocumentUpdate,
+    CommercialQuoteConvertRequest,
 )
 from app.services import commercial_service
 
@@ -23,11 +25,21 @@ def list_documents(
     q: str | None = Query(None, max_length=120),
     status: str | None = Query(None, max_length=30),
     supplier_id: UUID | None = None,
+    with_engagement: bool | None = None,
+    start: date | None = None,
+    end: date | None = None,
     _: User = Depends(require_permission("suppliers.read")),
     db: Session = Depends(get_db),
 ) -> list[CommercialDocumentRead]:
     return commercial_service.list_documents(
-        db, kind=kind, q=q, status=status, supplier_id=supplier_id
+        db,
+        kind=kind,
+        q=q,
+        status=status,
+        supplier_id=supplier_id,
+        with_engagement=with_engagement,
+        start=start,
+        end=end,
     )
 
 
@@ -82,11 +94,18 @@ def cancel_document(
 @router.post("/{document_id}/convert", response_model=CommercialDocumentRead)
 def convert_quote(
     document_id: UUID,
+    payload: CommercialQuoteConvertRequest,
     request: Request,
     actor: User = Depends(require_permission("suppliers.manage")),
     db: Session = Depends(get_db),
 ) -> CommercialDocumentRead:
     document = commercial_service.get_document(db, document_id)
     return commercial_service.convert_quote(
-        db, document, actor=actor, request=request
+        db,
+        document,
+        engagement_number=payload.engagement_number,
+        expected_date=payload.expected_date,
+        notes=payload.notes,
+        actor=actor,
+        request=request,
     )

@@ -666,15 +666,22 @@ SYSTEM_PROMPT = (
     "les valider dans SI PILOT. Ne divulgue aucun secret, mot de passe ou clé d'API. "
     "Pour les listes de postes, cite les noms machine et numéros d'inventaire fournis. "
     "Lorsque l'utilisateur demande explicitement de créer une action de suivi, une demande IT, "
-    "une réunion ou une communication, tu peux joindre à la fin de ta réponse un bloc de ce type :\n"
+    "une réunion, une communication, un devis ou un bon de commande, tu peux joindre à la fin "
+    "de ta réponse un bloc de ce type :\n"
     "```action\n"
     '{"type": "create_action", "title": "...", "description": "...", '
     '"priority": "medium", "due_date": "AAAA-MM-JJ"}\n'
     "```\n"
-    "Types autorisés : create_action, create_ticket, create_meeting, create_communication. "
+    "Types autorisés : create_action, create_ticket, create_meeting, create_communication, "
+    "create_quote, create_purchase_order. "
     "Pour create_ticket, ajoute category parmi hardware, software, network, telephony, "
     "messaging, accounts, security, printing. Pour create_meeting, ajoute scheduled_at en "
     "ISO 8601 et éventuellement duration_minutes et location. "
+    "Pour create_quote et create_purchase_order, ajoute supplier_name, éventuellement reference, "
+    "amount_ht, amount_ttc, vat_rate, expected_date (validité du devis ou livraison prévue) "
+    "et source_quote_reference pour convertir un devis existant. "
+    "Le numéro d'engagement est OBLIGATOIRE pour create_purchase_order : ne l'invente jamais. "
+    "S'il n'est pas fourni par l'utilisateur, ne propose pas l'action et demande-le d'abord. "
     "Tu ne dois jamais affirmer que l'action est créée : l'utilisateur devra la confirmer. "
     "Ne propose qu'une seule action par réponse et n'invente pas de date précise."
 )
@@ -1044,6 +1051,12 @@ SUGGESTION_MAP: dict[str, list[str]] = {
     "assets_renewal": [
         "Prépare un plan de renouvellement.",
         "Quels postes sont hors garantie ?",
+    ],
+    "commercial_overview": [
+        "Quels devis sont en attente de conversion ?",
+        "Quels bons de commande n'ont pas de numéro d'engagement ?",
+        "Quelles livraisons sont en retard ?",
+        "Prépare un point d'achat pour la direction.",
     ],
     "network_discovery": [
         "Quels équipements ajouter en priorité ?",

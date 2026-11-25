@@ -49,6 +49,8 @@ L'assistant sélectionne automatiquement des outils en lecture seule selon la qu
 - demandes ouvertes, demandes en retard, recherche de demandes ;
 - mises à jour WAPT, logiciels installés sur un poste ;
 - contrats à échéance, partages réseau, incidents de sécurité, certificats ;
+- devis et bons de commande : devis en attente, conversion, montants, livraisons et numéros
+  d'engagement (`commercial_overview`) ;
 - infrastructure, utilisateurs et agents, activité récente ;
 - jobs, sessions et dépôts de sauvegarde Veeam (`veeam_backup_status`) ;
 - découverte réseau limitée aux plages privées et rapprochement avec le parc (`network_discovery`) ;
@@ -83,7 +85,7 @@ affichés dans la réponse.
 - `GET /api/v1/ai/status` : état de l'intégration (`ai.use`).
 - `GET /api/v1/ai/tools` : outils disponibles selon les permissions (`ai.use`).
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
-- `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action : `actions.create`, `tickets.create`, `meetings.manage` ou `communications.manage`).
+- `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action : `actions.create`, `tickets.create`, `meetings.manage`, `communications.manage` ou `suppliers.manage`). Les actions `create_quote` et `create_purchase_order` créent un devis ou un bon de commande ; le numéro d'engagement est obligatoire pour un bon de commande et n'est jamais inventé par l'IA.
 - `GET /api/v1/admin/ai/models` : liste des modèles du fournisseur (`ai.configure`).
 - `POST /api/v1/documents/analyze` : analyse IA d'un document (`documents.create` + `ai.use`).
 - `POST /api/v1/documents/intake/{token}/integrate` : intégration du document analysé vers la documentation, un devis, un bon de commande, un contrat, une licence ou une facture budgétaire (`documents.create` + permission du module cible).

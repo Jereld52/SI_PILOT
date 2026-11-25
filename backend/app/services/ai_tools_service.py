@@ -117,6 +117,12 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "permission": "contracts.read",
     },
     {
+        "key": "commercial_overview",
+        "label": "Achats et engagement",
+        "description": "Devis, bons de commande, montants, conversion, livraisons et numéros d'engagement.",
+        "permission": "suppliers.read",
+    },
+    {
         "key": "network_shares_status",
         "label": "Partages réseau",
         "description": "Volumétrie et alertes des partages réseau.",
@@ -756,6 +762,51 @@ def network_discovery(
     return _result("network_discovery", items, note=note)
 
 
+def commercial_overview(db: Session, actor: User) -> dict[str, Any]:
+    stats = statistics_service.get_commercial_overview(db)
+    items = [
+        f"Période analysée : {stats.start:%d/%m/%Y} → {stats.end:%d/%m/%Y}.",
+        *[
+            f"{kpi.label} : {kpi.value} {kpi.unit or ''}".strip()
+            for kpi in stats.kpis
+        ],
+    ]
+    without_engagement = [
+        document
+        for document in stats.documents
+        if document.kind == "purchase_order" and not document.engagement_number
+    ]
+    for document in without_engagement[:8]:
+        items.append(
+            f"Sans engagement : {document.reference} | {document.supplier} | "
+            f"{document.amount_ttc if document.amount_ttc is not None else '—'} EUR TTC"
+        )
+    today = date.today()
+    late = [
+        document
+        for document in stats.documents
+        if document.kind == "purchase_order"
+        and document.due_date is not None
+        and document.due_date < today
+        and document.status not in {"delivered", "cancelled"}
+    ]
+    for document in late[:8]:
+        items.append(
+            f"Livraison en retard : {document.reference} | {document.supplier} | "
+            f"prévue le {document.due_date:%d/%m/%Y} | statut {document.status}"
+        )
+    for document in stats.documents[:10]:
+        label = "Devis" if document.kind == "quote" else "Bon de commande"
+        items.append(
+            f"{label} {document.reference} | {document.supplier} | {document.status} | "
+            f"{document.amount_ttc if document.amount_ttc is not None else '—'} EUR TTC | "
+            f"engagement {document.engagement_number or '—'}"
+        )
+    if len(stats.documents) > 10:
+        items.append(f"… {len(stats.documents) - 10} autre(s) document(s).")
+    return _result("commercial_overview", items)
+
+
 def daily_briefing(db: Session, actor: User) -> dict[str, Any]:
     items: list[str] = []
     checks = scheduler_service.checks_snapshot(db)
@@ -849,6 +900,7 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "software_updates": software_updates,
     "software_on_host": software_on_host,
     "contracts_expiring": contracts_expiring,
+    "commercial_overview": commercial_overview,
     "network_shares_status": network_shares_status,
     "security_incidents": security_incidents,
     "certificates_expiring": certificates_expiring,
@@ -903,6 +955,19 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("software_on_host", query=query)
     if "contrat" in text:
         add("contracts_expiring")
+    if any(
+        term in text
+        for term in (
+            "devis",
+            "bon de commande",
+            "bons de commande",
+            "commande fournisseur",
+            "achat",
+            "achats",
+            "engagement",
+        )
+    ):
+        add("commercial_overview")
     if any(term in text for term in ("partage", "espace libre", "volume", "réseau", "reseau")):
         add("network_shares_status")
     if any(term in text for term in ("incident", "sécurité", "securite", "cyber", "vulnérab")):

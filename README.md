@@ -41,7 +41,8 @@ se configurent depuis l'administration.
   chiffrés avec accès contrôlé et audité. Création, modification et suppression des lignes.
 - Fournisseurs, licences, sièges et coûts annuels.
 - **Achats** : devis et bons de commande rattachés aux fournisseurs, avec références DEV/BC,
-  montants HT/TTC, TVA, statuts, conversion d'un devis accepté en bon de commande et suivi des
+  montants HT/TTC, TVA, statuts, **numéro d'engagement obligatoire et unique pour les bons de
+  commande**, conversion d'un devis avec confirmation et saisie de l'engagement, et suivi des
   livraisons.
 - **Stock IT** dédié : claviers, souris, écrans, casques, stations d'accueil, câbles et
   consommables, avec quantités, seuils d'alerte, valeur, mouvements et historique.
@@ -115,8 +116,10 @@ se configurent depuis l'administration.
   de la licence ou de la facture budgétaire, et archivage du fichier source dans la documentation.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
   répartitions et détail.
-- Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, sécurité,
-  projets, téléphonie et documentation, avec export XLSX/PDF.
+- Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, achats,
+  sécurité, projets, téléphonie et documentation, avec export XLSX/PDF. L'onglet **Achats**
+  filtre les devis et bons de commande par type, statut, fournisseur, engagement et recherche,
+  puis exporte exactement le périmètre affiché.
 - RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
 - Exports RGPD : registre complet en XLSX/PDF, dossier d'une demande de droits et données
   personnelles détenues sur un agent, avec audit. Les PIN/PUK restent exclus.

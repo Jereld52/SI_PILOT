@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -41,6 +42,41 @@ class StatsBudget(BaseModel):
     invoiced: float = 0
     available: float = 0
     categories: list[StatsBudgetCategory] = Field(default_factory=list)
+
+
+class StatsCommercialRow(BaseModel):
+    id: UUID
+    kind: str
+    reference: str
+    object: str
+    supplier: str
+    status: str
+    issue_date: date
+    due_date: date | None = None
+    engagement_number: str | None = None
+    amount_ht: float | None = None
+    amount_ttc: float | None = None
+    budget_line: str | None = None
+    contract_reference: str | None = None
+    document_id: UUID | None = None
+    created_at: datetime
+
+
+class StatsCommercial(BaseModel):
+    start: date
+    end: date
+    generated_at: datetime
+    kind: str | None = None
+    status: str | None = None
+    supplier_id: UUID | None = None
+    with_engagement: bool | None = None
+    q: str | None = None
+    kpis: list[StatsKpi]
+    by_status: list[StatsPoint]
+    by_supplier: list[StatsPoint]
+    by_kind: list[StatsPoint]
+    periods: list[StatsPeriodPoint]
+    documents: list[StatsCommercialRow]
 
 
 class StatisticsOverview(BaseModel):

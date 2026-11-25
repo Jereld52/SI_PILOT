@@ -687,15 +687,20 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       list([
         "Devis : référence DEV-AAAA-NNNN, fournisseur, objet, date, validité, montants HT/TTC et TVA.",
-        "Bon de commande : référence BC-AAAA-NNNN, fournisseur, objet, date, livraison prévue et montants.",
+        "Bon de commande : référence BC-AAAA-NNNN, numéro d'engagement obligatoire, fournisseur, objet, date, livraison prévue et montants.",
         "Statuts des devis : brouillon, envoyé, accepté, refusé, expiré, converti, annulé.",
         "Statuts des bons de commande : brouillon, envoyé, confirmé, livré, annulé.",
-        "Un devis accepté peut être converti en bon de commande en un clic, avec copie des montants et du fournisseur.",
-        "Les documents peuvent être créés manuellement ou importés depuis Gestion → Import intelligent.",
+        "La conversion d'un devis en bon de commande n'est jamais automatique : elle demande le numéro d'engagement et une confirmation.",
+        "Le numéro d'engagement est unique et obligatoire pour tout bon de commande, y compris ceux créés par l'IA ou l'import intelligent.",
+        "Les documents peuvent être créés manuellement, importés depuis Gestion → Import intelligent ou préparés avec l'assistant IA.",
       ]),
       note(
         "info",
         "Les permissions utilisées sont suppliers.read pour consulter et suppliers.manage pour créer, modifier, convertir ou annuler.",
+      ),
+      note(
+        "info",
+        "Onglet Statistiques → Achats : filtres par type, statut, fournisseur, engagement et recherche, avec export XLSX/PDF filtré.",
       ),
       note(
         "warning",

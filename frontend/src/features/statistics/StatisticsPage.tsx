@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  AlertTriangle,
+  ArrowRightLeft,
   BarChart3,
   BookOpen,
   CalendarRange,
@@ -11,8 +13,10 @@ import {
   Layers,
   LifeBuoy,
   MonitorSmartphone,
+  PackageCheck,
   RefreshCw,
   ShieldAlert,
+  ShoppingCart,
   Target,
   Wallet,
   Wrench,
@@ -42,11 +46,19 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { apiFetch, buildQuery } from "@/lib/api";
-import { cn, formatCurrency, formatNumber } from "@/lib/utils";
-import type { StatisticsOverview, StatsKpi, StatsPoint } from "@/types/api";
+import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
+import type {
+  StatisticsOverview,
+  StatsCommercial,
+  StatsKpi,
+  StatsPoint,
+  SupplierItem,
+} from "@/types/api";
 
 type Granularity = "day" | "week" | "month" | "year";
 
@@ -69,6 +81,14 @@ const kpiIcons: Record<string, LucideIcon> = {
   budget_engaged: Wallet,
   budget_available: Wallet,
   documents_published: BookOpen,
+  commercial_quotes: FileText,
+  commercial_quotes_total: Wallet,
+  commercial_conversion_rate: ArrowRightLeft,
+  commercial_orders: ShoppingCart,
+  commercial_engaged_total: ShoppingCart,
+  commercial_delivered_total: PackageCheck,
+  commercial_without_engagement: AlertTriangle,
+  commercial_late_orders: Clock,
 };
 
 const kpiTones: Record<string, string> = {
@@ -106,10 +126,35 @@ const statusLabels: Record<string, string> = {
   published: "Publié",
   archived: "Archivé",
   suspended: "Suspendu",
+  sent: "Envoyé",
+  accepted: "Accepté",
+  refused: "Refusé",
+  converted: "Converti",
+  confirmed: "Confirmé",
+  delivered: "Livré",
   low: "Faible",
   medium: "Moyenne",
   high: "Élevée",
   critical: "Critique",
+};
+
+const commercialStatusOptions: Record<string, { value: string; label: string }[]> = {
+  quote: [
+    { value: "draft", label: "Brouillon" },
+    { value: "sent", label: "Envoyé" },
+    { value: "accepted", label: "Accepté" },
+    { value: "refused", label: "Refusé" },
+    { value: "expired", label: "Expiré" },
+    { value: "converted", label: "Converti" },
+    { value: "cancelled", label: "Annulé" },
+  ],
+  purchase_order: [
+    { value: "draft", label: "Brouillon" },
+    { value: "sent", label: "Envoyé" },
+    { value: "confirmed", label: "Confirmé" },
+    { value: "delivered", label: "Livré" },
+    { value: "cancelled", label: "Annulé" },
+  ],
 };
 
 const palette = [
@@ -301,14 +346,23 @@ function ActivityChart({ overview }: { overview: StatisticsOverview }) {
 }
 
 export function StatisticsPage() {
-  const [tab, setTab] = useState<"overview" | "distributions" | "budget">("overview");
+  const { hasPermission } = useAuth();
+  const [tab, setTab] = useState<"overview" | "distributions" | "budget" | "achats">(
+    "overview",
+  );
   const [granularity, setGranularity] = useState<Granularity>("month");
   const [range, setRange] = useState(() => defaultRange("month"));
+  const [commercialKind, setCommercialKind] = useState("");
+  const [commercialStatus, setCommercialStatus] = useState("");
+  const [commercialSupplier, setCommercialSupplier] = useState("");
+  const [commercialEngagement, setCommercialEngagement] = useState("");
+  const [commercialSearch, setCommercialSearch] = useState("");
 
   useEffect(() => {
     setRange(defaultRange(granularity));
   }, [granularity]);
 
+  const canReadCommercial = hasPermission("suppliers.read");
   const overviewQuery = useQuery({
     queryKey: ["statistics", "overview", granularity, range.start, range.end],
     queryFn: () =>
@@ -320,13 +374,56 @@ export function StatisticsPage() {
         })}`,
       ),
   });
+  const suppliersQuery = useQuery({
+    queryKey: ["suppliers", "statistics"],
+    queryFn: () => apiFetch<SupplierItem[]>("/suppliers"),
+    enabled: canReadCommercial && tab === "achats",
+    staleTime: 120_000,
+  });
+  const commercialFilters = {
+    start: range.start,
+    end: range.end,
+    granularity,
+    kind: commercialKind || undefined,
+    status: commercialStatus || undefined,
+    supplier_id: commercialSupplier || undefined,
+    with_engagement:
+      commercialEngagement === "with"
+        ? true
+        : commercialEngagement === "without"
+          ? false
+          : undefined,
+    q: commercialSearch.trim() || undefined,
+  };
+  const commercialQuery = useQuery({
+    queryKey: ["statistics", "commercial", commercialFilters],
+    queryFn: () =>
+      apiFetch<StatsCommercial>(
+        `/statistics/commercial${buildQuery(commercialFilters)}`,
+      ),
+    enabled: canReadCommercial && tab === "achats",
+  });
+  const suppliers = suppliersQuery.data ?? [];
 
   const overview = overviewQuery.data;
+  const commercial = commercialQuery.data;
   const exportQuery = buildQuery({
     start: range.start,
     end: range.end,
     granularity,
   });
+  const commercialExportQuery = buildQuery(commercialFilters);
+  const commercialStatuses = commercialKind
+    ? commercialStatusOptions[commercialKind] ?? []
+    : [
+        ...commercialStatusOptions.quote,
+        ...commercialStatusOptions.purchase_order.filter(
+          (option) =>
+            !commercialStatusOptions.quote.some(
+              (quoteOption) => quoteOption.value === option.value,
+            ),
+        ),
+      ];
 
   return (
     <div className="space-y-5">
@@ -383,6 +480,32 @@ export function StatisticsPage() {
                   <FileText className="h-3.5 w-3.5" />
                   Rapport d'exploitation (PDF)
                 </DropdownMenuItem>
+                {canReadCommercial ? (
+                  <>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.open(
+                          `/api/v1/exports/commercial-documents?format=xlsx&${commercialExportQuery}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5" />
+                      Achats filtrés (XLSX)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.open(
+                          `/api/v1/exports/commercial-documents?format=pdf&${commercialExportQuery}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Achats filtrés (PDF)
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -442,9 +565,12 @@ export function StatisticsPage() {
           { key: "overview", label: "Vue d'ensemble", icon: BarChart3 },
           { key: "distributions", label: "Répartitions", icon: Layers },
           { key: "budget", label: "Budget", icon: Wallet },
+          { key: "achats", label: "Achats", icon: ShoppingCart },
         ]}
         value={tab}
-        onChange={(value) => setTab(value as "overview" | "distributions" | "budget")}
+        onChange={(value) =>
+          setTab(value as "overview" | "distributions" | "budget" | "achats")
+        }
       />
 
       {overviewQuery.isError ? (
@@ -655,6 +781,291 @@ export function StatisticsPage() {
                   description="Créez un budget pour afficher sa répartition dans les statistiques."
                 />
               </Card>
+            )
+          ) : null}
+
+          {tab === "achats" ? (
+            !canReadCommercial ? (
+              <Card>
+                <EmptyState
+                  icon={ShoppingCart}
+                  title="Accès aux achats non autorisé"
+                  description="Votre rôle ne permet pas de consulter les devis et bons de commande."
+                />
+              </Card>
+            ) : commercialQuery.isError ? (
+              <Card>
+                <ErrorState
+                  message={
+                    commercialQuery.error instanceof Error
+                      ? commercialQuery.error.message
+                      : "Impossible de charger les statistiques d'achats."
+                  }
+                  onRetry={() => void commercialQuery.refetch()}
+                />
+              </Card>
+            ) : commercialQuery.isLoading || !commercial ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <Skeleton key={index} className="h-32 rounded-xl" />
+                  ))}
+                </div>
+                <Skeleton className="h-[280px] rounded-xl" />
+              </>
+            ) : (
+              <>
+                <Card className="panel-sheen border-primary/20 p-4">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
+                    <div className="flex-1">
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-2">
+                        Recherche
+                      </p>
+                      <Input
+                        value={commercialSearch}
+                        onChange={(event) => setCommercialSearch(event.target.value)}
+                        placeholder="Référence, objet, engagement, fournisseur…"
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-2">
+                        Type
+                      </p>
+                      <Select
+                        value={commercialKind}
+                        onChange={(event) => {
+                          setCommercialKind(event.target.value);
+                          setCommercialStatus("");
+                        }}
+                        className="xl:w-44"
+                      >
+                        <option value="">Tous</option>
+                        <option value="quote">Devis</option>
+                        <option value="purchase_order">Bons de commande</option>
+                      </Select>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-2">
+                        Statut
+                      </p>
+                      <Select
+                        value={commercialStatus}
+                        onChange={(event) => setCommercialStatus(event.target.value)}
+                        className="xl:w-44"
+                      >
+                        <option value="">Tous</option>
+                        {commercialStatuses.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-2">
+                        Fournisseur
+                      </p>
+                      <Select
+                        value={commercialSupplier}
+                        onChange={(event) => setCommercialSupplier(event.target.value)}
+                        className="xl:w-52"
+                      >
+                        <option value="">Tous</option>
+                        {suppliers.map((supplier) => (
+                          <option key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-2">
+                        Engagement
+                      </p>
+                      <Select
+                        value={commercialEngagement}
+                        onChange={(event) => setCommercialEngagement(event.target.value)}
+                        className="xl:w-48"
+                      >
+                        <option value="">Tous</option>
+                        <option value="with">Avec engagement</option>
+                        <option value="without">Sans engagement</option>
+                      </Select>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[10px] text-muted-2">
+                    {commercial.documents.length} document(s) correspondant aux filtres,
+                    du {formatDate(commercial.start)} au {formatDate(commercial.end)}.
+                  </p>
+                </Card>
+
+                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
+                  {commercial.kpis.map((kpi) => (
+                    <StatKpiCard key={kpi.key} kpi={kpi} />
+                  ))}
+                </section>
+
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <DistributionCard
+                    title="Achats par statut"
+                    description="Documents correspondant aux filtres."
+                    points={commercial.by_status}
+                  />
+                  <Card className="panel-sheen border-primary/20">
+                    <CardHeader>
+                      <div>
+                        <h2 className="text-sm font-semibold text-foreground">
+                          Montant par fournisseur
+                        </h2>
+                        <p className="mt-1 text-xs text-muted">
+                          Montants TTC des documents filtrés.
+                        </p>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2 pt-3">
+                      {commercial.by_supplier.length === 0 ? (
+                        <p className="py-4 text-center text-[11px] text-muted-2">
+                          Aucun montant sur la période.
+                        </p>
+                      ) : (
+                        commercial.by_supplier.slice(0, 10).map((point, index) => {
+                          const max = Math.max(
+                            1,
+                            ...commercial.by_supplier.map((item) => item.value),
+                          );
+                          return (
+                            <div key={`${point.label}-${index}`}>
+                              <div className="flex items-center justify-between gap-2 text-[11px]">
+                                <span className="truncate text-muted">{point.label}</span>
+                                <span className="shrink-0 font-medium text-foreground">
+                                  {formatCurrency(point.value, 2)}
+                                </span>
+                              </div>
+                              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.max(3, (point.value / max) * 100)}%`,
+                                    backgroundColor: point.color ?? palette[index % palette.length],
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="panel-sheen border-primary/20">
+                  <CardHeader>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+                        Détail
+                      </p>
+                      <h2 className="text-sm font-semibold text-foreground">
+                        Devis et bons de commande
+                      </h2>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          window.open(
+                            `/api/v1/exports/commercial-documents?format=xlsx&${commercialExportQuery}`,
+                            "_blank",
+                          )
+                        }
+                      >
+                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                        XLSX
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          window.open(
+                            `/api/v1/exports/commercial-documents?format=pdf&${commercialExportQuery}`,
+                            "_blank",
+                          )
+                        }
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        PDF
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="max-h-[520px] overflow-auto pt-0">
+                    {commercial.documents.length === 0 ? (
+                      <EmptyState
+                        icon={ShoppingCart}
+                        title="Aucun document"
+                        description="Aucun devis ou bon de commande ne correspond aux filtres."
+                      />
+                    ) : (
+                      <table className="w-full text-left text-[11px]">
+                        <thead className="sticky top-0 bg-surface">
+                          <tr className="border-b border-border-soft text-[10px] uppercase tracking-wide text-muted-2">
+                            <th className="py-2 pr-3 font-medium">Type</th>
+                            <th className="py-2 pr-3 font-medium">Référence</th>
+                            <th className="py-2 pr-3 font-medium">Objet</th>
+                            <th className="py-2 pr-3 font-medium">Fournisseur</th>
+                            <th className="py-2 pr-3 font-medium">Statut</th>
+                            <th className="py-2 pr-3 font-medium">Date</th>
+                            <th className="py-2 pr-3 font-medium">Échéance</th>
+                            <th className="py-2 pr-3 font-medium">Engagement</th>
+                            <th className="py-2 pr-3 text-right font-medium">TTC</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {commercial.documents.map((document) => (
+                            <tr
+                              key={document.id}
+                              className="border-b border-border-soft/60 last:border-0"
+                            >
+                              <td className="py-2 pr-3 text-muted">
+                                {document.kind === "quote" ? "Devis" : "BC"}
+                              </td>
+                              <td className="py-2 pr-3 font-mono text-foreground">
+                                {document.reference}
+                              </td>
+                              <td className="max-w-[220px] truncate py-2 pr-3 text-foreground">
+                                {document.object}
+                              </td>
+                              <td className="py-2 pr-3 text-muted">{document.supplier}</td>
+                              <td className="py-2 pr-3 text-muted">
+                                {statusLabels[document.status] ?? document.status}
+                              </td>
+                              <td className="whitespace-nowrap py-2 pr-3 text-muted">
+                                {formatDate(document.issue_date)}
+                              </td>
+                              <td className="whitespace-nowrap py-2 pr-3 text-muted">
+                                {document.due_date ? formatDate(document.due_date) : "—"}
+                              </td>
+                              <td className="py-2 pr-3 font-mono">
+                                {document.engagement_number ? (
+                                  <span className="text-foreground">
+                                    {document.engagement_number}
+                                  </span>
+                                ) : (
+                                  <span className="text-danger">—</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap py-2 pr-3 text-right text-foreground">
+                                {document.amount_ttc != null
+                                  ? formatCurrency(document.amount_ttc, 2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
             )
           ) : null}
         </>

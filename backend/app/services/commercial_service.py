@@ -87,6 +87,32 @@ def _amounts(
     return ht, ttc, vat
 
 
+def _validate_engagement(
+    db: Session,
+    kind: str,
+    engagement_number: str | None,
+    *,
+    exclude_id: UUID | None = None,
+) -> str | None:
+    cleaned = (engagement_number or "").strip() or None
+    if kind != "purchase_order":
+        return None
+    if not cleaned:
+        raise ValidationAppError(
+            "Le numéro d'engagement est obligatoire pour un bon de commande."
+        )
+    if cleaned is None:
+        return None
+    statement = select(CommercialDocument).where(
+        CommercialDocument.engagement_number == cleaned
+    )
+    if exclude_id is not None:
+        statement = statement.where(CommercialDocument.id != exclude_id)
+    if db.scalar(statement) is not None:
+        raise ConflictError("Ce numéro d'engagement est déjà utilisé.")
+    return cleaned
+
+
 def read(document: CommercialDocument) -> CommercialDocumentRead:
     data = CommercialDocumentRead.model_validate(document)
     data.amount_ht = float(document.amount_ht) if document.amount_ht is not None else None
@@ -97,14 +123,17 @@ def read(document: CommercialDocument) -> CommercialDocumentRead:
     return data
 
 
-def list_documents(
+def select_documents(
     db: Session,
     *,
     kind: str | None = None,
     q: str | None = None,
     status: str | None = None,
     supplier_id: UUID | None = None,
-) -> list[CommercialDocumentRead]:
+    with_engagement: bool | None = None,
+    start: date | None = None,
+    end: date | None = None,
+) -> list[CommercialDocument]:
     statement = select(CommercialDocument)
     if kind:
         statement = statement.where(CommercialDocument.kind == kind)
@@ -112,20 +141,61 @@ def list_documents(
         statement = statement.where(CommercialDocument.status == status)
     if supplier_id:
         statement = statement.where(CommercialDocument.supplier_id == supplier_id)
+    if with_engagement is True:
+        statement = statement.where(
+            CommercialDocument.kind == "purchase_order",
+            CommercialDocument.engagement_number.is_not(None),
+        )
+    elif with_engagement is False:
+        statement = statement.where(
+            CommercialDocument.kind == "purchase_order",
+            CommercialDocument.engagement_number.is_(None),
+        )
+    if start:
+        statement = statement.where(CommercialDocument.issue_date >= start)
+    if end:
+        statement = statement.where(CommercialDocument.issue_date <= end)
     if q:
         pattern = f"%{q.strip()}%"
         statement = statement.where(
             or_(
                 CommercialDocument.reference.ilike(pattern),
+                CommercialDocument.engagement_number.ilike(pattern),
                 CommercialDocument.object.ilike(pattern),
                 CommercialDocument.notes.ilike(pattern),
             )
         )
-    rows = db.scalars(
-        statement.order_by(
-            CommercialDocument.issue_date.desc(), CommercialDocument.reference.desc()
-        )
-    ).all()
+    return list(
+        db.scalars(
+            statement.order_by(
+                CommercialDocument.issue_date.desc(),
+                CommercialDocument.reference.desc(),
+            )
+        ).unique().all()
+    )
+
+
+def list_documents(
+    db: Session,
+    *,
+    kind: str | None = None,
+    q: str | None = None,
+    status: str | None = None,
+    supplier_id: UUID | None = None,
+    with_engagement: bool | None = None,
+    start: date | None = None,
+    end: date | None = None,
+) -> list[CommercialDocumentRead]:
+    rows = select_documents(
+        db,
+        kind=kind,
+        q=q,
+        status=status,
+        supplier_id=supplier_id,
+        with_engagement=with_engagement,
+        start=start,
+        end=end,
+    )
     return [read(row) for row in rows]
 
 
@@ -162,10 +232,14 @@ def create_document(
         select(CommercialDocument).where(CommercialDocument.reference == reference)
     ):
         raise ConflictError("Cette référence est déjà utilisée.")
+    engagement_number = _validate_engagement(
+        db, payload.kind, payload.engagement_number
+    )
     ht, ttc, vat = _amounts(payload.amount_ht, payload.amount_ttc, payload.vat_rate)
     document = CommercialDocument(
         kind=payload.kind,
         reference=reference,
+        engagement_number=engagement_number,
         object=payload.object.strip(),
         supplier_id=payload.supplier_id,
         status=payload.status,
@@ -195,6 +269,7 @@ def create_document(
         after={
             "kind": document.kind,
             "status": document.status,
+            "engagement_number": document.engagement_number,
             "amount_ttc": float(ttc) if ttc is not None else None,
         },
         request=request,
@@ -238,6 +313,14 @@ def update_document(
             raise ConflictError("Cette référence est déjà utilisée.")
         document.reference = reference
         data.pop("reference")
+    if "engagement_number" in data or kind == "purchase_order":
+        document.engagement_number = _validate_engagement(
+            db,
+            kind,
+            data.get("engagement_number", document.engagement_number),
+            exclude_id=document.id,
+        )
+        data.pop("engagement_number", None)
     if any(key in data for key in ("amount_ht", "amount_ttc", "vat_rate")):
         ht, ttc, vat = _amounts(
             data.get("amount_ht", float(document.amount_ht) if document.amount_ht is not None else None),
@@ -261,7 +344,11 @@ def update_document(
         entity_type="commercial_document",
         entity_id=str(document.id),
         entity_label=f"{document.reference} — {document.object}",
-        after={"kind": document.kind, "status": document.status},
+        after={
+            "kind": document.kind,
+            "status": document.status,
+            "engagement_number": document.engagement_number,
+        },
         request=request,
     )
     db.commit()
@@ -296,6 +383,9 @@ def convert_quote(
     db: Session,
     document: CommercialDocument,
     *,
+    engagement_number: str,
+    expected_date: date | None = None,
+    notes: str | None = None,
     actor: User,
     request: Request | None = None,
 ) -> CommercialDocumentRead:
@@ -303,16 +393,22 @@ def convert_quote(
         raise ValidationAppError("Seul un devis peut être converti en bon de commande.")
     if document.status == "converted":
         raise ConflictError("Ce devis a déjà été converti.")
+    if document.status in {"refused", "expired", "cancelled"}:
+        raise ValidationAppError(
+            "Ce devis n'est pas dans un état permettant la conversion."
+        )
+    engagement = _validate_engagement(db, "purchase_order", engagement_number)
     reference = next_reference(db, key="commercial_purchase_order", prefix="BC")
     purchase_order = CommercialDocument(
         kind="purchase_order",
         reference=reference,
+        engagement_number=engagement,
         object=document.object,
         supplier_id=document.supplier_id,
         status="draft",
         issue_date=date.today(),
         valid_until=None,
-        expected_date=document.valid_until,
+        expected_date=expected_date or document.valid_until,
         amount_ht=document.amount_ht,
         amount_ttc=document.amount_ttc,
         vat_rate=document.vat_rate,
@@ -320,7 +416,7 @@ def convert_quote(
         contract_id=document.contract_id,
         document_id=document.document_id,
         source_document_id=document.id,
-        notes=document.notes,
+        notes=notes if notes is not None else document.notes,
         created_by_id=actor.id,
         updated_by_id=actor.id,
     )
@@ -340,6 +436,7 @@ def convert_quote(
             "quote_id": str(document.id),
             "quote_reference": document.reference,
             "purchase_order": purchase_order.reference,
+            "engagement_number": purchase_order.engagement_number,
         },
         request=request,
     )

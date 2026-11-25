@@ -86,6 +86,8 @@ class AiActionProposal(BaseModel):
         "create_ticket",
         "create_meeting",
         "create_communication",
+        "create_quote",
+        "create_purchase_order",
     ]
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=4000)
@@ -95,6 +97,14 @@ class AiActionProposal(BaseModel):
     scheduled_at: datetime | None = None
     duration_minutes: int | None = Field(default=60, ge=5, le=1440)
     location: str | None = Field(default=None, max_length=255)
+    supplier_name: str | None = Field(default=None, max_length=150)
+    engagement_number: str | None = Field(default=None, max_length=80)
+    reference: str | None = Field(default=None, max_length=80)
+    amount_ht: float | None = Field(default=None, ge=0)
+    amount_ttc: float | None = Field(default=None, ge=0)
+    vat_rate: float | None = Field(default=None, ge=0, le=100)
+    expected_date: date | None = None
+    source_quote_reference: str | None = Field(default=None, max_length=80)
 
 
 class AiChatResponse(BaseModel):

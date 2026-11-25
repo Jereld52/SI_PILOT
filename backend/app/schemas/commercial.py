@@ -25,6 +25,7 @@ class CommercialDocumentCreate(BaseModel):
     kind: CommercialKind
     supplier_id: UUID
     reference: str = Field(default="", max_length=80)
+    engagement_number: str | None = Field(default=None, max_length=80)
     object: str = Field(min_length=1, max_length=255)
     status: CommercialStatus = "draft"
     issue_date: date = Field(default_factory=date.today)
@@ -43,6 +44,7 @@ class CommercialDocumentUpdate(BaseModel):
     kind: CommercialKind | None = None
     supplier_id: UUID | None = None
     reference: str | None = Field(default=None, max_length=80)
+    engagement_number: str | None = Field(default=None, max_length=80)
     object: str | None = Field(default=None, min_length=1, max_length=255)
     status: CommercialStatus | None = None
     issue_date: date | None = None
@@ -61,6 +63,7 @@ class CommercialDocumentRead(ORMModel):
     id: UUID
     kind: str
     reference: str
+    engagement_number: str | None = None
     object: str
     supplier_id: UUID
     supplier: SupplierRef
@@ -78,3 +81,9 @@ class CommercialDocumentRead(ORMModel):
     notes: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class CommercialQuoteConvertRequest(BaseModel):
+    engagement_number: str = Field(min_length=1, max_length=80)
+    expected_date: date | None = None
+    notes: str | None = None

@@ -4,9 +4,11 @@ from collections import Counter
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from typing import Any
+from uuid import UUID
 
+from app.core.errors import ValidationAppError
 from app.models.assets import Asset
-from app.models.budget import Budget
+from app.models.budget import Budget, BudgetLine
 from app.models.contracts import Contract
 from app.models.documents import Document
 from app.models.mobile import MobileLine
@@ -17,11 +19,13 @@ from app.schemas.statistics import (
     StatisticsOverview,
     StatsBudget,
     StatsBudgetCategory,
+    StatsCommercial,
+    StatsCommercialRow,
     StatsKpi,
     StatsPeriodPoint,
     StatsPoint,
 )
-from app.services import budget_service
+from app.services import budget_service, commercial_service
 from app.services.periods import Granularity, StatPeriod, build_periods, default_range, period_key
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -352,4 +356,219 @@ def get_overview(
         mobile_by_status=_distribution([line.status for line in mobile_lines]),
         documents_by_status=_distribution([document.status for document in documents]),
         budget=budget_data,
+    )
+
+
+def get_commercial_overview(
+    db: Session,
+    *,
+    start: date | None = None,
+    end: date | None = None,
+    granularity: Granularity = "month",
+    kind: str | None = None,
+    status: str | None = None,
+    supplier_id: UUID | None = None,
+    with_engagement: bool | None = None,
+    q: str | None = None,
+) -> StatsCommercial:
+    today = date.today()
+    start = start or date(today.year, 1, 1)
+    end = end or today
+    if start > end:
+        raise ValidationAppError("La date de début doit précéder la date de fin.")
+    periods = build_periods(start, end, granularity)
+    documents = commercial_service.select_documents(
+        db,
+        kind=kind,
+        status=status,
+        supplier_id=supplier_id,
+        with_engagement=with_engagement,
+        start=start,
+        end=end,
+        q=q,
+    )
+    now = datetime.now(UTC)
+    quotes = [document for document in documents if document.kind == "quote"]
+    orders = [document for document in documents if document.kind == "purchase_order"]
+    active_orders = [order for order in orders if order.status != "cancelled"]
+    quotes_pending = [
+        quote for quote in quotes if quote.status in {"draft", "sent", "accepted"}
+    ]
+    converted_quotes = [quote for quote in quotes if quote.status == "converted"]
+    eligible_quotes = [quote for quote in quotes if quote.status != "draft"]
+    conversion_rate = (
+        round(len(converted_quotes) * 100 / len(eligible_quotes), 1)
+        if eligible_quotes
+        else 0.0
+    )
+    without_engagement = [
+        order for order in orders if not (order.engagement_number or "").strip()
+    ]
+    late_orders = [
+        order
+        for order in active_orders
+        if order.expected_date is not None
+        and order.expected_date < today
+        and order.status != "delivered"
+    ]
+    quotes_total = sum(float(quote.amount_ttc or 0) for quote in quotes)
+    engaged_total = sum(float(order.amount_ttc or 0) for order in active_orders)
+    delivered_total = sum(
+        float(order.amount_ttc or 0)
+        for order in orders
+        if order.status == "delivered"
+    )
+
+    kpis = [
+        StatsKpi(
+            key="commercial_quotes",
+            label="Devis sur la période",
+            value=len(quotes),
+            hint=f"du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')}",
+            severity="neutral",
+        ),
+        StatsKpi(
+            key="commercial_quotes_total",
+            label="Montant des devis",
+            value=round(quotes_total, 2),
+            unit="EUR",
+            hint=f"{len(quotes_pending)} devis en attente",
+            severity="neutral",
+        ),
+        StatsKpi(
+            key="commercial_conversion_rate",
+            label="Taux de conversion",
+            value=conversion_rate,
+            unit="%",
+            hint=f"{len(converted_quotes)} devis converti(s)",
+            severity="success" if conversion_rate >= 50 else "warning",
+        ),
+        StatsKpi(
+            key="commercial_orders",
+            label="Bons de commande",
+            value=len(orders),
+            hint=f"{len(active_orders)} actif(s)",
+            severity="neutral",
+        ),
+        StatsKpi(
+            key="commercial_engaged_total",
+            label="Montant engagé",
+            value=round(engaged_total, 2),
+            unit="EUR",
+            hint="bons de commande hors annulés",
+            severity="warning",
+        ),
+        StatsKpi(
+            key="commercial_delivered_total",
+            label="Montant livré",
+            value=round(delivered_total, 2),
+            unit="EUR",
+            hint=f"{sum(1 for order in orders if order.status == 'delivered')} commande(s) livrée(s)",
+            severity="success",
+        ),
+        StatsKpi(
+            key="commercial_without_engagement",
+            label="BC sans engagement",
+            value=len(without_engagement),
+            hint="numéro d'engagement à compléter",
+            severity="danger" if without_engagement else "success",
+        ),
+        StatsKpi(
+            key="commercial_late_orders",
+            label="Livraisons en retard",
+            value=len(late_orders),
+            hint="date de livraison dépassée",
+            severity="danger" if late_orders else "success",
+        ),
+    ]
+
+    period_counts = Counter(
+        period_key(document.issue_date, granularity) for document in documents
+    )
+    period_points = [
+        StatsPeriodPoint(
+            key=period.key,
+            label=period.label,
+            created=period_counts.get(period.key, 0),
+        )
+        for period in periods
+    ]
+
+    supplier_totals: dict[str, float] = {}
+    for document in documents:
+        supplier_name = document.supplier.name if document.supplier else "Non renseigné"
+        supplier_totals[supplier_name] = supplier_totals.get(supplier_name, 0) + float(
+            document.amount_ttc or 0
+        )
+    by_supplier = [
+        StatsPoint(label=label, value=round(total, 2))
+        for label, total in sorted(
+            supplier_totals.items(), key=lambda item: item[1], reverse=True
+        )
+    ]
+
+    budget_ids = {document.budget_line_id for document in documents if document.budget_line_id}
+    budget_lines = (
+        {
+            line.id: line.label
+            for line in db.scalars(select(BudgetLine).where(BudgetLine.id.in_(budget_ids))).all()
+        }
+        if budget_ids
+        else {}
+    )
+    contract_ids = {document.contract_id for document in documents if document.contract_id}
+    contracts_map = (
+        {
+            contract.id: contract.reference
+            for contract in db.scalars(select(Contract).where(Contract.id.in_(contract_ids))).all()
+        }
+        if contract_ids
+        else {}
+    )
+
+    rows = [
+        StatsCommercialRow(
+            id=document.id,
+            kind=document.kind,
+            reference=document.reference,
+            object=document.object,
+            supplier=document.supplier.name if document.supplier else "Non renseigné",
+            status=document.status,
+            issue_date=document.issue_date,
+            due_date=(
+                document.valid_until
+                if document.kind == "quote"
+                else document.expected_date
+            ),
+            engagement_number=document.engagement_number,
+            amount_ht=float(document.amount_ht) if document.amount_ht is not None else None,
+            amount_ttc=float(document.amount_ttc) if document.amount_ttc is not None else None,
+            budget_line=budget_lines.get(document.budget_line_id) if document.budget_line_id else None,
+            contract_reference=contracts_map.get(document.contract_id) if document.contract_id else None,
+            document_id=document.document_id,
+            created_at=document.created_at,
+        )
+        for document in documents
+    ]
+
+    return StatsCommercial(
+        start=start,
+        end=end,
+        generated_at=now,
+        kind=kind,
+        status=status,
+        supplier_id=supplier_id,
+        with_engagement=with_engagement,
+        q=q,
+        kpis=kpis,
+        by_status=_distribution([document.status for document in documents]),
+        by_supplier=by_supplier,
+        by_kind=_distribution(
+            [
+                "Devis" if document.kind == "quote" else "Bon de commande"
+                for document in documents
+            ]
+        ),
+        periods=period_points,
+        documents=rows,
     )
