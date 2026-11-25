@@ -10,6 +10,7 @@ import {
   endOfMonth,
   endOfWeek,
   endOfYear,
+  differenceInCalendarDays,
   format,
   isSameDay,
   isSameMonth,
@@ -175,6 +176,81 @@ function overlapsDay(item: CalendarDisplayItem, day: Date): boolean {
   const end = item.end ? new Date(item.end).getTime() : start;
   return start <= dayEnd && end >= dayStart;
 }
+
+function itemStartDay(item: CalendarDisplayItem): Date {
+  return startOfDay(parseISO(item.start));
+}
+
+function itemEndDay(item: CalendarDisplayItem): Date {
+  return startOfDay(item.end ? parseISO(item.end) : parseISO(item.start));
+}
+
+function isMultiDay(item: CalendarDisplayItem): boolean {
+  return itemEndDay(item).getTime() > itemStartDay(item).getTime();
+}
+
+interface WeekBar {
+  item: CalendarDisplayItem;
+  startCol: number;
+  endCol: number;
+  lane: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+}
+
+function buildWeekBars(items: CalendarDisplayItem[], weekStartDate: Date): {
+  bars: WeekBar[];
+  lanes: number;
+} {
+  const weekStart = startOfDay(weekStartDate);
+  const weekEnd = endOfDay(addDays(weekStart, 6));
+  const bars = items
+    .filter((item) => isMultiDay(item))
+    .filter((item) => {
+      const start = itemStartDay(item).getTime();
+      const end = endOfDay(itemEndDay(item)).getTime();
+      return start <= weekEnd.getTime() && end >= weekStart.getTime();
+    })
+    .map((item) => {
+      const itemStart = itemStartDay(item);
+      const itemEnd = itemEndDay(item);
+      const startCol = Math.max(
+        0,
+        differenceInCalendarDays(itemStart, weekStart),
+      );
+      const endCol = Math.min(6, differenceInCalendarDays(itemEnd, weekStart));
+      return {
+        item,
+        startCol,
+        endCol: Math.max(startCol, endCol),
+        lane: 0,
+        continuesBefore: itemStart.getTime() < weekStart.getTime(),
+        continuesAfter: itemEnd.getTime() > addDays(weekStart, 6).getTime(),
+      };
+    })
+    .sort(
+      (left, right) =>
+        left.startCol - right.startCol ||
+        right.endCol - right.startCol - (left.endCol - left.startCol),
+    );
+
+  const laneEnds: number[] = [];
+  for (const bar of bars) {
+    let lane = laneEnds.findIndex((lastCol) => lastCol < bar.startCol);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(bar.endCol);
+    } else {
+      laneEnds[lane] = bar.endCol;
+    }
+    bar.lane = lane;
+  }
+  return { bars, lanes: laneEnds.length };
+}
+
+const SPAN_BAR_HEIGHT = 18;
+const MONTH_BAR_TOP = 30;
+const WEEK_BAR_TOP = 50;
 
 export function CalendarPage() {
   const navigate = useNavigate();
@@ -485,7 +561,10 @@ export function CalendarPage() {
     end: endOfWeek(currentDate, { weekStartsOn: 1 }),
   });
 
-  const itemsForDay = (day: Date) => displayItems.filter((item) => overlapsDay(item, day));
+  const itemsForDay = (day: Date, includeMultiDay = false) =>
+    displayItems.filter(
+      (item) => overlapsDay(item, day) && (includeMultiDay || !isMultiDay(item)),
+    );
 
   const renderItemButton = (item: CalendarDisplayItem, compact = false) => (
     <button
@@ -515,7 +594,48 @@ export function CalendarPage() {
     </button>
   );
 
-  const renderDayCell = (day: Date, inMonth: boolean) => {
+  const renderSpanBar = (bar: WeekBar) => (
+    <button
+      key={`span-${bar.item.key}-${bar.startCol}-${bar.lane}`}
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        openItem(bar.item);
+      }}
+      className={cn(
+        "pointer-events-auto z-10 mx-0.5 mb-0.5 flex h-4 min-w-0 items-center overflow-hidden border px-1.5 text-left text-[9px] font-medium transition-opacity hover:opacity-80",
+        bar.item.tone,
+        bar.continuesBefore && "rounded-l-none border-l-0 pl-1",
+        bar.continuesAfter && "rounded-r-none border-r-0 pr-1",
+        bar.item.kind === "event" &&
+          bar.item.event?.status === "cancelled" &&
+          "line-through opacity-60",
+      )}
+      style={{
+        gridColumn: `${bar.startCol + 1} / ${bar.endCol + 2}`,
+        gridRow: bar.lane + 1,
+      }}
+      title={`${bar.item.title} · ${bar.item.subtitle}`}
+    >
+      <span className="truncate">
+        {bar.continuesBefore ? "… " : ""}
+        {bar.item.title}
+        {bar.continuesAfter ? " …" : ""}
+      </span>
+    </button>
+  );
+
+  const renderSpanLayer = (top: number, bars: WeekBar[]) =>
+    bars.length === 0 ? null : (
+      <div
+        className="pointer-events-none absolute inset-x-0 z-10 grid grid-cols-7"
+        style={{ top }}
+      >
+        {bars.map(renderSpanBar)}
+      </div>
+    );
+
+  const renderDayCell = (day: Date, inMonth: boolean, spanLanes = 0) => {
     const dayItems = itemsForDay(day);
     const isToday = isSameDay(day, new Date());
     return (
@@ -531,9 +651,10 @@ export function CalendarPage() {
           }
         }}
         className={cn(
-          "min-h-[110px] border-b border-r border-border-soft p-1.5 text-left align-top transition-colors hover:bg-surface-2/60",
+          "border-b border-r border-border-soft p-1.5 text-left align-top transition-colors hover:bg-surface-2/60",
           !inMonth && "bg-background-soft/40 text-muted-2",
         )}
+        style={{ minHeight: 110 + spanLanes * SPAN_BAR_HEIGHT }}
       >
         <div className="flex items-center justify-between">
           <span
@@ -548,6 +669,9 @@ export function CalendarPage() {
             <span className="text-[9px] text-muted-2">+{dayItems.length - 2}</span>
           ) : null}
         </div>
+        {spanLanes > 0 ? (
+          <div style={{ height: spanLanes * SPAN_BAR_HEIGHT }} aria-hidden="true" />
+        ) : null}
         <div className="mt-1 space-y-1">
           {dayItems.slice(0, 2).map((item) => renderItemButton(item, true))}
         </div>
@@ -555,73 +679,107 @@ export function CalendarPage() {
     );
   };
 
-  const renderMonth = () => (
-    <div className="overflow-hidden rounded-lg border border-border-soft">
-      <div className="grid grid-cols-7 border-b border-border-soft bg-background-soft/60">
-        {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
-          <div
-            key={day}
-            className="px-2 py-1.5 text-center text-[10px] font-medium uppercase tracking-wide text-muted-2"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7">
-        {monthDays.map((day) => renderDayCell(day, isSameMonth(day, currentDate)))}
-      </div>
-    </div>
-  );
-
-  const renderWeek = () => (
-    <div className="overflow-x-auto">
-      <div className="grid min-w-[980px] grid-cols-7 rounded-lg border border-border-soft">
-        {weekDays.map((day) => {
-          const dayItems = itemsForDay(day);
-          const isToday = isSameDay(day, new Date());
-          return (
-            <div key={day.toISOString()} className="min-h-[420px] border-r border-border-soft last:border-r-0">
-              <div
-                className={cn(
-                  "border-b border-border-soft px-2 py-2",
-                  isToday ? "bg-accent/[0.07]" : "bg-background-soft/40",
-                )}
-              >
-                <p
-                  className={cn(
-                    "text-[10px] font-semibold uppercase tracking-wide",
-                    isToday ? "text-accent" : "text-muted-2",
-                  )}
-                >
-                  {format(day, "EEE", { locale: fr })}
-                </p>
-                <p className="text-sm font-semibold text-foreground">{format(day, "d MMM", { locale: fr })}</p>
-              </div>
-              <div className="space-y-1 p-1.5">
-                {dayItems.length === 0 ? (
-                  <p className="px-1 py-2 text-[10px] text-muted-2">Aucun élément</p>
-                ) : (
-                  dayItems.map((item) => renderItemButton(item))
-                )}
-                {canCreateEvent ? (
-                  <button
-                    type="button"
-                    onClick={() => openCreateEvent(day)}
-                    className="w-full rounded border border-dashed border-border-soft px-1 py-1 text-[9px] text-muted-2 transition-colors hover:border-accent/40 hover:text-accent"
-                  >
-                    + Événement
-                  </button>
-                ) : null}
-              </div>
+  const renderMonth = () => {
+    const weeks: Date[][] = [];
+    for (let index = 0; index < monthDays.length; index += 7) {
+      weeks.push(monthDays.slice(index, index + 7));
+    }
+    return (
+      <div className="overflow-hidden rounded-lg border border-border-soft">
+        <div className="grid grid-cols-7 border-b border-border-soft bg-background-soft/60">
+          {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
+            <div
+              key={day}
+              className="px-2 py-1.5 text-center text-[10px] font-medium uppercase tracking-wide text-muted-2"
+            >
+              {day}
             </div>
-          );
-        })}
+          ))}
+        </div>
+        <div>
+          {weeks.map((week) => {
+            const { bars, lanes } = buildWeekBars(displayItems, week[0]);
+            return (
+              <div key={week[0].toISOString()} className="relative">
+                <div className="grid grid-cols-7">
+                  {week.map((day) =>
+                    renderDayCell(day, isSameMonth(day, currentDate), lanes),
+                  )}
+                </div>
+                {renderSpanLayer(MONTH_BAR_TOP, bars)}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderWeek = () => {
+    const { bars, lanes } = buildWeekBars(displayItems, weekDays[0]);
+    return (
+      <div className="overflow-x-auto">
+        <div className="relative min-w-[980px]">
+          <div className="grid grid-cols-7 rounded-lg border border-border-soft">
+            {weekDays.map((day) => {
+              const dayItems = itemsForDay(day);
+              const isToday = isSameDay(day, new Date());
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="border-r border-border-soft last:border-r-0"
+                  style={{ minHeight: 420 + lanes * SPAN_BAR_HEIGHT }}
+                >
+                  <div
+                    className={cn(
+                      "border-b border-border-soft px-2 py-2",
+                      isToday ? "bg-accent/[0.07]" : "bg-background-soft/40",
+                    )}
+                  >
+                    <p
+                      className={cn(
+                        "text-[10px] font-semibold uppercase tracking-wide",
+                        isToday ? "text-accent" : "text-muted-2",
+                      )}
+                    >
+                      {format(day, "EEE", { locale: fr })}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">{format(day, "d MMM", { locale: fr })}</p>
+                  </div>
+                  {lanes > 0 ? (
+                    <div
+                      style={{ height: lanes * SPAN_BAR_HEIGHT }}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  <div className="space-y-1 p-1.5">
+                    {dayItems.length === 0 ? (
+                      <p className="px-1 py-2 text-[10px] text-muted-2">Aucun élément</p>
+                    ) : (
+                      dayItems.map((item) => renderItemButton(item))
+                    )}
+                    {canCreateEvent ? (
+                      <button
+                        type="button"
+                        onClick={() => openCreateEvent(day)}
+                        className="w-full rounded border border-dashed border-border-soft px-1 py-1 text-[9px] text-muted-2 transition-colors hover:border-accent/40 hover:text-accent"
+                      >
+                        + Événement
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {renderSpanLayer(WEEK_BAR_TOP, bars)}
+        </div>
+      </div>
+    );
+  };
 
   const renderDay = () => {
-    const dayItems = itemsForDay(currentDate);
+    const dayItems = itemsForDay(currentDate, true);
     return (
       <div className="rounded-lg border border-border-soft">
         <div className="flex items-center justify-between border-b border-border-soft bg-background-soft/40 px-3 py-2">
@@ -727,7 +885,7 @@ export function CalendarPage() {
                 </span>
               ))}
               {days.map((day) => {
-                const count = itemsForDay(day).length;
+                const count = itemsForDay(day, true).length;
                 const isToday = isSameDay(day, new Date());
                 return (
                   <button

@@ -771,6 +771,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Création d'un événement avec lieu, responsable, priorité, statut et description.",
         "Les réunions créées dans Communication → Réunions apparaissent automatiquement avec leur horaire, leur type et leur organisateur.",
         "Un clic sur une réunion ouvre sa fiche dans Communication → Réunions.",
+        "Les événements et réservations sur plusieurs jours s'affichent comme une barre continue dans les vues mois et semaine, avec des repères lorsque l'élément continue avant ou après la période affichée.",
         "Création directe d'une réservation de matériel depuis le calendrier.",
         "Types : maintenance, intervention, échéance, renouvellement, audit, projet, réunion, action.",
         "Actions avec module, priorité, échéance, responsable et statut.",

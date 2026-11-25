@@ -51,7 +51,12 @@ def list_events(
     if status:
         statement = statement.where(CalendarEvent.status == status)
     if start_from:
-        statement = statement.where(CalendarEvent.start_at >= start_from)
+        statement = statement.where(
+            or_(
+                CalendarEvent.start_at >= start_from,
+                CalendarEvent.end_at >= start_from,
+            )
+        )
     if start_to:
         statement = statement.where(CalendarEvent.start_at <= start_to)
     if q:

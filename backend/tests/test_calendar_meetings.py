@@ -1,3 +1,35 @@
+def test_calendar_lists_events_overlapping_range(admin_client, csrf_headers):
+    client, csrf = admin_client
+    created = client.post(
+        "/api/v1/calendar/events",
+        headers=csrf_headers(csrf),
+        json={
+            "title": "Événement sur plusieurs jours",
+            "event_type": "maintenance",
+            "start_at": "2026-11-28T09:00:00+00:00",
+            "end_at": "2026-12-02T18:00:00+00:00",
+            "all_day": False,
+        },
+    )
+    assert created.status_code == 201, created.text
+    event_id = created.json()["id"]
+
+    listed = client.get(
+        "/api/v1/calendar/events",
+        params={
+            "start_from": "2026-12-01T00:00:00+00:00",
+            "start_to": "2026-12-05T00:00:00+00:00",
+        },
+    )
+    assert listed.status_code == 200, listed.text
+    assert any(item["id"] == event_id for item in listed.json())
+
+    deleted = client.delete(
+        f"/api/v1/calendar/events/{event_id}", headers=csrf_headers(csrf)
+    )
+    assert deleted.status_code == 204, deleted.text
+
+
 def test_calendar_meetings_are_listed(admin_client, csrf_headers):
     client, csrf = admin_client
 
