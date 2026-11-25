@@ -44,6 +44,11 @@ const AdminAiPage = lazy(() =>
     default: module.AdminAiPage,
   })),
 );
+const AdminAutomationPage = lazy(() =>
+  import("@/features/admin/AdminAutomationPage").then((module) => ({
+    default: module.AdminAutomationPage,
+  })),
+);
 const AdminModulesPage = lazy(() =>
   import("@/features/admin/AdminModulesPage").then((module) => ({
     default: module.AdminModulesPage,
@@ -338,6 +343,14 @@ export function App() {
               element={
                 <RequirePermission permission="ai.configure">
                   <AdminAiPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="automation"
+              element={
+                <RequirePermission permission="admin.settings.read">
+                  <AdminAutomationPage />
                 </RequirePermission>
               }
             />

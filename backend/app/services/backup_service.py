@@ -226,6 +226,30 @@ def create_config_export(db: Session) -> dict[str, Any]:
     }
 
 
+def prune_backups(*, retention_days: int, keep_min: int = 3) -> list[str]:
+    if retention_days <= 0:
+        return []
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    files = sorted(
+        (item for item in BACKUP_DIR.glob("si-pilot-*") if item.is_file()),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
+    cutoff = datetime.now(UTC).timestamp() - retention_days * 86_400
+    deleted: list[str] = []
+    for index, item in enumerate(files):
+        if index < keep_min:
+            continue
+        try:
+            if item.stat().st_mtime >= cutoff:
+                continue
+            item.unlink()
+            deleted.append(item.name)
+        except OSError:
+            continue
+    return deleted
+
+
 def create_full_archive(
     db: Session, *, include_uploads: bool = True
 ) -> Path:

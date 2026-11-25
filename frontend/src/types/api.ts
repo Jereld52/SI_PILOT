@@ -1770,6 +1770,44 @@ export interface SmtpSettings {
   configured: boolean;
 }
 
+export interface SchedulerConfig {
+  enabled: boolean;
+  checks_interval_seconds: number;
+  veeam_enabled: boolean;
+  veeam_hour: number;
+  veeam_minute: number;
+  veeam_stale_hours: number;
+  backup_enabled: boolean;
+  backup_frequency: "daily" | "weekly";
+  backup_weekday: number;
+  backup_hour: number;
+  backup_minute: number;
+  backup_retention_days: number;
+  backup_keep_min: number;
+  digest_enabled: boolean;
+  digest_hour: number;
+  digest_minute: number;
+  digest_emails: string;
+  smtp_configured: boolean;
+}
+
+export interface SchedulerRunItem {
+  id: string;
+  job: string;
+  trigger: string;
+  started_at: string;
+  finished_at: string | null;
+  status: string;
+  summary: string | null;
+  details: Record<string, unknown> | null;
+  duration_ms: number | null;
+}
+
+export interface SchedulerRunResponse {
+  run: SchedulerRunItem;
+  message: string;
+}
+
 export interface VeeamConfig {
   enabled: boolean;
   base_url: string;

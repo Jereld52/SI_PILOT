@@ -22,7 +22,12 @@ from app.models.auth import (
     UserPermissionOverride,
     role_permissions,
 )
-from app.models.automation import AutomationRule, AutomationRun, EmailOutbox
+from app.models.automation import (
+    AutomationRule,
+    AutomationRun,
+    EmailOutbox,
+    SchedulerRun,
+)
 from app.models.budget import (
     Budget,
     BudgetCategory,
@@ -184,6 +189,7 @@ __all__ = [
     "ReservableEquipment",
     "RightsRequest",
     "Role",
+    "SchedulerRun",
     "SecurityAction",
     "SecurityAudit",
     "SecurityIncident",

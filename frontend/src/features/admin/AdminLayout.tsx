@@ -1,6 +1,7 @@
 import {
   ArchiveRestore,
   ArrowDownUp,
+  Clock,
   Database,
   DatabaseBackup,
   FileClock,
@@ -64,6 +65,7 @@ const groups: AdminGroup[] = [
     icon: ServerCog,
     items: [
       { to: "/admin/ai", label: "Assistant IA", icon: Sparkles, permission: "ai.configure" },
+      { to: "/admin/automation", label: "Veille & planification", icon: Clock, permission: "admin.settings.read" },
       { to: "/admin/modules", label: "Modules", icon: LayoutGrid, permission: "admin.settings.read" },
       { to: "/admin/backup", label: "Sauvegarde", icon: ArchiveRestore, permission: "admin.backup.manage" },
       { to: "/admin/system", label: "Système", icon: ServerCog, permission: "admin.settings.read" },

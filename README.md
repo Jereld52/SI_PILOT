@@ -61,6 +61,9 @@ se configurent depuis l'administration.
 - **Sauvegardes Veeam** : connexion en lecture seule à l'API REST de Veeam Backup & Replication 12
   (jobs, sessions, dépôts, alertes), page Infrastructure → Sauvegardes, cache court et outil IA
   `veeam_backup_status`. Voir [`docs/VEEAM.md`](docs/VEEAM.md).
+- **Veille automatique** : planificateur intégré pour les contrôles de supervision, la
+  vérification Veeam, la sauvegarde complète de SI PILOT et un digest quotidien par e-mail, avec
+  journal des exécutions et lancement manuel. Voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).
 - **Modules activables** : chaque module du menu peut être désactivé depuis Administration → Modules.
   Un module désactivé disparaît du menu, son URL directe affiche un écran dédié et le tableau de
   bord masque sa tuile. Tous les modules sont actifs par défaut et les données sont conservées.
@@ -217,6 +220,7 @@ configurée.
 - **Assistant IA et fournisseurs** : voir [`docs/ASSISTANT_IA.md`](docs/ASSISTANT_IA.md).
 - **Arrivées et départs** : voir [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 - **Réunions interparcs et rapports** : voir [`docs/MEETING_REPORTS.md`](docs/MEETING_REPORTS.md).
+- **Veille et planification** : voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).
 - **Sécurité** : voir [`docs/SECURITY.md`](docs/SECURITY.md).
 - **Centre d'aide** : voir [`docs/HELP.md`](docs/HELP.md).
 - **Architecture** : voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

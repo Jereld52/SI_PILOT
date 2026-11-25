@@ -31,6 +31,7 @@ from app.api.v1 import (
     referentials,
     reservations,
     rgpd,
+    scheduler,
     search,
     security,
     setup,
@@ -53,6 +54,7 @@ api_router.include_router(dashboard.router)
 api_router.include_router(search.router)
 api_router.include_router(notifications.router)
 api_router.include_router(admin.router)
+api_router.include_router(scheduler.router)
 api_router.include_router(modules.router)
 api_router.include_router(modules.admin_router)
 api_router.include_router(ai.router)

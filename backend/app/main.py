@@ -111,7 +111,19 @@ async def lifespan(app: FastAPI):
     )
     if not check_database():
         logger.error("database_unavailable_at_startup")
+    try:
+        from app.services import scheduler_service
+
+        scheduler_service.reconfigure()
+    except Exception:  # noqa: BLE001 - la veille ne doit pas empêcher le démarrage
+        logger.exception("scheduler_start_failed")
     yield
+    try:
+        from app.services import scheduler_service
+
+        scheduler_service.stop()
+    except Exception:  # noqa: BLE001
+        logger.exception("scheduler_stop_failed")
     logger.info("application_stop")
 
 

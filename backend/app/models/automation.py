@@ -52,6 +52,23 @@ class AutomationRun(Base, UUIDMixin):
     dry_run: Mapped[bool] = mapped_column(default=True, nullable=False)
 
 
+class SchedulerRun(Base, UUIDMixin):
+    __tablename__ = "scheduler_runs"
+
+    job: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    trigger: Mapped[str] = mapped_column(String(20), default="schedule", nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(
+        String(20), default="running", nullable=False, index=True
+    )
+    summary: Mapped[str | None] = mapped_column(Text)
+    details_json: Mapped[str | None] = mapped_column(Text)
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+
+
 class EmailOutbox(Base, UUIDMixin):
     __tablename__ = "email_outbox"
 

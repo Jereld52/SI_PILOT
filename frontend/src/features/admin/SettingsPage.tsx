@@ -97,6 +97,7 @@ export function SettingsPage() {
       if (
         BRANDING_KEYS.has(setting.key) ||
         setting.key.startsWith("smtp.") ||
+        setting.key.startsWith("scheduler.") ||
         setting.key === "notifications.email_enabled"
       ) {
         return;

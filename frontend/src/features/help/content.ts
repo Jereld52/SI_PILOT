@@ -1139,6 +1139,36 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "veille-automatique",
+    title: "Veille et planification",
+    summary: "Contrôles automatiques, vérification Veeam, sauvegarde planifiée et digest quotidien.",
+    category: "administration",
+    tags: ["veille", "planificateur", "contrôles", "supervision", "sauvegarde", "digest", "Veeam"],
+    blocks: [
+      p(
+        "Administration → Veille & planification exécute automatiquement les tâches d'exploitation lorsque SI PILOT est démarré.",
+      ),
+      list([
+        "Contrôles de supervision activés et autorisés : ping, TCP, HTTP et SNMP.",
+        "Vérification Veeam quotidienne : jobs en échec, sauvegardes anciennes et dépôts presque pleins.",
+        "Sauvegarde complète de SI PILOT, quotidienne ou hebdomadaire, avec rétention des archives.",
+        "Digest quotidien par e-mail : contrôles, Veeam, sauvegarde et alertes du tableau de bord.",
+        "Journal des exécutions et lancement manuel de chaque tâche.",
+      ]),
+      p(
+        "Cochez « Activer la veille automatique », réglez les heures et les destinataires, puis enregistrez. Les heures utilisent le fuseau horaire du serveur.",
+      ),
+      note(
+        "warning",
+        "Le planificateur ne fonctionne que si l'application tourne en permanence. Sur un serveur, installez SI PILOT comme service plutôt que de laisser une fenêtre ouverte.",
+      ),
+      note(
+        "info",
+        "Le digest nécessite un SMTP actif. Sans destinataire renseigné, il est envoyé aux administrateurs actifs. Un contrôle qui passe en échec crée aussi une notification dans l'application.",
+      ),
+    ],
+  },
+  {
     slug: "veeam",
     title: "Sauvegardes Veeam",
     summary: "Connecter Veeam Backup & Replication 12 et suivre les jobs, sessions et dépôts.",
