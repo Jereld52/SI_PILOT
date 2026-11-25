@@ -17,7 +17,14 @@ CommunicationChannel = Literal["in_app", "email", "both"]
 CommunicationStatus = Literal["draft", "scheduled", "published", "archived"]
 
 MeetingType = Literal[
-    "team", "service", "project", "manager_1on1", "crisis", "other"
+    "team",
+    "service",
+    "project",
+    "manager_1on1",
+    "crisis",
+    "interpark",
+    "external",
+    "other",
 ]
 MeetingStatus = Literal["planned", "done", "cancelled"]
 
@@ -102,6 +109,8 @@ class MeetingCreate(BaseModel):
     visio_url: str | None = Field(default=None, max_length=500)
     organizer_user_id: UUID | None = None
     participant_user_ids: list[UUID] = Field(default_factory=list)
+    external_organizations: list[str] = Field(default_factory=list)
+    external_participants: list[str] = Field(default_factory=list)
     agenda: str | None = None
     notes: str | None = None
     decisions: str | None = None
@@ -117,6 +126,8 @@ class MeetingUpdate(BaseModel):
     visio_url: str | None = Field(default=None, max_length=500)
     organizer_user_id: UUID | None = None
     participant_user_ids: list[UUID] | None = None
+    external_organizations: list[str] | None = None
+    external_participants: list[str] | None = None
     agenda: str | None = None
     notes: str | None = None
     decisions: str | None = None
@@ -135,6 +146,8 @@ class MeetingRead(BaseModel):
     organizer: TicketUserRef | None = None
     participant_user_ids: list[UUID] = Field(default_factory=list)
     participants: list[TicketUserRef] = Field(default_factory=list)
+    external_organizations: list[str] = Field(default_factory=list)
+    external_participants: list[str] = Field(default_factory=list)
     agenda: str | None = None
     notes: str | None = None
     decisions: str | None = None

@@ -32,6 +32,13 @@ function nullable(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
+function lines(value: string): string[] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 function toLocalInput(value: string | null): string {
   if (!value) return "";
   const date = new Date(value);
@@ -378,6 +385,8 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
   const [location, setLocation] = useState("");
   const [visioUrl, setVisioUrl] = useState("");
   const [participantIds, setParticipantIds] = useState<string[]>([]);
+  const [externalOrganizations, setExternalOrganizations] = useState("");
+  const [externalParticipants, setExternalParticipants] = useState("");
   const [agenda, setAgenda] = useState("");
   const [notes, setNotes] = useState("");
   const [decisions, setDecisions] = useState("");
@@ -394,6 +403,8 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
     setLocation(meeting?.location ?? "");
     setVisioUrl(meeting?.visio_url ?? "");
     setParticipantIds(meeting?.participant_user_ids ?? []);
+    setExternalOrganizations((meeting?.external_organizations ?? []).join("\n"));
+    setExternalParticipants((meeting?.external_participants ?? []).join("\n"));
     setAgenda(meeting?.agenda ?? "");
     setNotes(meeting?.notes ?? "");
     setDecisions(meeting?.decisions ?? "");
@@ -416,6 +427,8 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
       location: nullable(location),
       visio_url: nullable(visioUrl),
       participant_user_ids: participantIds,
+      external_organizations: lines(externalOrganizations),
+      external_participants: lines(externalParticipants),
       agenda: nullable(agenda),
       notes: nullable(notes),
       decisions: nullable(decisions),
@@ -450,7 +463,7 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
         <DialogHeader>
           <DialogTitle>{editing ? "Modifier la réunion" : "Nouvelle réunion"}</DialogTitle>
           <DialogDescription>
-            Réunion d'équipe, de service, projet ou point individuel avec la responsable.
+            Réunion d'équipe, de service, projet, interparcs ou avec des partenaires externes.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
@@ -480,6 +493,8 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
                 <option value="project">Réunion projet</option>
                 <option value="manager_1on1">Point avec la responsable</option>
                 <option value="crisis">Cellule de crise</option>
+                <option value="interpark">Réunion interparcs</option>
+                <option value="external">Réunion avec des partenaires</option>
                 <option value="other">Autre</option>
               </Select>
             </div>
@@ -542,6 +557,36 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
               selected={participantIds}
               onChange={setParticipantIds}
             />
+          </div>
+          <div className="grid gap-3 rounded-lg border border-border-soft bg-background/40 p-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="meeting-organizations">Structures et partenaires invités</Label>
+              <Textarea
+                id="meeting-organizations"
+                rows={3}
+                value={externalOrganizations}
+                onChange={(event) => setExternalOrganizations(event.target.value)}
+                placeholder={"OFB\nParc national des Écrins\nDREAL"}
+              />
+              <p className="mt-1 text-[10px] text-muted-2">
+                Une structure par ligne. Utile pour les réunions interparcs et les partenaires
+                externes.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="meeting-external-participants">Participants externes</Label>
+              <Textarea
+                id="meeting-external-participants"
+                rows={3}
+                value={externalParticipants}
+                onChange={(event) => setExternalParticipants(event.target.value)}
+                placeholder={"Jean Dupont — OFB\nMarie Martin — Parc national des Écrins"}
+              />
+              <p className="mt-1 text-[10px] text-muted-2">
+                Une personne par ligne, avec sa structure si possible. Ils apparaîtront dans le
+                rapport de réunion.
+              </p>
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

@@ -2062,6 +2062,8 @@ export interface MeetingItem {
   organizer: TicketUserRef | null;
   participant_user_ids: string[];
   participants: TicketUserRef[];
+  external_organizations: string[];
+  external_participants: string[];
   agenda: string | null;
   notes: string | null;
   decisions: string | null;

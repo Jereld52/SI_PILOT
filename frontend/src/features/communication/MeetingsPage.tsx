@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   CalendarClock,
   ExternalLink,
+  FileText,
   ListChecks,
   Pencil,
   Plus,
@@ -227,7 +228,7 @@ export function MeetingsPage() {
                   <TableHead className="hidden lg:table-cell">Participants</TableHead>
                   <TableHead className="hidden xl:table-cell">Points ouverts</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="w-32 text-right">Actions</TableHead>
+                  <TableHead className="w-40 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -241,6 +242,11 @@ export function MeetingsPage() {
                           ? ` · ${meeting.organizer.first_name} ${meeting.organizer.last_name}`
                           : ""}
                       </p>
+                      {meeting.external_organizations.length > 0 ? (
+                        <p className="mt-0.5 truncate text-[10px] text-accent">
+                          Avec {meeting.external_organizations.join(", ")}
+                        </p>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-xs text-muted">
                       {meetingTypeLabels[meeting.meeting_type] ?? meeting.meeting_type}
@@ -264,6 +270,16 @@ export function MeetingsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <a
+                          href={`/api/v1/communication/meetings/${meeting.id}/report?format=pdf`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-foreground"
+                          aria-label={`Générer le rapport de ${meeting.title}`}
+                          title="Rapport de réunion (PDF)"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </a>
                         {meeting.visio_url ? (
                           <a
                             href={meeting.visio_url}

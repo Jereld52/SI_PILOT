@@ -426,6 +426,8 @@ def _meeting_read(db: Session, meeting: Meeting) -> MeetingRead:
         organizer=_user_ref(meeting.organizer),
         participant_user_ids=meeting.participant_user_ids,
         participants=[TicketUserRef.model_validate(user) for user in participants],
+        external_organizations=meeting.external_organizations,
+        external_participants=meeting.external_participants,
         agenda=meeting.agenda,
         notes=meeting.notes,
         decisions=meeting.decisions,
@@ -486,10 +488,19 @@ def create_meeting(
     request: Request | None = None,
 ) -> MeetingRead:
     _validate_meeting(db, payload)
-    data = payload.model_dump(exclude={"participant_user_ids", "organizer_user_id"})
+    data = payload.model_dump(
+        exclude={
+            "participant_user_ids",
+            "organizer_user_id",
+            "external_organizations",
+            "external_participants",
+        }
+    )
     meeting = Meeting(
         **data,
         participant_user_ids=payload.participant_user_ids,
+        external_organizations=payload.external_organizations,
+        external_participants=payload.external_participants,
         organizer_user_id=payload.organizer_user_id or actor.id,
         created_by_id=actor.id,
         updated_by_id=actor.id,
@@ -520,11 +531,22 @@ def update_meeting(
     actor: User,
     request: Request | None = None,
 ) -> MeetingRead:
-    data = payload.model_dump(exclude_unset=True, exclude={"participant_user_ids"})
+    data = payload.model_dump(
+        exclude_unset=True,
+        exclude={
+            "participant_user_ids",
+            "external_organizations",
+            "external_participants",
+        },
+    )
     for key, value in data.items():
         setattr(meeting, key, value)
     if payload.participant_user_ids is not None:
         meeting.participant_user_ids = payload.participant_user_ids
+    if payload.external_organizations is not None:
+        meeting.external_organizations = payload.external_organizations
+    if payload.external_participants is not None:
+        meeting.external_participants = payload.external_participants
     _validate_meeting(db, meeting)
     meeting.updated_by_id = actor.id
     write_audit(
@@ -609,6 +631,19 @@ def list_meeting_points(
             MeetingPoint.status,
             MeetingPoint.due_date.asc().nullslast(),
             MeetingPoint.created_at.desc(),
+        )
+    ).all()
+    return [_point_read(db, row) for row in rows]
+
+
+def points_for_meeting(db: Session, meeting_id: UUID) -> list[MeetingPointRead]:
+    rows = db.scalars(
+        select(MeetingPoint)
+        .where(MeetingPoint.meeting_id == meeting_id)
+        .order_by(
+            MeetingPoint.status,
+            MeetingPoint.due_date.asc().nullslast(),
+            MeetingPoint.created_at,
         )
     ).all()
     return [_point_read(db, row) for row in rows]

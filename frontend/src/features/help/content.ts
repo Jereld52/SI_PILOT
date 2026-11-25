@@ -627,7 +627,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       list([
         "Communications : rédaction, ciblage des destinataires, publication, suivi de lecture et archivage.",
-        "Réunions : équipe, service, projet, cellule de crise ou point avec la responsable, avec ordre du jour, compte rendu et décisions.",
+        "Réunions : équipe, service, projet, cellule de crise, interparcs ou partenaires externes, avec ordre du jour, compte rendu et décisions.",
+        "Réunions interparcs et partenaires : renseignez les structures invitées (OFB, autre parc, DREAL…) et les participants externes, une ligne par structure ou par personne.",
+        "Rapport de réunion : depuis la liste, l'icône document génère un PDF prêt à diffuser avec participants internes et externes, ordre du jour, compte rendu, décisions et points de suivi.",
         "Formations : organisme, dates, durée, coût, caractère obligatoire et participants.",
         "Points 1:1 : sujets en cours avec la responsable, priorité, échéance, prochaine revue et historique des échanges.",
       ]),

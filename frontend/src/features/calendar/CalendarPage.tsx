@@ -132,6 +132,9 @@ const meetingTypeLabels: Record<string, string> = {
   service: "Réunion de service",
   project: "Réunion de projet",
   manager_1on1: "Point avec la responsable",
+  crisis: "Cellule de crise",
+  interpark: "Réunion interparcs",
+  external: "Réunion partenaires",
   other: "Réunion",
 };
 

@@ -66,9 +66,11 @@ se configurent depuis l'administration.
   bord masque sa tuile. Tous les modules sont actifs par défaut et les données sont conservées.
 - **Communication** : communications ciblées aux utilisateurs (tous, service, rôle ou sélection),
   publication avec notification interne et e-mail optionnel, suivi de lecture et archivage ;
-  réunions d'équipe, de service, de projet ou points avec la responsable avec ordre du jour,
-  compte rendu et décisions ; formations avec organisme, dates, coût, caractère obligatoire et
-  participants ; points de suivi 1:1 avec priorité, échéance et prochaine revue.
+  réunions d'équipe, de service, de projet, interparcs ou avec des partenaires externes (OFB,
+  autres parcs, DREAL…), avec structures et participants externes, ordre du jour, compte rendu
+  et décisions ; génération d'un **rapport de réunion PDF** prêt à diffuser ; formations avec
+  organisme, dates, coût, caractère obligatoire et participants ; points de suivi 1:1 avec
+  priorité, échéance et prochaine revue.
 - **Gestion Active Directory** : création et modification d'utilisateurs, activation/désactivation,
   réinitialisation de mot de passe via LDAPS et gestion de l'appartenance aux groupes, avec audit.
 - **Partages réseau** : suivi de l'espace libre des lecteurs et chemins UNC, seuils d'alerte et
@@ -214,6 +216,7 @@ configurée.
 - **Sauvegarde / restauration** : voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 - **Assistant IA et fournisseurs** : voir [`docs/ASSISTANT_IA.md`](docs/ASSISTANT_IA.md).
 - **Arrivées et départs** : voir [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
+- **Réunions interparcs et rapports** : voir [`docs/MEETING_REPORTS.md`](docs/MEETING_REPORTS.md).
 - **Sécurité** : voir [`docs/SECURITY.md`](docs/SECURITY.md).
 - **Centre d'aide** : voir [`docs/HELP.md`](docs/HELP.md).
 - **Architecture** : voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

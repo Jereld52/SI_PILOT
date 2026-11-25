@@ -33,6 +33,8 @@ export const meetingTypeLabels: Record<string, string> = {
   project: "Projet",
   manager_1on1: "Point responsable",
   crisis: "Cellule de crise",
+  interpark: "Interparcs",
+  external: "Partenaires externes",
   other: "Autre",
 };
 

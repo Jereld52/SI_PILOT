@@ -1,10 +1,14 @@
+import re
+import unicodedata
+from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
 from app.db.session import get_db
+from app.exports import meetings as meetings_export
 from app.models.auth import User
 from app.schemas.communication import (
     CommunicationCreate,
@@ -20,7 +24,7 @@ from app.schemas.communication import (
     TrainingRead,
     TrainingUpdate,
 )
-from app.services import communication_service
+from app.services import branding_service, communication_service
 
 router = APIRouter(prefix="/communication", tags=["Communication"])
 
@@ -150,6 +154,41 @@ def get_meeting(
     db: Session = Depends(get_db),
 ):
     return communication_service.get_meeting_read(db, meeting_id)
+
+
+def _report_filename(title: str, meeting_date: datetime, extension: str) -> str:
+    normalized = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-") or "reunion"
+    return f"rapport-reunion-{meeting_date:%Y%m%d}-{slug[:60]}.{extension}"
+
+
+@router.get("/meetings/{meeting_id}/report")
+def meeting_report(
+    meeting_id: UUID,
+    export_format: str = Query("pdf", alias="format", pattern="^(pdf|md)$"),
+    _: User = Depends(require_permission("meetings.read")),
+    db: Session = Depends(get_db),
+):
+    meeting = communication_service.get_meeting_read(db, meeting_id)
+    points = communication_service.points_for_meeting(db, meeting_id)
+    filename = _report_filename(meeting.title, meeting.scheduled_at, export_format)
+    if export_format == "md":
+        content = meetings_export.meeting_report_markdown(meeting, points).encode("utf-8")
+        return Response(
+            content=content,
+            media_type="text/markdown; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    content = meetings_export.meeting_report_pdf(
+        meeting,
+        points,
+        branding=branding_service.get_pdf_branding(db),
+    )
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.patch("/meetings/{meeting_id}", response_model=MeetingRead)

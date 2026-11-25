@@ -48,6 +48,25 @@ def _dump_ids(values: list[UUID] | None) -> str | None:
     return json.dumps([str(value) for value in values], ensure_ascii=False)
 
 
+def _load_strings(value: str | None) -> list[str]:
+    if not value:
+        return []
+    try:
+        data = json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if not isinstance(data, list):
+        return []
+    return [str(item).strip() for item in data if str(item).strip()]
+
+
+def _dump_strings(values: list[str] | None) -> str | None:
+    cleaned = [value.strip() for value in (values or []) if value and value.strip()]
+    if not cleaned:
+        return None
+    return json.dumps(cleaned, ensure_ascii=False)
+
+
 class Communication(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "communications"
 
@@ -139,6 +158,8 @@ class Meeting(Base, UUIDMixin, TimestampMixin):
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     participant_user_ids_json: Mapped[str | None] = mapped_column(Text)
+    external_organizations_json: Mapped[str | None] = mapped_column(Text)
+    external_participants_json: Mapped[str | None] = mapped_column(Text)
     agenda: Mapped[str | None] = mapped_column(Text)
     notes: Mapped[str | None] = mapped_column(Text)
     decisions: Mapped[str | None] = mapped_column(Text)
@@ -166,6 +187,22 @@ class Meeting(Base, UUIDMixin, TimestampMixin):
     @participant_user_ids.setter
     def participant_user_ids(self, values: list[UUID] | None) -> None:
         self.participant_user_ids_json = _dump_ids(values)
+
+    @property
+    def external_organizations(self) -> list[str]:
+        return _load_strings(self.external_organizations_json)
+
+    @external_organizations.setter
+    def external_organizations(self, values: list[str] | None) -> None:
+        self.external_organizations_json = _dump_strings(values)
+
+    @property
+    def external_participants(self) -> list[str]:
+        return _load_strings(self.external_participants_json)
+
+    @external_participants.setter
+    def external_participants(self, values: list[str] | None) -> None:
+        self.external_participants_json = _dump_strings(values)
 
 
 class MeetingPoint(Base, UUIDMixin, TimestampMixin):
