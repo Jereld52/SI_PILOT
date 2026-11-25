@@ -14,6 +14,7 @@ from app.schemas.calendar import (
     CalendarEventCreate,
     CalendarEventRead,
     CalendarEventUpdate,
+    CalendarMeetingRead,
     CalendarOverview,
 )
 from app.services import calendar_service
@@ -46,6 +47,18 @@ def list_events(
         status=status,
         start_from=start_from,
         start_to=start_to,
+    )
+
+
+@router.get("/meetings", response_model=list[CalendarMeetingRead])
+def list_meetings(
+    start_from: datetime | None = None,
+    start_to: datetime | None = None,
+    _: User = Depends(require_permission("meetings.read")),
+    db: Session = Depends(get_db),
+):
+    return calendar_service.list_meetings(
+        db, start_from=start_from, start_to=start_to
     )
 
 

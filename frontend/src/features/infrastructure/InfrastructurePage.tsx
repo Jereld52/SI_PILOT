@@ -13,6 +13,7 @@ import {
   Server,
   ShieldCheck,
   Trash2,
+  Wifi,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -49,6 +50,7 @@ import {
   MonitoringCheckDialog,
   MonitoringResultsDialog,
 } from "@/features/infrastructure/InfrastructureDialogs";
+import { NetworkDiscoveryPanel } from "@/features/infrastructure/NetworkDiscoveryPanel";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { cn, formatDateTime, formatNumber } from "@/lib/utils";
 import type {
@@ -60,7 +62,7 @@ import type {
   TicketUserRef,
 } from "@/types/api";
 
-type TabKey = "equipments" | "dependencies" | "checks";
+type TabKey = "equipments" | "dependencies" | "checks" | "discovery";
 
 const equipmentTypeLabels: Record<string, string> = {
   server: "Serveur",
@@ -262,6 +264,7 @@ export function InfrastructurePage() {
     { key: "equipments", label: "Équipements", icon: Server },
     { key: "dependencies", label: "Dépendances", icon: Cable },
     { key: "checks", label: "Supervision", icon: Radar },
+    { key: "discovery", label: "Découverte", icon: Wifi },
   ];
 
   return (
@@ -389,6 +392,12 @@ export function InfrastructurePage() {
         ))}
       </div>
 
+      {tab === "discovery" ? (
+        <NetworkDiscoveryPanel
+          canCreate={canCreate}
+          onEquipmentAdded={refreshEquipments}
+        />
+      ) : (
       <Card>
         <CardHeader className="flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative w-full lg:max-w-xs">
@@ -761,6 +770,7 @@ export function InfrastructurePage() {
           ) : null}
         </CardContent>
       </Card>
+      )}
 
       <InfraEquipmentDialog
         open={equipmentDialogOpen}

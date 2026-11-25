@@ -7,6 +7,7 @@ from app.core.errors import NotFoundError
 from app.db.base import utcnow
 from app.models.auth import User
 from app.models.calendar import ActionItem, CalendarEvent
+from app.models.communication import Meeting
 from app.schemas.calendar import (
     ActionItemCreate,
     ActionItemRead,
@@ -14,6 +15,7 @@ from app.schemas.calendar import (
     CalendarEventCreate,
     CalendarEventRead,
     CalendarEventUpdate,
+    CalendarMeetingRead,
     CalendarOverview,
 )
 from app.services.audit_service import write_audit
@@ -67,6 +69,45 @@ def list_events(
 
 def get_event(db: Session, event_id: UUID) -> CalendarEvent:
     return _require(db, CalendarEvent, event_id, "Événement introuvable.")
+
+
+def list_meetings(
+    db: Session,
+    *,
+    start_from: datetime | None = None,
+    start_to: datetime | None = None,
+) -> list[CalendarMeetingRead]:
+    statement = select(Meeting).where(Meeting.status != "cancelled")
+    if start_from:
+        statement = statement.where(Meeting.scheduled_at >= start_from)
+    if start_to:
+        statement = statement.where(Meeting.scheduled_at <= start_to)
+    rows = db.scalars(statement.order_by(Meeting.scheduled_at)).all()
+    meetings: list[CalendarMeetingRead] = []
+    for meeting in rows:
+        organizer = meeting.organizer
+        organizer_name = (
+            f"{organizer.first_name} {organizer.last_name}".strip()
+            if organizer is not None
+            else None
+        )
+        meetings.append(
+            CalendarMeetingRead(
+                id=meeting.id,
+                title=meeting.title,
+                meeting_type=meeting.meeting_type,
+                start_at=meeting.scheduled_at,
+                end_at=meeting.scheduled_at + timedelta(minutes=meeting.duration_minutes),
+                location=meeting.location,
+                visio_url=meeting.visio_url,
+                status=meeting.status,
+                organizer_name=organizer_name or None,
+                open_point_count=sum(
+                    1 for point in meeting.points if point.status != "done"
+                ),
+            )
+        )
+    return meetings
 
 
 def create_event(

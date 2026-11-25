@@ -8,8 +8,8 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,7 @@ export function MeetingsPage() {
   const [editing, setEditing] = useState<MeetingItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MeetingItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const meetingsQuery = useQuery({
     queryKey: ["communication", "meetings"],
@@ -59,6 +60,18 @@ export function MeetingsPage() {
 
   const meetings = meetingsQuery.data ?? [];
   const users = usersQuery.data ?? [];
+
+  useEffect(() => {
+    const meetingId = searchParams.get("meeting");
+    if (!meetingId || meetings.length === 0) return;
+    const match = meetings.find((meeting) => meeting.id === meetingId);
+    if (!match) return;
+    if (canManage) {
+      setEditing(match);
+      setDialogOpen(true);
+    }
+    setSearchParams({}, { replace: true });
+  }, [searchParams, meetings, canManage, setSearchParams]);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();

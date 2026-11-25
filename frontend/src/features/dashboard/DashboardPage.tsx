@@ -46,6 +46,7 @@ import type {
   ActivityItem,
   AlertItem,
   CalendarEventItem,
+  CalendarMeetingItem,
   CockpitDeadline,
   CockpitModule,
   DashboardActivity,
@@ -328,6 +329,17 @@ export function DashboardPage() {
     enabled: hasPermission("reservations.read"),
     staleTime: 60_000,
   });
+  const weekMeetingsQuery = useQuery({
+    queryKey: ["calendar", "dashboard-meetings", format(weekStart, "yyyy-MM-dd")],
+    queryFn: () =>
+      apiFetch<CalendarMeetingItem[]>(
+        `/calendar/meetings?start_from=${encodeURIComponent(
+          weekStart.toISOString(),
+        )}&start_to=${encodeURIComponent(weekEnd.toISOString())}`,
+      ),
+    enabled: hasPermission("meetings.read"),
+    staleTime: 60_000,
+  });
 
   const isRefreshing =
     summaryQuery.isFetching ||
@@ -369,6 +381,7 @@ export function DashboardPage() {
   const activities = activityQuery.data?.items ?? [];
   const weekEvents = weekEventsQuery.data ?? [];
   const weekReservations = weekReservationsQuery.data ?? [];
+  const weekMeetings = weekMeetingsQuery.data ?? [];
   const charts = chartsQuery.data?.series ?? [];
   const orderedCharts = [...charts].sort((a, b) => {
     const indexA = preferredCharts.indexOf(a.key);
@@ -636,7 +649,7 @@ export function DashboardPage() {
                 Semaine du {format(weekStart, "d MMMM yyyy", { locale: fr })}
               </h2>
               <p className="mt-1 text-xs text-muted">
-                Événements de la semaine en cours, du lundi au dimanche.
+                Événements, réunions et réservations de la semaine en cours, du lundi au dimanche.
               </p>
             </div>
             {hasPermission("calendar.read") ? (
@@ -676,6 +689,11 @@ export function DashboardPage() {
                       new Date(reservation.start_at) < endOfDay(day) &&
                       new Date(reservation.end_at) > startOfDay(day),
                   );
+                  const dayMeetings = weekMeetings.filter(
+                    (meeting) =>
+                      new Date(meeting.start_at) < endOfDay(day) &&
+                      new Date(meeting.end_at) > startOfDay(day),
+                  );
                   const dayItems = [
                     ...dayEvents.map((event) => ({
                       key: `event-${event.id}`,
@@ -686,6 +704,7 @@ export function DashboardPage() {
                       title: event.title,
                       meta: event.location ?? "",
                       reservation: false,
+                      meeting: false,
                     })),
                     ...dayReservations.map((reservation) => ({
                       key: `reservation-${reservation.id}`,
@@ -703,6 +722,21 @@ export function DashboardPage() {
                         reservation.requester_email ??
                         "Demandeur non précisé",
                       reservation: true,
+                      meeting: false,
+                    })),
+                    ...dayMeetings.map((meeting) => ({
+                      key: `meeting-${meeting.id}`,
+                      start: meeting.start_at,
+                      time: `${format(parseISO(meeting.start_at), "HH:mm")}–${format(
+                        parseISO(meeting.end_at),
+                        "HH:mm",
+                      )}`,
+                      title: meeting.title,
+                      meta: ["Réunion", meeting.organizer_name, meeting.location]
+                        .filter(Boolean)
+                        .join(" · "),
+                      reservation: false,
+                      meeting: true,
                     })),
                   ].sort((left, right) => left.start.localeCompare(right.start));
                   const today = isSameDay(day, new Date());
@@ -735,7 +769,9 @@ export function DashboardPage() {
                                 "rounded-md border px-2 py-1.5",
                                 item.reservation
                                   ? "border-brand-green/30 bg-brand-green/10"
-                                  : "border-border-soft bg-surface/70",
+                                  : item.meeting
+                                    ? "border-accent/30 bg-accent/10"
+                                    : "border-border-soft bg-surface/70",
                               )}
                             >
                               <p className="text-[10px] font-medium text-foreground">

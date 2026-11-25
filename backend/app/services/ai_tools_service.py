@@ -15,7 +15,7 @@ from app.models.network import NetworkShare
 from app.models.organization import Agent, ChecklistRun
 from app.models.security import Certificate, SecurityIncident
 from app.models.tickets import Ticket, TicketStatus
-from app.services import onboarding_service, veeam_service
+from app.services import network_scan_service, onboarding_service, veeam_service
 from sqlalchemy import false, func, or_, select
 from sqlalchemy.orm import Session
 
@@ -149,6 +149,12 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "label": "Sauvegardes Veeam",
         "description": "Jobs, sessions, échecs et dépôts Veeam.",
         "permission": "security.read",
+    },
+    {
+        "key": "network_discovery",
+        "label": "Découverte réseau",
+        "description": "Hôtes détectés sur un sous-réseau privé et rapprochement avec le parc.",
+        "permission": "infrastructure.read",
     },
     {
         "key": "recent_activity",
@@ -690,6 +696,46 @@ def veeam_backup_status(db: Session, actor: User) -> dict[str, Any]:
     return _result("veeam_backup_status", items)
 
 
+def network_discovery(
+    db: Session, actor: User, query: str | None = None, limit: int = 40
+) -> dict[str, Any]:
+    cidr = network_scan_service.extract_cidr(query)
+    if not cidr:
+        return _result(
+            "network_discovery",
+            [],
+            note=(
+                "Précisez un sous-réseau privé, par exemple « scan 192.168.1.0/24 ». "
+                "Le scan est limité aux adresses privées et à 1024 adresses."
+            ),
+        )
+    try:
+        result = network_scan_service.scan(db, cidr, actor=actor)
+    except Exception as exc:  # noqa: BLE001 - le contexte doit rester exploitable
+        return _result("network_discovery", [], note=f"Scan réseau impossible : {exc}")
+    items: list[str] = []
+    for host in result.hosts[:limit]:
+        ports = ", ".join(str(port) for port in host.open_ports) or "aucun port ouvert"
+        known = (
+            f"déjà connu ({host.known_in} : {host.known_label})"
+            if host.known_in
+            else "nouveau"
+        )
+        items.append(
+            f"{host.ip_address} | {host.suggested_name} | type pressenti "
+            f"{host.suggested_type} | ports {ports} | MAC {host.mac_address or '—'} | {known}"
+        )
+    if len(result.hosts) > limit:
+        items.append(f"… {len(result.hosts) - limit} autre(s) hôte(s) non affiché(s).")
+    note = (
+        f"{result.scanned_addresses} adresse(s) balayée(s) en "
+        f"{result.duration_seconds} s, {result.new_hosts} nouveau(x) hôte(s). "
+        "Aucune écriture en base : l'ajout se fait depuis Infrastructure → Découverte "
+        "ou avec la permission infrastructure.create."
+    )
+    return _result("network_discovery", items, note=note)
+
+
 def recent_activity(db: Session, actor: User, limit: int = 15) -> dict[str, Any]:
     rows = db.scalars(
         select(AuditLog).order_by(AuditLog.occurred_at.desc()).limit(limit)
@@ -721,6 +767,7 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "agent_lookup": agent_lookup,
     "onboarding_briefing": onboarding_briefing,
     "veeam_backup_status": veeam_backup_status,
+    "network_discovery": network_discovery,
     "recent_activity": recent_activity,
 }
 
@@ -777,6 +824,23 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("onboarding_briefing")
     if any(term in text for term in ("sauvegarde", "veeam", "backup", "restauration")):
         add("veeam_backup_status")
+    if any(
+        term in text
+        for term in (
+            "scan",
+            "scanner",
+            "balayage",
+            "découverte réseau",
+            "decouverte reseau",
+            "plage ip",
+            "plage d'adresses",
+            "cidr",
+        )
+    ) or (
+        network_scan_service.extract_cidr(query)
+        and any(term in text for term in ("réseau", "reseau", "adresse ip", "hôte", "hote"))
+    ):
+        add("network_discovery", query=query)
     if any(term in text for term in ("qui est", "qui utilise", "utilisateur", "agent", "affecté", "affecte", "annuaire")):
         add("agent_lookup", query=query)
     if any(term in text for term in ("récent", "recent", "changement", "activité", "activite", "audit", "dernier")):

@@ -765,10 +765,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["calendrier", "événement", "action", "réservation", "échéance"],
     blocks: [
       p(
-        "Le calendrier propose les vues jour, semaine, mois et année. Il regroupe les événements, les réservations de matériel et les actions à réaliser.",
+        "Le calendrier propose les vues jour, semaine, mois et année. Il regroupe les événements, les réunions, les réservations de matériel et les actions à réaliser.",
       ),
       list([
         "Création d'un événement avec lieu, responsable, priorité, statut et description.",
+        "Les réunions créées dans Communication → Réunions apparaissent automatiquement avec leur horaire, leur type et leur organisateur.",
+        "Un clic sur une réunion ouvre sa fiche dans Communication → Réunions.",
         "Création directe d'une réservation de matériel depuis le calendrier.",
         "Types : maintenance, intervention, échéance, renouvellement, audit, projet, réunion, action.",
         "Actions avec module, priorité, échéance, responsable et statut.",
@@ -800,6 +802,34 @@ export const HELP_ARTICLES: HelpArticle[] = [
       note(
         "warning",
         "L'application n'exécute aucune sonde réseau sans action explicite. Un contrôle de supervision doit être autorisé avant activation.",
+      ),
+    ],
+  },
+  {
+    slug: "decouverte-reseau",
+    title: "Découverte réseau",
+    summary: "Scanner un sous-réseau privé et ajouter les équipements détectés.",
+    category: "infrastructure",
+    tags: ["scan", "réseau", "découverte", "IP", "MAC", "ARP", "ports", "assistant IA"],
+    blocks: [
+      p(
+        "Infrastructure → Découverte lance un balayage en lecture seule d'un sous-réseau privé pour repérer les équipements non recensés. L'assistant IA peut aussi lancer ce scan avec une question du type « scanne 192.168.1.0/24 ».",
+      ),
+      list([
+        "Sous-réseaux privés uniquement : 10.0.0.0/8, 172.16.0.0/12 ou 192.168.0.0/16, avec 1024 adresses maximum.",
+        "Détection par lecture de la table ARP locale et test de ports courants : SSH, HTTP, SMB, RDP, WinRM.",
+        "Résolution du nom DNS inverse lorsqu'elle est disponible.",
+        "Rapprochement automatique avec les adresses IP et MAC déjà présentes dans l'infrastructure et le parc.",
+        "Type d'équipement pressenti selon les ports et le nom : serveur, switch, routeur, pare-feu, NAS ou point d'accès.",
+        "Ajout manuel d'un nouvel hôte vers l'infrastructure, après confirmation. Les champs sont préremplis.",
+      ]),
+      note(
+        "info",
+        "Le scan ne modifie ni le réseau ni la base. Il nécessite la permission infrastructure.read ; l'ajout d'un équipement nécessite infrastructure.create. Le résultat est limité au sous-réseau demandé et chaque scan est journalisé.",
+      ),
+      note(
+        "warning",
+        "Un hôte sans port ouvert et absent de la table ARP peut ne pas être détecté. Vérifiez le VLAN, les règles de pare-feu et les plages d'adresses avant de conclure.",
       ),
     ],
   },
@@ -1093,7 +1123,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Test de connexion et synchronisation de l'inventaire.",
         "Création ou mise à jour des fiches du parc : nom machine, IP, MAC, série, fabricant, modèle, système, dernier utilisateur, groupes et domaine.",
         "Catalogue via `/api/v3/packages` et paquets installés via `/api/v1/host_data?uuid=...&field=installed_packages` sur WAPT 2.4.",
-        "Signature des actions : renseignez la clé privée (`C:\\Users\\<compte>\\private\\key.pem`), le certificat (`key.crt`) et le mot de passe de la clé.",
+        "Signature des actions : importez directement la clé privée (`key.pem`) et le certificat (`key.crt`) depuis la console WAPT. Aucun chemin à saisir.",
+        "L'import vérifie que la clé correspond au certificat, stocke les fichiers dans l'espace privé de SI PILOT et chiffre le mot de passe de clé.",
+        "Un chemin manuel reste possible dans les paramètres avancés pour une clé déjà installée sur le serveur.",
         "L'installation et la désinstallation passent par `/api/v3/trigger_host_action` avec une action `trigger_install_packages` ou `trigger_remove_packages` signée.",
         "Le bouton « Tester la signature » vérifie que la clé correspond au certificat et affiche l'empreinte utilisée.",
       ]),

@@ -49,8 +49,8 @@ se configurent depuis l'administration.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
 - **Connexion WAPT** dans Administration : URL, identifiants, chemins API, test et synchronisation
-  de l'inventaire ; clé privée et certificat de signature des actions à distance
-  (`/api/v3/trigger_host_action`) avec test de la clé.
+  de l'inventaire ; clé privée et certificat importés comme fichiers (plus de chemin à saisir),
+  vérification de la paire et signature des actions à distance (`/api/v3/trigger_host_action`).
 - **Logiciels** dans Support & parc : parc logiciel remonté par WAPT, versions installées,
   mises à jour disponibles par logiciel et par poste, alertes sur le tableau de bord, catalogue
   et installation/désinstallation par équipement. Le déploiement direct nécessite une action
@@ -79,7 +79,11 @@ se configurent depuis l'administration.
 - Cybersécurité : incidents, actions, vulnérabilités, sauvegardes, certificats et audits.
 - Projets : jalons, tâches, risques, décisions et avancement calculé.
 - Documentation : métadonnées, tags, versions et téléversement/téléchargement de fichiers.
-- Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser.
+- Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser. Les
+  réunions de Communication et les réservations de matériel apparaissent dans le calendrier.
+- **Découverte réseau** : scan en lecture seule d'un sous-réseau privé, rapprochement avec le
+  parc et l'infrastructure, ajout manuel des nouveaux hôtes. L'assistant IA expose l'outil
+  `network_discovery`.
 - Administration → **Import / Export** : imports CSV/XLSX pour agents, parc, mobiles, fournisseurs,
   licences et infrastructure, avec prévisualisation, rapport et historique ; exports XLSX/PDF du
   parc, des lignes mobiles, de l'infrastructure, des tickets et des statistiques.

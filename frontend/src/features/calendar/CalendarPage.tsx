@@ -76,6 +76,7 @@ import type {
   AgentItem,
   CalendarActionItem,
   CalendarEventItem,
+  CalendarMeetingItem,
   CalendarOverview,
   EquipmentReservationItem,
   Page,
@@ -88,7 +89,7 @@ type CalendarView = "day" | "week" | "month" | "year";
 
 interface CalendarDisplayItem {
   key: string;
-  kind: "event" | "reservation";
+  kind: "event" | "reservation" | "meeting";
   start: string;
   end: string | null;
   title: string;
@@ -96,6 +97,7 @@ interface CalendarDisplayItem {
   tone: string;
   event?: CalendarEventItem;
   reservation?: EquipmentReservationItem;
+  meeting?: CalendarMeetingItem;
 }
 
 const eventTypeLabels: Record<string, string> = {
@@ -123,6 +125,16 @@ const eventTypeColors: Record<string, string> = {
 };
 
 const reservationTone = "bg-brand-green/20 text-brand-green border-brand-green/30";
+
+const meetingTypeLabels: Record<string, string> = {
+  team: "Réunion d'équipe",
+  service: "Réunion de service",
+  project: "Réunion de projet",
+  manager_1on1: "Point avec la responsable",
+  other: "Réunion",
+};
+
+const meetingTone = "bg-accent/15 text-accent border-accent/30";
 
 const reservationStatusLabels: Record<string, string> = {
   confirmed: "Confirmée",
@@ -174,6 +186,7 @@ export function CalendarPage() {
   const canUpdateAction = hasPermission("actions.update");
   const canReadReservations = hasPermission("reservations.read");
   const canCreateReservation = hasPermission("reservations.create");
+  const canReadMeetings = hasPermission("meetings.read");
 
   const [tab, setTab] = useState<TabKey>("calendar");
   const [view, setView] = useState<CalendarView>("month");
@@ -246,6 +259,17 @@ export function CalendarPage() {
       ),
     enabled: canReadReservations,
   });
+  const meetingsQuery = useQuery({
+    queryKey: ["calendar", "meetings", rangeStart.toISOString(), rangeEnd.toISOString()],
+    queryFn: () =>
+      apiFetch<CalendarMeetingItem[]>(
+        `/calendar/meetings${buildQuery({
+          start_from: rangeStart.toISOString(),
+          start_to: rangeEnd.toISOString(),
+        })}`,
+      ),
+    enabled: canReadMeetings,
+  });
   const upcomingReservationsQuery = useQuery({
     queryKey: ["calendar", "reservations", "upcoming"],
     queryFn: () =>
@@ -290,6 +314,7 @@ export function CalendarPage() {
 
   const events = eventsQuery.data ?? [];
   const reservations = reservationsQuery.data ?? [];
+  const meetings = meetingsQuery.data ?? [];
   const upcomingReservations = upcomingReservationsQuery.data ?? [];
   const nextUpcomingReservation = [...upcomingReservations].sort((left, right) =>
     left.start_at.localeCompare(right.start_at),
@@ -329,6 +354,22 @@ export function CalendarPage() {
       tone: reservationTone,
       reservation,
     })),
+    ...meetings.map((meeting) => ({
+      key: `meeting-${meeting.id}`,
+      kind: "meeting" as const,
+      start: meeting.start_at,
+      end: meeting.end_at,
+      title: meeting.title,
+      subtitle: [
+        meetingTypeLabels[meeting.meeting_type] ?? meeting.meeting_type,
+        meeting.organizer_name,
+        meeting.location,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      tone: meetingTone,
+      meeting,
+    })),
   ].sort((left, right) => left.start.localeCompare(right.start));
 
   const globalQuery = searchParams.get("q")?.trim().toLowerCase() ?? "";
@@ -346,6 +387,7 @@ export function CalendarPage() {
   const refreshEvents = () => {
     void eventsQuery.refetch();
     void reservationsQuery.refetch();
+    void meetingsQuery.refetch();
     void upcomingReservationsQuery.refetch();
     void overviewQuery.refetch();
   };
@@ -374,6 +416,10 @@ export function CalendarPage() {
     }
     if (item.kind === "reservation" && item.reservation) {
       setSelectedReservation(item.reservation);
+      return;
+    }
+    if (item.kind === "meeting" && item.meeting) {
+      navigate(`/communication/reunions?meeting=${item.meeting.id}`);
     }
   };
 
@@ -458,7 +504,7 @@ export function CalendarPage() {
       title={`${timeLabel(item)} · ${item.title} · ${item.subtitle}`}
     >
       <span className="flex items-center gap-1 truncate font-medium">
-        {item.kind === "reservation" ? (
+        {item.kind === "reservation" || item.kind === "meeting" ? (
           <CalendarClock className="h-2.5 w-2.5 shrink-0" />
         ) : null}
         <span className="truncate">
@@ -630,7 +676,11 @@ export function CalendarPage() {
                         item.tone,
                       )}
                     >
-                      {item.kind === "reservation" ? "Réservation" : "Événement"}
+                      {item.kind === "reservation"
+                        ? "Réservation"
+                        : item.kind === "meeting"
+                          ? "Réunion"
+                          : "Événement"}
                     </span>
                   </span>
                   <span className="mt-0.5 block text-[11px] text-muted">{item.subtitle}</span>
@@ -718,7 +768,7 @@ export function CalendarPage() {
       <PageHeader
         eyebrow="Échéances et planification"
         title="Calendrier et actions"
-        description="Vues jour, semaine, mois et année. Les réservations de matériel apparaissent avec le nom du demandeur."
+        description="Vues jour, semaine, mois et année. Les réservations de matériel et les réunions apparaissent avec leur demandeur ou organisateur."
         actions={
           <>
             {tab === "calendar" && canCreateReservation ? (
@@ -830,7 +880,9 @@ export function CalendarPage() {
             />
           </CardHeader>
           <CardContent>
-            {eventsQuery.isError || (canReadReservations && reservationsQuery.isError) ? (
+            {eventsQuery.isError ||
+            (canReadReservations && reservationsQuery.isError) ||
+            (canReadMeetings && meetingsQuery.isError) ? (
               <ErrorState
                 message={
                   (eventsQuery.error instanceof Error
@@ -838,11 +890,16 @@ export function CalendarPage() {
                     : null) ??
                   (reservationsQuery.error instanceof Error
                     ? reservationsQuery.error.message
+                    : null) ??
+                  (meetingsQuery.error instanceof Error
+                    ? meetingsQuery.error.message
                     : "Erreur inconnue.")
                 }
                 onRetry={refreshEvents}
               />
-            ) : eventsQuery.isLoading || (canReadReservations && reservationsQuery.isLoading) ? (
+            ) : eventsQuery.isLoading ||
+              (canReadReservations && reservationsQuery.isLoading) ||
+              (canReadMeetings && meetingsQuery.isLoading) ? (
               <Skeleton className="h-[520px] rounded-xl" />
             ) : view === "month" ? (
               renderMonth()

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
@@ -46,6 +46,38 @@ def test_connection(
     db: Session = Depends(get_db),
 ) -> WaptTestResponse:
     return wapt_service.test_connection(wapt_service.get_config(db))
+
+
+@router.post("/signing-files", response_model=WaptConfigRead)
+async def upload_signing_files(
+    request: Request,
+    key: UploadFile | None = File(None),
+    cert: UploadFile | None = File(None),
+    key_password: str | None = Form(None),
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> WaptConfigRead:
+    key_content = await key.read() if key is not None else None
+    cert_content = await cert.read() if cert is not None else None
+    return wapt_service.save_signing_files(
+        db,
+        key_content=key_content,
+        key_filename=key.filename if key is not None else None,
+        cert_content=cert_content,
+        cert_filename=cert.filename if cert is not None else None,
+        key_password=key_password or None,
+        actor=actor,
+        request=request,
+    )
+
+
+@router.delete("/signing-files", response_model=WaptConfigRead)
+def delete_signing_files(
+    request: Request,
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> WaptConfigRead:
+    return wapt_service.delete_signing_files(db, actor=actor, request=request)
 
 
 @router.post("/signing-test", response_model=WaptSigningTestResponse)

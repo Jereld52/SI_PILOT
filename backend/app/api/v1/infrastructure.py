@@ -20,11 +20,14 @@ from app.schemas.infrastructure import (
     MonitoringCheckUpdate,
     MonitoringResultCreate,
     MonitoringResultRead,
+    NetworkScanRequest,
+    NetworkScanResult,
     SupervisionMapCreate,
     SupervisionMapRead,
     SupervisionMapUpdate,
 )
-from app.services import infrastructure_service
+from app.services import infrastructure_service, network_scan_service
+from app.services.audit_service import write_audit
 
 router = APIRouter(prefix="/infrastructure", tags=["Infrastructure"])
 
@@ -41,6 +44,33 @@ def list_equipments(
     return infrastructure_service.list_equipments(
         db, q=q, type=type, status=status, criticality=criticality
     )
+
+
+@router.post("/network-scan", response_model=NetworkScanResult)
+def run_network_scan(
+    payload: NetworkScanRequest,
+    request: Request,
+    actor: User = Depends(require_permission("infrastructure.read")),
+    db: Session = Depends(get_db),
+) -> NetworkScanResult:
+    result = network_scan_service.scan(db, payload.cidr, actor=actor)
+    write_audit(
+        db,
+        module="infrastructure",
+        action="network_scan_run",
+        actor=actor,
+        entity_type="network_scan",
+        entity_id=result.cidr,
+        entity_label=result.cidr,
+        after={
+            "hosts": len(result.hosts),
+            "new_hosts": result.new_hosts,
+            "duration_seconds": result.duration_seconds,
+        },
+        request=request,
+    )
+    db.commit()
+    return result
 
 
 @router.get("/map", response_model=InfraMapRead)

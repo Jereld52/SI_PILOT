@@ -1,5 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Boxes, KeyRound, Plug, RefreshCw, Save, ShieldCheck } from "lucide-react";
+import {
+  Boxes,
+  KeyRound,
+  Plug,
+  RefreshCw,
+  Save,
+  ShieldCheck,
+  Upload,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,11 +55,14 @@ export function AdminWaptPage() {
   const [signingKeyPath, setSigningKeyPath] = useState("");
   const [signingCertPath, setSigningCertPath] = useState("");
   const [signingKeyPassword, setSigningKeyPassword] = useState("");
+  const [signingKeyFile, setSigningKeyFile] = useState<File | null>(null);
+  const [signingCertFile, setSigningCertFile] = useState<File | null>(null);
   const [packageField, setPackageField] = useState("package");
   const [timeoutSeconds, setTimeoutSeconds] = useState("30");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [importingSigning, setImportingSigning] = useState(false);
   const [signingTesting, setSigningTesting] = useState(false);
   const [testResult, setTestResult] = useState<WaptTestResponse | null>(null);
   const [syncResult, setSyncResult] = useState<WaptSyncResponse | null>(null);
@@ -83,6 +95,8 @@ export function AdminWaptPage() {
     setSigningKeyPath(config.signing_key_path);
     setSigningCertPath(config.signing_cert_path);
     setSigningKeyPassword("");
+    setSigningKeyFile(null);
+    setSigningCertFile(null);
     setPackageField(config.package_field);
     setTimeoutSeconds(String(config.timeout_seconds));
     setSigningResult(null);
@@ -122,6 +136,52 @@ export function AdminWaptPage() {
       toast.error(error instanceof ApiError ? error.message : "Enregistrement impossible.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const importSigningFiles = async () => {
+    if (!signingKeyFile && !signingCertFile) {
+      toast.error("Sélectionnez la clé privée, le certificat, ou les deux.");
+      return;
+    }
+    setImportingSigning(true);
+    try {
+      const form = new FormData();
+      if (signingKeyFile) form.append("key", signingKeyFile);
+      if (signingCertFile) form.append("cert", signingCertFile);
+      if (signingKeyPassword) form.append("key_password", signingKeyPassword);
+      const updated = await apiFetch<WaptConfig>("/admin/wapt/signing-files", {
+        method: "POST",
+        body: form,
+      });
+      toast.success(
+        updated.signing_files_uploaded
+          ? "Clé et certificat importés."
+          : "Fichier importé. Ajoutez le second fichier pour activer la signature.",
+      );
+      setSigningKeyFile(null);
+      setSigningCertFile(null);
+      setSigningKeyPassword("");
+      await configQuery.refetch();
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError ? error.message : "Import des fichiers impossible.",
+      );
+    } finally {
+      setImportingSigning(false);
+    }
+  };
+
+  const removeSigningFiles = async () => {
+    setImportingSigning(true);
+    try {
+      await apiFetch<WaptConfig>("/admin/wapt/signing-files", { method: "DELETE" });
+      toast.success("Fichiers de signature supprimés.");
+      await configQuery.refetch();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Suppression impossible.");
+    } finally {
+      setImportingSigning(false);
     }
   };
 
@@ -305,42 +365,52 @@ export function AdminWaptPage() {
                   Signature des actions à distance
                 </p>
                 <p className="mt-0.5 text-[10px] leading-4 text-muted">
-                  WAPT 2.4 refuse les installations et désinstallations non signées. Indiquez la clé
-                  privée et le certificat utilisés par la console WAPT.
+                  Importez directement les fichiers de la console WAPT : la clé privée et le
+                  certificat. Aucun chemin à saisir.
                 </p>
               </div>
-              <Badge
-                tone={
-                  config?.signing_key_path && config?.signing_cert_path
-                    ? "success"
-                    : "warning"
-                }
-              >
-                {config?.signing_key_path && config?.signing_cert_path
-                  ? "Signature configurée"
-                  : "Signature non configurée"}
+              <Badge tone={config?.signing_files_uploaded ? "success" : "warning"}>
+                {config?.signing_files_uploaded
+                  ? "Fichiers importés"
+                  : config?.signing_key_path && config?.signing_cert_path
+                    ? "Signature via chemin existant"
+                    : "Signature non configurée"}
               </Badge>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <Label htmlFor="wapt-signing-key">Clé privée</Label>
+                <Label htmlFor="wapt-signing-key-file">Clé privée (.pem ou .key)</Label>
                 <Input
-                  id="wapt-signing-key"
-                  value={signingKeyPath}
-                  onChange={(event) => setSigningKeyPath(event.target.value)}
-                  placeholder={"C:\\Users\\compte\\private\\key.pem"}
+                  id="wapt-signing-key-file"
+                  type="file"
+                  accept=".pem,.key,application/x-pem-file,application/octet-stream"
+                  onChange={(event) => setSigningKeyFile(event.target.files?.[0] ?? null)}
                   disabled={!canManage}
                 />
+                <p className="mt-1 text-[10px] text-muted-2">
+                  {config?.signing_key_filename
+                    ? `Importée : ${config.signing_key_filename}`
+                    : signingKeyPath
+                      ? `Chemin existant : ${signingKeyPath}`
+                      : "Généralement key.pem dans le dossier privé de la console WAPT."}
+                </p>
               </div>
               <div>
-                <Label htmlFor="wapt-signing-cert">Certificat</Label>
+                <Label htmlFor="wapt-signing-cert-file">Certificat (.crt ou .pem)</Label>
                 <Input
-                  id="wapt-signing-cert"
-                  value={signingCertPath}
-                  onChange={(event) => setSigningCertPath(event.target.value)}
-                  placeholder={"C:\\Users\\compte\\private\\key.crt"}
+                  id="wapt-signing-cert-file"
+                  type="file"
+                  accept=".crt,.cer,.pem,application/x-x509-ca-cert,application/x-pem-file"
+                  onChange={(event) => setSigningCertFile(event.target.files?.[0] ?? null)}
                   disabled={!canManage}
                 />
+                <p className="mt-1 text-[10px] text-muted-2">
+                  {config?.signing_cert_filename
+                    ? `Importé : ${config.signing_cert_filename}`
+                    : signingCertPath
+                      ? `Chemin existant : ${signingCertPath}`
+                      : "Généralement key.crt, le certificat associé à la clé."}
+                </p>
               </div>
               <div>
                 <Label htmlFor="wapt-signing-password">Mot de passe de la clé</Label>
@@ -352,20 +422,39 @@ export function AdminWaptPage() {
                   placeholder={
                     config?.signing_key_password_set
                       ? "Laisser vide pour conserver"
-                      : "Mot de passe de la clé privée"
+                      : "Uniquement si la clé est chiffrée"
                   }
                   disabled={!canManage}
                 />
               </div>
-              <div className="flex items-end">
+              <div className="flex flex-wrap items-end gap-2">
                 <Button
                   variant="secondary"
+                  loading={importingSigning}
+                  onClick={() => void importSigningFiles()}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Importer les fichiers
+                </Button>
+                <Button
+                  variant="ghost"
                   loading={signingTesting}
                   onClick={() => void testSigning()}
                 >
                   <KeyRound className="h-3.5 w-3.5" />
                   Tester la signature
                 </Button>
+                {config?.signing_key_filename || config?.signing_cert_filename ? (
+                  <Button
+                    variant="ghost"
+                    className="text-danger hover:bg-danger/10 hover:text-danger"
+                    loading={importingSigning}
+                    onClick={() => void removeSigningFiles()}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Retirer
+                  </Button>
+                ) : null}
               </div>
             </div>
             {signingResult ? (
@@ -378,10 +467,10 @@ export function AdminWaptPage() {
               </div>
             ) : null}
             <p className="text-[10px] leading-4 text-muted-2">
-              La clé se trouve généralement dans <span className="font-mono">C:\Users\&lt;compte&gt;\private\key.pem</span>{" "}
-              avec son certificat <span className="font-mono">key.crt</span>. Le mot de passe est celui
-              saisi par la console WAPT lors de la signature. Il est chiffré en base et n'est jamais
-              renvoyé par l'API.
+              Les fichiers sont vérifiés avant enregistrement : la clé doit correspondre au
+              certificat. Ils sont conservés dans le stockage privé de SI PILOT et le mot de passe
+              de clé est chiffré en base. Pour une clé déjà installée sur le serveur, utilisez les
+              champs de chemin dans les paramètres avancés.
             </p>
           </div>
           {canManage ? (

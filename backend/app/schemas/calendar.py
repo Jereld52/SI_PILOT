@@ -128,3 +128,16 @@ class CalendarOverview(BaseModel):
     open_actions: int
     next_events: list[CalendarEventRead]
     next_actions: list[ActionItemRead]
+
+
+class CalendarMeetingRead(BaseModel):
+    id: UUID
+    title: str
+    meeting_type: str
+    start_at: datetime
+    end_at: datetime
+    location: str | None = None
+    visio_url: str | None = None
+    status: str
+    organizer_name: str | None = None
+    open_point_count: int = 0

@@ -49,7 +49,8 @@ L'assistant sélectionne automatiquement des outils en lecture seule selon la qu
 - mises à jour WAPT, logiciels installés sur un poste ;
 - contrats à échéance, partages réseau, incidents de sécurité, certificats ;
 - infrastructure, utilisateurs et agents, activité récente ;
-- jobs, sessions et dépôts de sauvegarde Veeam (`veeam_backup_status`).
+- jobs, sessions et dépôts de sauvegarde Veeam (`veeam_backup_status`) ;
+- découverte réseau limitée aux plages privées et rapprochement avec le parc (`network_discovery`).
 
 Chaque outil vérifie les permissions et applique la portée de données (`all`, `service`, `own`)
 pour les équipements et les demandes. Les résultats sont tronqués et les outils utilisés sont

@@ -1294,6 +1294,28 @@ export interface InfraEquipmentItem {
   updated_at: string;
 }
 
+export interface NetworkScanHost {
+  ip_address: string;
+  hostname: string | null;
+  mac_address: string | null;
+  open_ports: number[];
+  suggested_name: string;
+  suggested_type: string;
+  known_in: string | null;
+  known_label: string | null;
+}
+
+export interface NetworkScanResult {
+  cidr: string;
+  started_at: string;
+  duration_seconds: number;
+  scanned_addresses: number;
+  hosts: NetworkScanHost[];
+  new_hosts: number;
+  known_hosts: number;
+  notes: string[];
+}
+
 export interface InfraDependencyItem {
   id: string;
   source_id: string;
@@ -1661,6 +1683,19 @@ export interface CalendarActionItem {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CalendarMeetingItem {
+  id: string;
+  title: string;
+  meeting_type: string;
+  start_at: string;
+  end_at: string;
+  location: string | null;
+  visio_url: string | null;
+  status: string;
+  organizer_name: string | null;
+  open_point_count: number;
 }
 
 export interface CalendarOverview {
@@ -2091,6 +2126,9 @@ export interface WaptConfig {
   trigger_action_path: string;
   signing_key_path: string;
   signing_cert_path: string;
+  signing_key_filename: string;
+  signing_cert_filename: string;
+  signing_files_uploaded: boolean;
   signing_key_password_set: boolean;
   package_field: string;
   timeout_seconds: number;

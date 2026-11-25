@@ -200,3 +200,31 @@ class InfraMapRead(BaseModel):
     locations: list[LocationRef]
     maps: list[SupervisionMapRead]
     summary: InfraMapSummary
+
+
+class NetworkScanRequest(BaseModel):
+    cidr: str = Field(min_length=7, max_length=64)
+
+
+class NetworkScanHost(BaseModel):
+    ip_address: str
+    hostname: str | None = None
+    mac_address: str | None = None
+    open_ports: list[int] = Field(default_factory=list)
+    suggested_name: str = ""
+    suggested_type: Literal[
+        "server", "vm", "switch", "router", "firewall", "nas", "access_point", "ups", "other"
+    ] = "other"
+    known_in: str | None = None
+    known_label: str | None = None
+
+
+class NetworkScanResult(BaseModel):
+    cidr: str
+    started_at: datetime
+    duration_seconds: float
+    scanned_addresses: int
+    hosts: list[NetworkScanHost] = Field(default_factory=list)
+    new_hosts: int = 0
+    known_hosts: int = 0
+    notes: list[str] = Field(default_factory=list)

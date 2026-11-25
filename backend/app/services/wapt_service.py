@@ -11,6 +11,7 @@ from typing import Any
 from uuid import UUID
 
 import httpx
+from app.core.config import settings
 from app.core.crypto import decrypt_secret, encrypt_secret
 from app.core.errors import NotFoundError, ValidationAppError
 from app.models.assets import Asset, AssetCategory, AssetSoftware
@@ -170,6 +171,12 @@ def get_settings(db: Session) -> WaptConfigRead:
         trigger_action_path=config.trigger_action_path,
         signing_key_path=config.signing_key_path,
         signing_cert_path=config.signing_cert_path,
+        signing_key_filename=str(_value(db, "wapt.signing_key_filename", "") or ""),
+        signing_cert_filename=str(_value(db, "wapt.signing_cert_filename", "") or ""),
+        signing_files_uploaded=bool(
+            _value(db, "wapt.signing_key_filename", "")
+            and _value(db, "wapt.signing_cert_filename", "")
+        ),
         signing_key_password_set=bool(config.signing_key_password),
         package_field=config.package_field,
         timeout_seconds=config.timeout_seconds,
@@ -224,8 +231,10 @@ def update_settings(
         "wapt.trigger_action_path",
         payload.trigger_action_path.strip() or "/api/v3/trigger_host_action",
     )
-    _set_value(db, "wapt.signing_key_path", payload.signing_key_path.strip())
-    _set_value(db, "wapt.signing_cert_path", payload.signing_cert_path.strip())
+    if "signing_key_path" in payload.model_fields_set:
+        _set_value(db, "wapt.signing_key_path", payload.signing_key_path.strip())
+    if "signing_cert_path" in payload.model_fields_set:
+        _set_value(db, "wapt.signing_cert_path", payload.signing_cert_path.strip())
     if payload.signing_key_password:
         _set_value(
             db,
@@ -1056,10 +1065,211 @@ def test_connection(config: WaptConfig) -> WaptTestResponse:
     )
 
 
+SIGNING_DIR_NAME = "wapt-signing"
+MAX_SIGNING_FILE_BYTES = 2 * 1024 * 1024
+
+
+def _signing_directory() -> Path:
+    directory = Path(settings.upload_dir) / SIGNING_DIR_NAME
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def _safe_upload_name(filename: str | None, fallback: str) -> str:
+    name = Path(filename or "").name.strip() or fallback
+    name = re.sub(r"[^A-Za-z0-9._ -]", "_", name)
+    return name[:180]
+
+
+def _load_private_key_bytes(data: bytes, password: str | None):  # noqa: ANN202
+    encoded = password.encode("utf-8") if password else None
+    try:
+        return serialization.load_pem_private_key(data, password=encoded)
+    except TypeError as exc:
+        if encoded is not None:
+            try:
+                return serialization.load_pem_private_key(data, password=None)
+            except Exception:  # noqa: BLE001 - message explicite ci-dessous
+                raise ValidationAppError(
+                    "La clé privée est chiffrée. Renseignez le mot de passe de la clé."
+                ) from exc
+        raise ValidationAppError(
+            "La clé privée est chiffrée : renseignez le mot de passe de la clé."
+        ) from exc
+    except ValueError as exc:
+        raise ValidationAppError(
+            "Le fichier de clé privée n'est pas un PEM valide."
+        ) from exc
+
+
+def _load_certificate_bytes(data: bytes):  # noqa: ANN202
+    try:
+        return x509.load_pem_x509_certificate(data)
+    except ValueError as exc:
+        raise ValidationAppError(
+            "Le fichier de certificat n'est pas un certificat PEM valide."
+        ) from exc
+
+
+def _public_key_bytes(material) -> bytes:  # noqa: ANN001
+    public_key = material.public_key()
+    return public_key.public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+
+def save_signing_files(
+    db: Session,
+    *,
+    key_content: bytes | None,
+    key_filename: str | None,
+    cert_content: bytes | None,
+    cert_filename: str | None,
+    key_password: str | None,
+    actor: User,
+    request: Request | None = None,
+) -> WaptConfigRead:
+    if not key_content and not cert_content:
+        raise ValidationAppError("Sélectionnez au moins la clé privée ou le certificat.")
+    for content, label in ((key_content, "clé privée"), (cert_content, "certificat")):
+        if content is not None and len(content) > MAX_SIGNING_FILE_BYTES:
+            raise ValidationAppError(
+                f"Le fichier de {label} dépasse la taille maximale de 2 Mo."
+            )
+
+    config = get_config(db)
+    password = key_password if key_password is not None else config.signing_key_password
+
+    key_candidate = key_content
+    if key_candidate is None and config.signing_key_path:
+        key_path = Path(config.signing_key_path)
+        if key_path.is_file():
+            key_candidate = key_path.read_bytes()
+    cert_candidate = cert_content
+    if cert_candidate is None and config.signing_cert_path:
+        cert_path = Path(config.signing_cert_path)
+        if cert_path.is_file():
+            cert_candidate = cert_path.read_bytes()
+
+    private_key = (
+        _load_private_key_bytes(key_candidate, password) if key_candidate else None
+    )
+    certificate = (
+        _load_certificate_bytes(cert_candidate) if cert_candidate else None
+    )
+    if (
+        private_key is not None
+        and certificate is not None
+        and _public_key_bytes(private_key) != _public_key_bytes(certificate)
+    ):
+        raise ValidationAppError(
+            "La clé privée et le certificat ne correspondent pas. "
+            "Importez la paire utilisée par la console WAPT."
+        )
+
+    directory = _signing_directory()
+    before = get_settings(db).model_dump()
+    if key_content:
+        target = directory / "signing-key.pem"
+        target.write_bytes(key_content)
+        _set_value(db, "wapt.signing_key_path", str(target.resolve()))
+        _set_value(
+            db,
+            "wapt.signing_key_filename",
+            _safe_upload_name(key_filename, "signing-key.pem"),
+        )
+    if cert_content:
+        target = directory / "signing-cert.pem"
+        target.write_bytes(cert_content)
+        _set_value(db, "wapt.signing_cert_path", str(target.resolve()))
+        _set_value(
+            db,
+            "wapt.signing_cert_filename",
+            _safe_upload_name(cert_filename, "signing-cert.pem"),
+        )
+    if key_password is not None:
+        _set_value(
+            db,
+            "wapt.signing_key_password_encrypted",
+            encrypt_secret(key_password) or "",
+            is_secret=True,
+            description="Mot de passe de la clé privée WAPT, chiffré",
+        )
+
+    write_audit(
+        db,
+        module="admin",
+        action="wapt_signing_files_imported",
+        actor=actor,
+        entity_type="setting",
+        entity_id="wapt.signing",
+        entity_label="Fichiers de signature WAPT",
+        before={
+            "key_filename": before.get("signing_key_filename"),
+            "cert_filename": before.get("signing_cert_filename"),
+        },
+        after={
+            "key_imported": bool(key_content),
+            "cert_imported": bool(cert_content),
+            "key_filename": _safe_upload_name(key_filename, "signing-key.pem")
+            if key_content
+            else before.get("signing_key_filename"),
+            "cert_filename": _safe_upload_name(cert_filename, "signing-cert.pem")
+            if cert_content
+            else before.get("signing_cert_filename"),
+        },
+        request=request,
+    )
+    db.commit()
+    return get_settings(db)
+
+
+def delete_signing_files(
+    db: Session,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> WaptConfigRead:
+    directory = (Path(settings.upload_dir) / SIGNING_DIR_NAME).resolve()
+    config = get_config(db)
+    for raw_path in (config.signing_key_path, config.signing_cert_path):
+        if not raw_path:
+            continue
+        path = Path(raw_path)
+        try:
+            resolved = path.resolve()
+        except OSError:
+            continue
+        if resolved.parent == directory:
+            resolved.unlink(missing_ok=True)
+    before = get_settings(db).model_dump()
+    _set_value(db, "wapt.signing_key_path", "")
+    _set_value(db, "wapt.signing_cert_path", "")
+    _set_value(db, "wapt.signing_key_filename", "")
+    _set_value(db, "wapt.signing_cert_filename", "")
+    write_audit(
+        db,
+        module="admin",
+        action="wapt_signing_files_deleted",
+        actor=actor,
+        entity_type="setting",
+        entity_id="wapt.signing",
+        entity_label="Fichiers de signature WAPT",
+        before={
+            "key_filename": before.get("signing_key_filename"),
+            "cert_filename": before.get("signing_cert_filename"),
+        },
+        request=request,
+    )
+    db.commit()
+    return get_settings(db)
+
+
 def _load_signing_material(config: WaptConfig):  # noqa: ANN202
     if not config.signing_key_path or not config.signing_cert_path:
         raise ValidationAppError(
-            "La signature WAPT n'est pas configurée. Renseignez la clé privée et le "
+            "La signature WAPT n'est pas configurée. Importez la clé privée et le "
             "certificat dans Administration → Connexion WAPT."
         )
     key_path = Path(config.signing_key_path)

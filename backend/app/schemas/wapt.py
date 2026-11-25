@@ -20,6 +20,9 @@ class WaptConfigRead(BaseModel):
     trigger_action_path: str = "/api/v3/trigger_host_action"
     signing_key_path: str = ""
     signing_cert_path: str = ""
+    signing_key_filename: str = ""
+    signing_cert_filename: str = ""
+    signing_files_uploaded: bool = False
     signing_key_password_set: bool = False
     package_field: str = "package"
     timeout_seconds: int = 30
