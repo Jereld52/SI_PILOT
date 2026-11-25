@@ -1,5 +1,8 @@
 # Déploiement Docker
 
+> Pour un serveur accessible en continu depuis le réseau, voir
+> [`SERVER_DEPLOYMENT.md`](SERVER_DEPLOYMENT.md).
+
 Docker n'est pas installé sur le poste actuel (droits administrateur et WSL2 requis). Les
 fichiers sont fournis pour un déploiement ultérieur sur un serveur ou un poste compatible.
 

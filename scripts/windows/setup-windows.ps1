@@ -1,6 +1,8 @@
 param(
     [switch]$SkipPrereqs,
-    [string]$PostgresVersion = "17.7"
+    [string]$PostgresVersion = "17.7",
+    [switch]$SkipFrontend,
+    [string]$SecretsFile = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,15 +33,26 @@ function Install-WithWinget([string]$Id, [string]$Scope = "user") {
 Refresh-Path
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    throw "Python 3.13 est requis. Installez-le puis relancez ce script."
+    if ($SkipPrereqs) { throw "Python 3.13 est requis. Installez-le puis relancez ce script." }
+    try {
+        Install-WithWinget "Python.Python.3.13"
+    }
+    catch {
+        throw "Python 3.13 est requis et n'a pas pu être installé automatiquement. Installez-le manuellement."
+    }
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        throw "Python reste introuvable après installation."
+    }
 }
 
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    if ($SkipPrereqs) { throw "Node.js est absent. Relancez sans -SkipPrereqs ou installez Node.js LTS." }
-    Install-WithWinget "OpenJS.NodeJS.LTS"
-}
-if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    throw "npm est introuvable après installation de Node.js."
+if (-not $SkipFrontend) {
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        if ($SkipPrereqs) { throw "Node.js est absent. Relancez sans -SkipPrereqs ou installez Node.js LTS." }
+        Install-WithWinget "OpenJS.NodeJS.LTS"
+    }
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        throw "npm est introuvable après installation de Node.js."
+    }
 }
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     if (-not $SkipPrereqs) {
@@ -95,13 +108,30 @@ if (-not (Test-Path $envFile)) {
     [System.IO.File]::WriteAllText($envFile, $content, [System.Text.UTF8Encoding]::new($false))
 }
 
+if ($SecretsFile) {
+    if (-not (Test-Path $SecretsFile)) {
+        throw "Fichier de secrets introuvable : $SecretsFile"
+    }
+    $content = Get-Content $envFile -Raw
+    foreach ($line in Get-Content $SecretsFile) {
+        if ($line -match '^\s*(SECRET_KEY|FIELD_ENCRYPTION_KEY)\s*=\s*(.+?)\s*$') {
+            $key = $matches[1]
+            $value = $matches[2]
+            $content = [regex]::Replace($content, "(?m)^$key=.*$", "$key=$value")
+        }
+    }
+    [System.IO.File]::WriteAllText($envFile, $content, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "Secrets appliqués depuis $SecretsFile."
+}
+
 $venvPython = Join-Path $Backend ".venv\Scripts\python.exe"
 if (-not (Test-Path $venvPython)) {
     Write-Host "Création de l'environnement Python ..."
     python -m venv (Join-Path $Backend ".venv")
 }
 & $venvPython -m pip install --upgrade pip
-& (Join-Path $Backend ".venv\Scripts\pip.exe") install -r (Join-Path $Backend "requirements-dev.txt")
+$requirementsFile = if ($SkipFrontend) { "requirements.txt" } else { "requirements-dev.txt" }
+& (Join-Path $Backend ".venv\Scripts\pip.exe") install -r (Join-Path $Backend $requirementsFile)
 if ($LASTEXITCODE -ne 0) { throw "Installation des dépendances Python impossible." }
 
 Push-Location $Backend
@@ -115,20 +145,28 @@ finally {
     Pop-Location
 }
 
-Push-Location $Frontend
-try {
-    if (Test-Path "package-lock.json") {
-        npm ci --no-audit --no-fund
+if ($SkipFrontend) {
+    if (-not (Test-Path (Join-Path $Frontend "dist\index.html"))) {
+        throw "Frontend compilé introuvable dans frontend\dist. Copiez le dossier dist du kit serveur ou relancez sans -SkipFrontend."
     }
-    else {
-        npm install --no-audit --no-fund
-    }
-    if ($LASTEXITCODE -ne 0) { throw "Installation des dépendances frontend impossible." }
-    npm run build
-    if ($LASTEXITCODE -ne 0) { throw "Compilation du frontend impossible." }
+    Write-Host "Frontend compilé conservé (npm ignoré)."
 }
-finally {
-    Pop-Location
+else {
+    Push-Location $Frontend
+    try {
+        if (Test-Path "package-lock.json") {
+            npm ci --no-audit --no-fund
+        }
+        else {
+            npm install --no-audit --no-fund
+        }
+        if ($LASTEXITCODE -ne 0) { throw "Installation des dépendances frontend impossible." }
+        npm run build
+        if ($LASTEXITCODE -ne 0) { throw "Compilation du frontend impossible." }
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 Write-Host ""

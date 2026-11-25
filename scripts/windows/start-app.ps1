@@ -1,6 +1,9 @@
 param(
     [switch]$SkipBuild,
-    [switch]$OpenBrowser
+    [switch]$OpenBrowser,
+    [string]$BindAddress = "127.0.0.1",
+    [int]$Port = 8000,
+    [string]$PublicUrl = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,14 +34,26 @@ if (-not (Test-Path (Join-Path $Dist "index.html"))) {
 $env:SERVE_FRONTEND = "true"
 $env:FRONTEND_DIST = $Dist
 $env:APP_ENV = "production"
-$env:SECURE_COOKIES = "false"
+if (-not $PublicUrl) {
+    $PublicUrl = "http://127.0.0.1:$Port"
+}
+$env:PUBLIC_BASE_URL = $PublicUrl
+if ($PublicUrl -match '^https://') {
+    $env:SECURE_COOKIES = "true"
+    $env:TRUST_PROXY_HEADERS = "true"
+}
+else {
+    $env:SECURE_COOKIES = "false"
+    $env:TRUST_PROXY_HEADERS = "false"
+}
 
 if ($OpenBrowser) {
-    $browserCommand = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$r = Invoke-WebRequest 'http://127.0.0.1:8000/health' -UseBasicParsing -TimeoutSec 2; if (`$r.StatusCode -eq 200) { Start-Process 'http://127.0.0.1:8000'; break } } catch {}; Start-Sleep -Milliseconds 500 }"
+    $browserCommand = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$r = Invoke-WebRequest 'http://127.0.0.1:$Port/health' -UseBasicParsing -TimeoutSec 2; if (`$r.StatusCode -eq 200) { Start-Process '$PublicUrl'; break } } catch {}; Start-Sleep -Milliseconds 500 }"
     Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-NoProfile", "-Command", $browserCommand | Out-Null
 }
 
 Set-Location (Join-Path $Root "backend")
-Write-Host "SI PILOT : http://127.0.0.1:8000"
-Write-Host "Documentation API : http://127.0.0.1:8000/api/docs"
-& .\.venv\Scripts\uvicorn.exe app.main:app --host 127.0.0.1 --port 8000
+Write-Host "SI PILOT : $PublicUrl"
+Write-Host "Écoute : $BindAddress`:$Port"
+Write-Host "Documentation API : $PublicUrl/api/docs"
+& .\.venv\Scripts\uvicorn.exe app.main:app --host $BindAddress --port $Port

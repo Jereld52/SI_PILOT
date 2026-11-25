@@ -21,6 +21,7 @@ from app.models.organization import Agent
 from app.models.reservations import EquipmentReservation
 from app.models.tickets import Ticket, TicketStatus
 from app.services import (
+    backup_service,
     branding_service,
     email_service,
     ldap_service,
@@ -128,7 +129,7 @@ def _last_audit(db: Session, action: str) -> str | None:
 
 
 def _backup_state() -> dict[str, Any]:
-    directory = PROJECT_ROOT / ".runtime" / "backups"
+    directory = backup_service.BACKUP_DIR
     files = sorted(
         directory.glob("*.dump"),
         key=lambda item: item.stat().st_mtime,
@@ -246,7 +247,7 @@ def get_diagnostics(db: Session) -> dict[str, Any]:
             "detail": (
                 f"Dernière sauvegarde : {backup['last_backup_at']}."
                 if backup["last_backup_at"]
-                else "Aucune sauvegarde détectée dans .runtime/backups."
+                else "Aucune sauvegarde détectée dans le répertoire configuré."
             ),
         }
     )

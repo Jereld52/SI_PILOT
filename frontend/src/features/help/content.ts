@@ -1344,6 +1344,40 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "deploiement-serveur",
+    title: "Déploiement sur un serveur 24/7",
+    summary: "Exporter SI PILOT, l'installer sur un serveur et le rendre accessible au réseau.",
+    category: "exploitation",
+    tags: ["serveur", "déploiement", "export", "service", "réseau", "24/7", "Docker"],
+    blocks: [
+      p(
+        "Pour rendre SI PILOT accessible en continu depuis tous les postes, installez-le sur un serveur plutôt que sur un ordinateur personnel.",
+      ),
+      steps([
+        "Depuis le poste actuel, lancer scripts/windows/export-server-kit.ps1. Le script compile le frontend, prépare une sauvegarde complète et produit un ZIP dans .runtime/export.",
+        "Copier le ZIP sur le serveur et l'extraire, par exemple dans C:\\SI_PILOT.",
+        "Exécuter setup-windows.ps1 -SkipFrontend -SecretsFile .\\migration\\secrets.env en PowerShell administrateur.",
+        "Démarrer l'application, créer le premier administrateur, puis restaurer migration\\si-pilot-backup.zip depuis Administration → Sauvegarde.",
+        "Installer le démarrage automatique avec install-server.ps1 -Port 8000 -PublicUrl http://NOM-DU-SERVEUR:8000.",
+      ]),
+      list([
+        "La tâche planifiée démarre SI PILOT au boot et le redémarre en cas d'arrêt.",
+        "Le port est ouvert dans le pare-feu pour les profils domaine et privé.",
+        "Le journal est écrit dans .runtime/server.log.",
+        "Une pile Docker de production est également fournie pour un serveur Linux.",
+        "Pour HTTPS, placer un reverse proxy devant l'application et définir PUBLIC_BASE_URL en https.",
+      ]),
+      note(
+        "warning",
+        "Le kit d'export contient les clés de chiffrement et une sauvegarde complète. Transférez-le par un canal sûr et ne le laissez pas traîner. Ne perdez jamais FIELD_ENCRYPTION_KEY.",
+      ),
+      note(
+        "info",
+        "L'application doit être joignable sur le port choisi entre les VLAN. Créez un nom DNS interne et vérifiez le pare-feu du serveur. Voir docs/SERVER_DEPLOYMENT.md.",
+      ),
+    ],
+  },
+  {
     slug: "installation-initiale",
     title: "Première installation",
     summary: "Préparer le serveur et créer le premier administrateur via l'assistant.",

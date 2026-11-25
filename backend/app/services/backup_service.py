@@ -29,7 +29,14 @@ from sqlalchemy.orm import Session
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 PROJECT_ROOT = BACKEND_ROOT.parent
-BACKUP_DIR = PROJECT_ROOT / ".runtime" / "backups"
+
+
+def _backup_dir() -> Path:
+    configured = Path(settings.backup_dir)
+    return (configured if configured.is_absolute() else PROJECT_ROOT / configured).resolve()
+
+
+BACKUP_DIR = _backup_dir()
 
 
 def _pg_bin_dir() -> Path | None:

@@ -64,6 +64,9 @@ se configurent depuis l'administration.
 - **Veille automatique** : planificateur intégré pour les contrôles de supervision, la
   vérification Veeam, la sauvegarde complète de SI PILOT et un digest quotidien par e-mail, avec
   journal des exécutions et lancement manuel. Voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).
+- **Déploiement serveur** : export en kit, installation Windows avec service de démarrage
+  automatique, ou pile Docker avec PostgreSQL, Nginx et volumes persistants. Voir
+  [`docs/SERVER_DEPLOYMENT.md`](docs/SERVER_DEPLOYMENT.md).
 - **Modules activables** : chaque module du menu peut être désactivé depuis Administration → Modules.
   Un module désactivé disparaît du menu, son URL directe affiche un écran dédié et le tableau de
   bord masque sa tuile. Tous les modules sont actifs par défaut et les données sont conservées.
@@ -221,6 +224,7 @@ configurée.
 - **Arrivées et départs** : voir [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 - **Réunions interparcs et rapports** : voir [`docs/MEETING_REPORTS.md`](docs/MEETING_REPORTS.md).
 - **Veille et planification** : voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).
+- **Déploiement serveur 24/7** : voir [`docs/SERVER_DEPLOYMENT.md`](docs/SERVER_DEPLOYMENT.md).
 - **Sécurité** : voir [`docs/SECURITY.md`](docs/SECURITY.md).
 - **Centre d'aide** : voir [`docs/HELP.md`](docs/HELP.md).
 - **Architecture** : voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

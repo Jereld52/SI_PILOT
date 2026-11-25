@@ -3,7 +3,9 @@ set -eu
 
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "${UPLOAD_DIR:-/app/data/uploads}"
+  mkdir -p "${BACKUP_DIR:-/app/data/backups}"
   chown -R appuser:appuser "${UPLOAD_DIR:-/app/data/uploads}"
+  chown -R appuser:appuser "${BACKUP_DIR:-/app/data/backups}"
   exec gosu appuser "$@"
 fi
 
