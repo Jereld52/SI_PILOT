@@ -525,6 +525,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Assignation à un utilisateur et liaison à un ou plusieurs équipements.",
         "Commentaires publics ou internes et temps passé.",
         "Historique des changements de statut, priorité, assignation et catégorie.",
+        "Copilote IA : résumé, qualification suggérée, informations manquantes, réponse proposée et détection de demandes similaires.",
+        "Création d'une demande depuis une phrase via l'assistant, après confirmation.",
       ]),
       steps([
         "Créer la demande avec un objet explicite et une description actionnable.",
@@ -643,6 +645,33 @@ export const HELP_ARTICLES: HelpArticle[] = [
       note(
         "warning",
         "Les communications sensibles doivent rester dans les canaux maîtrisés par la structure. Vérifiez les destinataires avant publication.",
+      ),
+    ],
+  },
+  {
+    slug: "import-intelligent",
+    title: "Import intelligent de documents",
+    summary: "Analyser un contrat, un devis ou une facture et l'intégrer au bon endroit.",
+    category: "gestion",
+    tags: ["document", "contrat", "devis", "facture", "licence", "IA", "import"],
+    blocks: [
+      p(
+        "Gestion → Import intelligent analyse un PDF texte ou un fichier texte, puis propose une destination : documentation, contrat, licence ou facture budgétaire.",
+      ),
+      list([
+        "Extraction du type de document, du fournisseur, de la référence, des dates et des montants.",
+        "Vérification et correction des informations avant toute écriture.",
+        "Création d'un contrat en brouillon, d'une licence ou d'une facture budgétaire selon la destination choisie.",
+        "Archivage systématique du fichier source dans la documentation, avec les métadonnées et les tags.",
+        "Création automatique du fournisseur s'il n'existe pas encore.",
+      ]),
+      note(
+        "warning",
+        "Les PDF scannés sans texte doivent être passés par un OCR avant l'import. Vérifiez toujours les montants, dates et références extraits : l'IA peut se tromper.",
+      ),
+      note(
+        "info",
+        "L'analyse nécessite une IA configurée. L'intégration respecte les permissions : contrats.create, licenses.manage, budget.update, documents.create et suppliers.manage.",
       ),
     ],
   },
@@ -1107,7 +1136,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Outils de lecture : recherche d'équipements, pannes, renouvellements, garanties, demandes ouvertes ou en retard, mises à jour WAPT, logiciels d'un poste, contrats, partages réseau, incidents, certificats, infrastructure, utilisateurs, Veeam, découverte réseau et activité récente.",
         "L'assistant choisit automatiquement les outils adaptés à la question, respecte vos permissions et affiche les outils utilisés.",
         "Après chaque réponse, des suggestions permettent de poursuivre l'analyse en un clic.",
-        "L'assistant peut proposer une action de suivi : elle n'est créée qu'après confirmation et vérification de la permission actions.create.",
+        "L'assistant peut proposer une action de suivi, une demande IT, une réunion ou un brouillon de communication : elle n'est créée qu'après confirmation et vérification des permissions.",
+        "Import intelligent : analyser un contrat, un devis, une facture ou une licence et l'intégrer dans le bon module.",
         "Réponses mises en forme (titres, listes, gras) et bouton de copie.",
       ]),
       note(

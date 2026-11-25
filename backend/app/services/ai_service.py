@@ -665,14 +665,18 @@ SYSTEM_PROMPT = (
     "Tu ne modifies jamais les données : tu peux proposer des actions, mais l'utilisateur doit "
     "les valider dans SI PILOT. Ne divulgue aucun secret, mot de passe ou clé d'API. "
     "Pour les listes de postes, cite les noms machine et numéros d'inventaire fournis. "
-    "Lorsque l'utilisateur demande explicitement de créer une action de suivi, un rappel "
-    "ou une tâche, tu peux joindre à la fin de ta réponse un bloc de ce type :\n"
+    "Lorsque l'utilisateur demande explicitement de créer une action de suivi, une demande IT, "
+    "une réunion ou une communication, tu peux joindre à la fin de ta réponse un bloc de ce type :\n"
     "```action\n"
     '{"type": "create_action", "title": "...", "description": "...", '
     '"priority": "medium", "due_date": "AAAA-MM-JJ"}\n'
     "```\n"
+    "Types autorisés : create_action, create_ticket, create_meeting, create_communication. "
+    "Pour create_ticket, ajoute category parmi hardware, software, network, telephony, "
+    "messaging, accounts, security, printing. Pour create_meeting, ajoute scheduled_at en "
+    "ISO 8601 et éventuellement duration_minutes et location. "
     "Tu ne dois jamais affirmer que l'action est créée : l'utilisateur devra la confirmer. "
-    "Ne propose qu'une seule action par réponse et n'invente pas d'échéance précise."
+    "Ne propose qu'une seule action par réponse et n'invente pas de date précise."
 )
 
 
@@ -882,10 +886,11 @@ def _record_run(
     response_text: str | None = None,
     http_status: int | None = None,
     error_code: str | None = None,
+    feature_code: str = "assistant_chat",
 ) -> None:
     run = AiRun(
         user_id=actor.id,
-        feature_code="assistant_chat",
+        feature_code=feature_code,
         scope_json=json.dumps(
             {
                 "include_fleet_context": include_context,

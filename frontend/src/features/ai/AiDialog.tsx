@@ -113,6 +113,27 @@ const actionPriorityLabels: Record<string, string> = {
   critical: "Critique",
 };
 
+const actionTypeLabels: Record<string, string> = {
+  create_action: "Action de suivi",
+  create_ticket: "Demande IT",
+  create_meeting: "Réunion",
+  create_communication: "Communication",
+};
+
+const actionButtonLabels: Record<string, string> = {
+  create_action: "Créer l'action",
+  create_ticket: "Créer la demande",
+  create_meeting: "Créer la réunion",
+  create_communication: "Créer le brouillon",
+};
+
+const actionIcons: Record<string, typeof CalendarPlus> = {
+  create_action: CalendarPlus,
+  create_ticket: Sparkles,
+  create_meeting: CalendarPlus,
+  create_communication: Send,
+};
+
 function InlineText({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return (
@@ -200,6 +221,17 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
   const canUse = hasPermission("ai.use");
   const canConfigure = hasPermission("ai.configure");
   const canCreateAction = hasPermission("actions.create");
+  const canCreateTicket = hasPermission("tickets.create");
+  const canCreateMeeting = hasPermission("meetings.manage");
+  const canCreateCommunication = hasPermission("communications.manage");
+  const canExecuteAction = (type: string) =>
+    type === "create_ticket"
+      ? canCreateTicket
+      : type === "create_meeting"
+        ? canCreateMeeting
+        : type === "create_communication"
+          ? canCreateCommunication
+          : canCreateAction;
   const contextKey = context ? `${context.type}:${context.id}` : "general";
 
   const statusQuery = useQuery({
@@ -538,9 +570,11 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                     message.actions?.length &&
                     !message.actionsIgnored ? (
                       <div className="mt-2 space-y-2">
-                        {message.actions.map((action) => (
+                        {message.actions.map((action) => {
+                          const ActionIcon = actionIcons[action.type] ?? CalendarPlus;
+                          return (
                           <div
-                            key={action.title}
+                            key={`${action.type}-${action.title}`}
                             className="rounded-lg border border-accent/30 bg-accent/5 p-2"
                           >
                             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -554,20 +588,30 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                                   </p>
                                 ) : null}
                                 <p className="mt-1 text-[9px] text-muted-2">
-                                  Priorité{" "}
-                                  {actionPriorityLabels[action.priority] ?? action.priority}
-                                  {action.due_date
+                                  {actionTypeLabels[action.type] ?? action.type}
+                                  {action.type === "create_ticket"
+                                    ? ` · priorité ${
+                                        actionPriorityLabels[action.priority] ??
+                                        action.priority
+                                      }${action.category ? ` · ${action.category}` : ""}`
+                                    : ""}
+                                  {action.type === "create_meeting" && action.scheduled_at
+                                    ? ` · ${new Date(action.scheduled_at).toLocaleString("fr-FR")}`
+                                    : ""}
+                                  {action.type === "create_action" && action.due_date
                                     ? ` · échéance ${formatDate(action.due_date)}`
                                     : ""}
                                 </p>
                               </div>
                               <Badge tone={message.actionsDone ? "success" : "info"}>
-                                {message.actionsDone ? "Action créée" : "Action proposée"}
+                                {message.actionsDone
+                                  ? "Créé"
+                                  : actionTypeLabels[action.type] ?? "Action proposée"}
                               </Badge>
                             </div>
                             {!message.actionsDone ? (
                               <div className="mt-2 flex flex-wrap gap-1.5">
-                                {canCreateAction ? (
+                                {canExecuteAction(action.type) ? (
                                   <Button
                                     size="sm"
                                     loading={
@@ -575,12 +619,12 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                                     }
                                     onClick={() => void executeAction(action, index)}
                                   >
-                                    <CalendarPlus className="h-3.5 w-3.5" />
-                                    Créer l'action
+                                    <ActionIcon className="h-3.5 w-3.5" />
+                                    {actionButtonLabels[action.type] ?? "Confirmer"}
                                   </Button>
                                 ) : (
                                   <span className="text-[10px] text-warning">
-                                    Permission actions.create requise.
+                                    Permission requise pour créer cet élément.
                                   </span>
                                 )}
                                 <Button
@@ -602,7 +646,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                               </div>
                             ) : null}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : null}
                     {message.role === "assistant" &&

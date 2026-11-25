@@ -1,4 +1,4 @@
-import { Clock, MessageSquare, Send, Sparkles, UserRound } from "lucide-react";
+import { Check, Clock, MessageSquare, Send, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDateTime, fullName } from "@/lib/utils";
-import type { TicketDetailItem, TicketMeta, TicketUserRef } from "@/types/api";
+import type { TicketDetailItem, TicketMeta, TicketTriage, TicketUserRef } from "@/types/api";
 
 const priorityTones: Record<string, "danger" | "warning" | "info" | "neutral"> = {
   critical: "danger",
@@ -75,6 +75,10 @@ export function TicketDetailDialog({
   const [minutes, setMinutes] = useState("");
   const [timeComment, setTimeComment] = useState("");
   const [busy, setBusy] = useState(false);
+  const [triage, setTriage] = useState<TicketTriage | null>(null);
+  const [triageLoading, setTriageLoading] = useState(false);
+  const [applyingTriage, setApplyingTriage] = useState(false);
+  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
     if (!open || !ticket) return;
@@ -84,6 +88,8 @@ export function TicketDetailDialog({
     setInternal(false);
     setMinutes("");
     setTimeComment("");
+    setTriage(null);
+    setReplyText("");
   }, [open, ticket]);
 
   const run = async (action: () => Promise<unknown>, success: string) => {
@@ -142,6 +148,66 @@ export function TicketDetailDialog({
         }),
       `Ticket ${label.toLowerCase()}.`,
     );
+  };
+
+  const analyzeTicket = async () => {
+    if (!ticket) return;
+    setTriageLoading(true);
+    try {
+      const result = await apiFetch<TicketTriage>(`/tickets/${ticket.id}/ai/triage`, {
+        method: "POST",
+      });
+      setTriage(result);
+      setReplyText(result.suggested_reply);
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Analyse IA impossible.",
+      );
+    } finally {
+      setTriageLoading(false);
+    }
+  };
+
+  const applyTriage = async () => {
+    if (!ticket || !triage) return;
+    setApplyingTriage(true);
+    try {
+      await apiFetch(`/tickets/${ticket.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          category_id: triage.category_id,
+          priority_id: triage.priority_id,
+        }),
+      });
+      toast.success("Qualification appliquée.");
+      onChanged();
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Application impossible.",
+      );
+    } finally {
+      setApplyingTriage(false);
+    }
+  };
+
+  const addSuggestedReply = async () => {
+    if (!ticket || !replyText.trim()) return;
+    setBusy(true);
+    try {
+      await apiFetch(`/tickets/${ticket.id}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ body: replyText.trim(), is_internal: false }),
+      });
+      toast.success("Réponse ajoutée à la demande.");
+      setReplyText("");
+      onChanged();
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Ajout du commentaire impossible.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -273,6 +339,132 @@ export function TicketDetailDialog({
                 </Button>
               ) : null}
             </div>
+
+            {hasPermission("ai.use") ? (
+              <div className="space-y-3 rounded-lg border border-accent/25 bg-accent/5 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <Sparkles className="h-3.5 w-3.5 text-accent" />
+                      Copilote de la demande
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted">
+                      Résumé, qualification, doublons, informations manquantes et réponse
+                      suggérée.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={triageLoading}
+                    onClick={() => void analyzeTicket()}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {triage ? "Relancer l'analyse" : "Analyser avec l'IA"}
+                  </Button>
+                </div>
+
+                {triage ? (
+                  <div className="space-y-3">
+                    <p className="whitespace-pre-wrap text-[11px] leading-5 text-foreground">
+                      {triage.summary}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone="info">Catégorie : {triage.category_name}</Badge>
+                      <Badge tone="warning">Priorité : {triage.priority_name}</Badge>
+                      <Badge tone="neutral">
+                        Confiance {Math.round(triage.confidence * 100)} %
+                      </Badge>
+                      {hasPermission("tickets.update") ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={applyingTriage}
+                          onClick={() => void applyTriage()}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          Appliquer la qualification
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {triage.missing_info.length > 0 ? (
+                      <div>
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-2">
+                          Informations manquantes
+                        </p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-muted">
+                          {triage.missing_info.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {triage.duplicates.length > 0 ? (
+                      <div>
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-2">
+                          Demandes similaires
+                        </p>
+                        <div className="mt-1 space-y-1">
+                          {triage.duplicates.map((duplicate) => (
+                            <div
+                              key={duplicate.id}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border-soft bg-background/50 px-2 py-1 text-[10px]"
+                            >
+                              <span className="text-foreground">
+                                {duplicate.reference} — {duplicate.subject}
+                              </span>
+                              <span className="text-muted-2">
+                                {duplicate.status} · {Math.round(duplicate.score * 100)} %
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {replyText ? (
+                      <div>
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-2">
+                          Réponse suggérée
+                        </p>
+                        <Textarea
+                          className="mt-1"
+                          rows={5}
+                          value={replyText}
+                          onChange={(event) => setReplyText(event.target.value)}
+                        />
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {hasPermission("tickets.comment") ? (
+                            <Button
+                              size="sm"
+                              loading={busy}
+                              onClick={() => void addSuggestedReply()}
+                            >
+                              <Send className="h-3.5 w-3.5" />
+                              Ajouter comme commentaire
+                            </Button>
+                          ) : null}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              void navigator.clipboard
+                                .writeText(replyText)
+                                .then(() => toast.success("Réponse copiée."))
+                                .catch(() => toast.error("Copie impossible."));
+                            }}
+                          >
+                            Copier
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-border-soft p-3">

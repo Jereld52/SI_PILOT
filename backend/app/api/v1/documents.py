@@ -5,8 +5,15 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
+from app.core.errors import PermissionDeniedError
+from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.models.auth import User
+from app.schemas.document_ai import (
+    DocumentAnalysisRead,
+    DocumentIntegrationRead,
+    DocumentIntegrationRequest,
+)
 from app.schemas.documents import (
     DocumentCategoryRead,
     DocumentCreate,
@@ -15,7 +22,7 @@ from app.schemas.documents import (
     DocumentUpdate,
     DocumentVersionRead,
 )
-from app.services import documents_service
+from app.services import document_ai_service, documents_service
 
 router = APIRouter(prefix="/documents", tags=["Documentation"])
 
@@ -26,6 +33,37 @@ def document_categories(
     db: Session = Depends(get_db),
 ):
     return documents_service.list_categories(db)
+
+
+@router.post("/analyze", response_model=DocumentAnalysisRead)
+async def analyze_document(
+    file: UploadFile = File(...),
+    actor: User = Depends(require_permission("documents.create")),
+    db: Session = Depends(get_db),
+) -> DocumentAnalysisRead:
+    if not has_permission(actor, "ai.use"):
+        raise PermissionDeniedError("Vous ne pouvez pas utiliser l'assistant IA.")
+    content = await file.read()
+    return document_ai_service.analyze(
+        db,
+        content=content,
+        filename=file.filename or "document",
+        mime_type=file.content_type or "application/octet-stream",
+        actor=actor,
+    )
+
+
+@router.post("/intake/{token}/integrate", response_model=DocumentIntegrationRead)
+def integrate_document(
+    token: str,
+    payload: DocumentIntegrationRequest,
+    request: Request,
+    actor: User = Depends(require_permission("documents.create")),
+    db: Session = Depends(get_db),
+) -> DocumentIntegrationRead:
+    return document_ai_service.integrate(
+        db, token, payload, actor=actor, request=request
+    )
 
 
 @router.get("", response_model=list[DocumentRead])

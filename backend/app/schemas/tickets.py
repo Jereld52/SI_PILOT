@@ -177,3 +177,25 @@ class TicketMeta(BaseModel):
     status_counts: list[TicketStatusCount]
     open_count: int
     unassigned_count: int
+
+
+class TicketDuplicateRead(BaseModel):
+    id: UUID
+    reference: str
+    subject: str
+    status: str
+    score: float
+
+
+class TicketTriageRead(BaseModel):
+    summary: str
+    category_id: UUID
+    category_code: str
+    category_name: str
+    priority_id: UUID
+    priority_code: str
+    priority_name: str
+    missing_info: list[str] = Field(default_factory=list)
+    suggested_reply: str = ""
+    duplicates: list[TicketDuplicateRead] = Field(default_factory=list)
+    confidence: float = 0.0

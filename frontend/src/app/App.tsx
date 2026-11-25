@@ -137,6 +137,11 @@ const DocumentsPage = lazy(() =>
     default: module.DocumentsPage,
   })),
 );
+const DocumentIntakePage = lazy(() =>
+  import("@/features/documents/DocumentIntakePage").then((module) => ({
+    default: module.DocumentIntakePage,
+  })),
+);
 const ExportsPage = lazy(() =>
   import("@/features/exports/ExportsPage").then((module) => ({
     default: module.ExportsPage,
@@ -575,6 +580,15 @@ export function App() {
             element={
               <RequirePermission permission="documents.read">
                 <DocumentsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="import-documents"
+            element={
+              <RequirePermission permission="documents.create">
+                <DocumentIntakePage />
               </RequirePermission>
             }
           />

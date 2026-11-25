@@ -1010,6 +1010,28 @@ export interface TicketMeta {
   unassigned_count: number;
 }
 
+export interface TicketDuplicateItem {
+  id: string;
+  reference: string;
+  subject: string;
+  status: string;
+  score: number;
+}
+
+export interface TicketTriage {
+  summary: string;
+  category_id: string;
+  category_code: string;
+  category_name: string;
+  priority_id: string;
+  priority_code: string;
+  priority_name: string;
+  missing_info: string[];
+  suggested_reply: string;
+  duplicates: TicketDuplicateItem[];
+  confidence: number;
+}
+
 export interface InterventionItem {
   id: string;
   reference: string;
@@ -1647,6 +1669,34 @@ export interface DocumentDetailItem extends DocumentItem {
   versions: DocumentVersionItem[];
 }
 
+export type DocumentAiKind = "contract" | "quote" | "invoice" | "license" | "other";
+export type DocumentAiTarget = "documentation" | "contract" | "license" | "invoice";
+
+export interface DocumentAiAnalysis {
+  token: string;
+  filename: string;
+  document_type: DocumentAiKind;
+  title: string;
+  supplier: string | null;
+  reference: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  vat_rate: number | null;
+  summary: string;
+  suggested_targets: DocumentAiTarget[];
+  confidence: number;
+  warnings: string[];
+  text_excerpt: string;
+}
+
+export interface DocumentAiIntegration {
+  message: string;
+  link: string;
+  document_id: string | null;
+}
+
 export interface CalendarEventItem {
   id: string;
   title: string;
@@ -1997,11 +2047,15 @@ export interface AiModelsResponse {
 }
 
 export interface AiActionProposal {
-  type: "create_action";
+  type: "create_action" | "create_ticket" | "create_meeting" | "create_communication";
   title: string;
   description: string | null;
   priority: "low" | "medium" | "high" | "critical";
   due_date: string | null;
+  category: string | null;
+  scheduled_at: string | null;
+  duration_minutes: number | null;
+  location: string | null;
 }
 
 export interface AiActionExecuteResponse {

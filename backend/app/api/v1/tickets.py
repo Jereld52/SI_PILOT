@@ -17,10 +17,11 @@ from app.schemas.tickets import (
     TicketRead,
     TicketTimeEntryCreate,
     TicketTransitionRequest,
+    TicketTriageRead,
     TicketUpdate,
     TicketUserRef,
 )
-from app.services import tickets_service
+from app.services import ticket_ai_service, tickets_service
 
 router = APIRouter(prefix="/tickets", tags=["Demandes IT"])
 
@@ -75,6 +76,15 @@ def create_ticket(
     db: Session = Depends(get_db),
 ):
     return tickets_service.create_ticket(db, payload, actor=actor, request=request)
+
+
+@router.post("/{ticket_id}/ai/triage", response_model=TicketTriageRead)
+def triage_ticket(
+    ticket_id: UUID,
+    actor: User = Depends(require_permission("tickets.read")),
+    db: Session = Depends(get_db),
+) -> TicketTriageRead:
+    return ticket_ai_service.triage(db, ticket_id, actor=actor)
 
 
 @router.get("/{ticket_id}", response_model=TicketDetailRead)

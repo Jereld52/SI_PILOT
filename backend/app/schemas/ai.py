@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -81,11 +81,20 @@ class AiChatRequest(BaseModel):
 
 
 class AiActionProposal(BaseModel):
-    type: Literal["create_action"] = "create_action"
+    type: Literal[
+        "create_action",
+        "create_ticket",
+        "create_meeting",
+        "create_communication",
+    ]
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=4000)
     priority: Literal["low", "medium", "high", "critical"] = "medium"
     due_date: date | None = None
+    category: str | None = Field(default=None, max_length=50)
+    scheduled_at: datetime | None = None
+    duration_minutes: int | None = Field(default=60, ge=5, le=1440)
+    location: str | None = Field(default=None, max_length=255)
 
 
 class AiChatResponse(BaseModel):

@@ -103,7 +103,13 @@ se configurent depuis l'administration.
   utilisateurs, groupes) et enrichissement depuis Remote Desktop Manager par export CSV, sans
   jamais importer les secrets.
 - Demandes IT : création simplifiée, actions rapides, priorités, SLA, assignation, commentaires,
-  temps passé, historique complet et interventions liées.
+  temps passé, historique complet et interventions liées. Un **copilote IA** résume la demande,
+  propose une catégorie et une priorité, détecte les doublons et rédige une réponse.
+- **Actions IA assistées** : création d'une action de suivi, d'une demande IT, d'une réunion ou
+  d'un brouillon de communication, avec aperçu et confirmation.
+- **Import intelligent de documents** : analyse IA de contrats, devis, factures et licences,
+  extraction des dates et montants, création du contrat, de la licence ou de la facture
+  budgétaire, et archivage du fichier source dans la documentation.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
   répartitions et détail.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, sécurité,
