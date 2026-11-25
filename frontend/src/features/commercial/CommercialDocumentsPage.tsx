@@ -371,7 +371,7 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Rechercher une référence, un objet…"
+            placeholder="Rechercher une référence, un objet, un engagement…"
             className="sm:max-w-xs"
           />
           <div className="flex flex-1 justify-end">
@@ -465,7 +465,11 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        {kind === "quote" && canManage && document.status !== "converted" ? (
+                        {kind === "quote" &&
+                        canManage &&
+                        !["converted", "refused", "expired", "cancelled"].includes(
+                          document.status,
+                        ) ? (
                           <Button
                             variant="ghost"
                             size="icon"
