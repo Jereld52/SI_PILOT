@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.models.auth import Permission, Role, User
 from app.models.setting import Setting
 from app.schemas.admin import SettingRead, SettingUpdate
+from app.schemas.asset_naming import AssetNamingRead, AssetNamingUpdate
 from app.schemas.auth import (
     AdminResetPasswordRequest,
     PermissionRead,
@@ -24,7 +25,7 @@ from app.schemas.auth import (
 )
 from app.schemas.common import MessageResponse, Page
 from app.schemas.mail import SmtpSettingsRead, SmtpSettingsUpdate, SmtpTestRequest
-from app.services import auth_service, email_service
+from app.services import asset_naming_service, auth_service, email_service
 from app.services.audit_service import write_audit
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
@@ -333,6 +334,26 @@ def test_smtp_settings(
         db, str(payload.to_email), actor=actor, request=request
     )
     return MessageResponse(message=message)
+
+
+@router.get("/settings/asset-naming", response_model=AssetNamingRead)
+def get_asset_naming_settings(
+    _: User = Depends(require_permission("admin.settings.read")),
+    db: Session = Depends(get_db),
+) -> AssetNamingRead:
+    return asset_naming_service.read_settings(db)
+
+
+@router.put("/settings/asset-naming", response_model=AssetNamingRead)
+def update_asset_naming_settings(
+    payload: AssetNamingUpdate,
+    request: Request,
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> AssetNamingRead:
+    return asset_naming_service.update_settings(
+        db, payload, actor=actor, request=request
+    )
 
 
 @router.get("/settings", response_model=list[SettingRead])

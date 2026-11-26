@@ -308,6 +308,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Catégories d'équipements, avec préfixe de numéro d'inventaire et durée de vie indicative.",
         "Catégories de contrats, de budget et de documents.",
       ]),
+      p(
+        "Le numéro d'inventaire peut être généré par un modèle global simple, configurable dans Administration → Paramètres → Nommage des équipements. Exemples : SI-0001, SI-PC-0001, PC-2026-0001.",
+      ),
       note(
         "info",
         "Un référentiel utilisé par des fiches ne doit généralement pas être supprimé. Utilisez la désactivation lorsqu'elle est disponible, afin de conserver l'historique.",

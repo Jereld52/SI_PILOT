@@ -21,6 +21,7 @@ from app.schemas.assets import (
     AssetTagPreview,
     AssetUpdate,
 )
+from app.services import asset_naming_service
 from app.services.audit_service import write_audit
 from fastapi import Request
 from sqlalchemy import or_, select
@@ -69,30 +70,53 @@ def _sequence_scope(category: AssetCategory) -> tuple[str, int]:
 
 
 def peek_asset_tag(db: Session, category: AssetCategory) -> AssetTagPreview:
-    key, year = _sequence_scope(category)
+    config = asset_naming_service.get_config(db)
+    if config.enabled:
+        key, year = asset_naming_service.sequence_scope(config, category)
+    else:
+        key, year = _sequence_scope(category)
     sequence = db.scalar(
         select(DocumentSequence).where(
             DocumentSequence.key == key, DocumentSequence.year == year
         )
     )
     next_sequence = (sequence.last_value if sequence else 0) + 1
-    return AssetTagPreview(
-        tag=render_asset_tag(
+    prefix: str | None
+    template: str
+    if config.enabled:
+        tag = asset_naming_service.render_tag(
+            config,
+            category,
+            year=date.today().year,
+            sequence=next_sequence,
+        )
+        prefix = config.prefix
+        template = config.effective_template
+    else:
+        tag = render_asset_tag(
             category.tag_template,
             prefix=category.tag_prefix,
             category_code=category.code,
             year=date.today().year,
             sequence=next_sequence,
-        ),
-        prefix=category.tag_prefix,
-        template=category.tag_template,
+        )
+        prefix = category.tag_prefix
+        template = category.tag_template
+    return AssetTagPreview(
+        tag=tag,
+        prefix=prefix,
+        template=template,
         next_sequence=next_sequence,
         year=date.today().year,
     )
 
 
 def generate_asset_tag(db: Session, category: AssetCategory) -> str:
-    key, year = _sequence_scope(category)
+    config = asset_naming_service.get_config(db)
+    if config.enabled:
+        key, year = asset_naming_service.sequence_scope(config, category)
+    else:
+        key, year = _sequence_scope(category)
     sequence = db.scalar(
         select(DocumentSequence)
         .where(DocumentSequence.key == key, DocumentSequence.year == year)
@@ -108,6 +132,13 @@ def generate_asset_tag(db: Session, category: AssetCategory) -> str:
         sequence.updated_at = utcnow()
         db.flush()
         value = sequence.last_value
+    if config.enabled:
+        return asset_naming_service.render_tag(
+            config,
+            category,
+            year=date.today().year,
+            sequence=value,
+        )
     return render_asset_tag(
         category.tag_template,
         prefix=category.tag_prefix,

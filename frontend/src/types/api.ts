@@ -234,6 +234,23 @@ export interface SettingItem {
   updated_at: string;
 }
 
+export interface AssetNamingSettings {
+  enabled: boolean;
+  scheme:
+    | "prefix_seq"
+    | "prefix_category_seq"
+    | "category_year_seq"
+    | "prefix_year_seq"
+    | "custom";
+  prefix: string;
+  sequence_mode: "year" | "global";
+  sequence_length: number;
+  template: string;
+  preview: string;
+  sample_category_code: string;
+  sample_category_prefix: string;
+}
+
 export interface BrandingInfo {
   app_name: string;
   organization_name: string;

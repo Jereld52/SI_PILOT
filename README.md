@@ -34,6 +34,9 @@ se configurent depuis l'administration.
   supervision, sécurité, arrivées, stock, budget, RGPD), avec liens directs et filtrage par
   permissions et modules actifs.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
+- **Nommage des équipements configurable** dans Administration → Paramètres : préfixe,
+  catégorie, année, compteur annuel ou global, longueur du compteur et aperçu en direct.
+  Modèles simples : `SI-0001`, `SI-PC-0001`, `PC-2026-0001` ou modèle personnalisé.
 - **Arrivées & départs** : dossiers d'intégration et de sortie, checklists obligatoires ou
   facultatives, progression, échéances, détection des arrivées/départs sans dossier, dossiers en
   retard, points d'attention et alertes tableau de bord. L'assistant IA peut résumer les dossiers
