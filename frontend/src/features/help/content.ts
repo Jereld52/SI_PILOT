@@ -670,6 +670,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "OCR local Tesseract pour les PDF scannés et les images, avec langue française et anglaise.",
         "Import en lot : sélection multiple, analyse séquentielle avec statut par fichier, puis vérification individuelle.",
         "Archivage rapide de tout le lot dans la documentation avec les métadonnées extraites.",
+        "Détection de doublons : même fichier, même référence, même fournisseur + montant, même nom de fichier.",
+        "Avertissement avant intégration avec lien vers la fiche existante et confirmation obligatoire pour passer outre.",
         "Historique des imports : fichier, type, fournisseur, montant, statut, destination, OCR et erreurs.",
         "Extraction du type de document, du fournisseur, de la référence, des dates et des montants.",
         "Vérification et correction des informations avant toute écriture.",

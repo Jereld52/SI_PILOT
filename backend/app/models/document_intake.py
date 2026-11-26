@@ -15,6 +15,7 @@ class DocumentIntake(Base, UUIDMixin, TimestampMixin):
 
     token: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     batch_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    file_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     mime_type: Mapped[str | None] = mapped_column(String(120))
     size_bytes: Mapped[int | None] = mapped_column()

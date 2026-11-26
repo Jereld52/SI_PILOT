@@ -70,7 +70,9 @@ outils accessibles et l'historique des demandes.
 
 L'**Import intelligent** accepte un ou plusieurs fichiers, les PDF texte, les PDF scannés via
 **OCR Tesseract local** et les images. Les imports sont suivis dans un historique avec statut,
-destination, OCR et erreurs. L'OCR se configure dans **Administration → Paramètres → OCR**.
+destination, OCR et erreurs. Une **détection de doublons** signale les fichiers déjà archivés,
+les références existantes et les mêmes fournisseur/montant avant validation. L'OCR se configure
+dans **Administration → Paramètres → OCR**.
 
 - Bilan mensuel du parc et synthèse pour la direction.
 - Identification des postes en panne, à renouveler ou hors garantie.

@@ -12,6 +12,16 @@ DocumentTarget = Literal[
 ]
 
 
+class DocumentDuplicateRead(BaseModel):
+    kind: str
+    id: UUID
+    label: str
+    detail: str | None = None
+    reason: str
+    severity: str = "warning"
+    link: str | None = None
+
+
 class DocumentAnalysisRead(BaseModel):
     token: str
     filename: str
@@ -31,6 +41,7 @@ class DocumentAnalysisRead(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     text_excerpt: str = ""
     ocr_used: bool = False
+    duplicates: list[DocumentDuplicateRead] = Field(default_factory=list)
 
 
 class DocumentIntegrationRequest(BaseModel):

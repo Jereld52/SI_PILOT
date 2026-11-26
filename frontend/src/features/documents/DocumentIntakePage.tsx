@@ -56,6 +56,13 @@ const targetLabels: Record<DocumentAiTarget, string> = {
   invoice: "Facture budgétaire",
 };
 
+const duplicateReasonLabels: Record<string, string> = {
+  same_file: "Même fichier",
+  same_reference: "Même référence",
+  same_supplier_amount: "Même fournisseur et montant",
+  same_filename: "Même nom de fichier",
+};
+
 function nullable(value: string): string | null {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
@@ -116,6 +123,7 @@ export function DocumentIntakePage() {
   const [integrating, setIntegrating] = useState(false);
   const [result, setResult] = useState<DocumentAiIntegration | null>(null);
   const [archiveAllOpen, setArchiveAllOpen] = useState(false);
+  const [duplicateAcknowledged, setDuplicateAcknowledged] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
   const [historySearch, setHistorySearch] = useState("");
   const [historyStatus, setHistoryStatus] = useState("");
@@ -173,6 +181,7 @@ export function DocumentIntakePage() {
 
   const loadAnalysis = (data: DocumentAiAnalysis) => {
     setAnalysis(data);
+    setDuplicateAcknowledged(false);
     setTitle(data.title);
     setKind(data.document_type);
     setSupplier(data.supplier ?? "");
@@ -385,6 +394,10 @@ export function DocumentIntakePage() {
 
   const integrate = async () => {
     if (!analysis || !selectedId) return;
+    if (analysis.duplicates.length > 0 && !duplicateAcknowledged) {
+      toast.error("Confirmez l'intégration malgré les doublons détectés.");
+      return;
+    }
     if (target === "purchase_order" && !engagementNumber.trim()) {
       toast.error("Le numéro d'engagement est obligatoire pour un bon de commande.");
       return;
@@ -586,6 +599,11 @@ export function DocumentIntakePage() {
                               ? "Intégré"
                               : "Erreur"}
                     </Badge>
+                    {item.analysis?.duplicates.length ? (
+                      <Badge tone="warning">
+                        Doublon{item.analysis.duplicates.length > 1 ? "s" : ""}
+                      </Badge>
+                    ) : null}
                   </div>
                   <div className="mt-0.5 flex flex-wrap gap-2 text-[9px] text-muted-2">
                     <span>{formatFileSize(item.file.size)}</span>
@@ -667,6 +685,56 @@ export function DocumentIntakePage() {
             {analysis.warnings.length > 0 ? (
               <div className="rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-[10px] text-warning">
                 {analysis.warnings.join(" · ")}
+              </div>
+            ) : null}
+            {analysis.duplicates.length > 0 ? (
+              <div className="rounded-lg border border-danger/25 bg-danger/5 px-3 py-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-danger">
+                    Doublons potentiels détectés
+                  </p>
+                  <Badge tone="danger">{analysis.duplicates.length}</Badge>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {analysis.duplicates.map((duplicate) => (
+                    <div
+                      key={`${duplicate.kind}-${duplicate.id}`}
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-border-soft bg-background/50 px-2.5 py-1.5"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-medium text-foreground">
+                          {duplicate.link ? (
+                            <Link to={duplicate.link} className="hover:underline">
+                              {duplicate.label}
+                            </Link>
+                          ) : (
+                            duplicate.label
+                          )}
+                        </p>
+                        {duplicate.detail ? (
+                          <p className="text-[9px] leading-4 text-muted-2">
+                            {duplicate.detail}
+                          </p>
+                        ) : null}
+                      </div>
+                      <Badge tone={duplicate.severity === "danger" ? "danger" : "warning"}>
+                        {duplicateReasonLabels[duplicate.reason] ?? duplicate.reason}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <label className="mt-2 flex items-start gap-2 text-[10px] text-muted">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-3.5 w-3.5 accent-[var(--color-primary)]"
+                    checked={duplicateAcknowledged}
+                    onChange={(event) =>
+                      setDuplicateAcknowledged(event.target.checked)
+                    }
+                  />
+                  Je confirme vouloir intégrer ce document malgré les doublons
+                  détectés.
+                </label>
               </div>
             ) : null}
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -853,6 +921,7 @@ export function DocumentIntakePage() {
                   loading={integrating}
                   disabled={
                     !title.trim() ||
+                    (analysis.duplicates.length > 0 && !duplicateAcknowledged) ||
                     (target === "invoice" && !budgetLineId) ||
                     (target === "purchase_order" && !engagementNumber.trim())
                   }
@@ -1095,7 +1164,13 @@ export function DocumentIntakePage() {
         open={archiveAllOpen}
         onOpenChange={setArchiveAllOpen}
         title="Archiver tout le lot dans la documentation ?"
-        description={`${queue.filter((item) => item.status === "ready").length} document(s) analysé(s) seront archivés avec les métadonnées extraites. Aucun contrat, devis, bon de commande ou facture ne sera créé. Vous pourrez ensuite les classer manuellement.`}
+        description={`${queue.filter((item) => item.status === "ready").length} document(s) analysé(s) seront archivés avec les métadonnées extraites. Aucun contrat, devis, bon de commande ou facture ne sera créé. Vous pourrez ensuite les classer manuellement.${
+          queue.some(
+            (item) => item.status === "ready" && (item.analysis?.duplicates.length ?? 0) > 0,
+          )
+            ? " Attention : certains documents présentent des doublons potentiels."
+            : ""
+        }`}
         confirmLabel="Archiver tout le lot"
         loading={integrating}
         onConfirm={() => void archiveAll()}

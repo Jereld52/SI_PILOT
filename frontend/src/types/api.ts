@@ -1799,6 +1799,16 @@ export type DocumentAiTarget =
   | "license"
   | "invoice";
 
+export interface DocumentDuplicate {
+  kind: string;
+  id: string;
+  label: string;
+  detail: string | null;
+  reason: string;
+  severity: string;
+  link: string | null;
+}
+
 export interface DocumentAiAnalysis {
   token: string;
   filename: string;
@@ -1818,6 +1828,7 @@ export interface DocumentAiAnalysis {
   warnings: string[];
   text_excerpt: string;
   ocr_used: boolean;
+  duplicates: DocumentDuplicate[];
 }
 
 export interface DocumentIntakeHistoryItem {

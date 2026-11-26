@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
@@ -36,6 +37,7 @@ from app.services import (
     budget_service,
     commercial_service,
     contracts_service,
+    document_duplicate_service,
     documents_service,
     licenses_service,
     ocr_service,
@@ -276,10 +278,20 @@ def analyze(
     supplier = str(payload.get("supplier") or "").strip() or None
     reference = str(payload.get("reference") or "").strip() or None
     amount_ttc = _number(payload.get("amount_ttc"))
+    file_hash = hashlib.sha256(content).hexdigest()
+    duplicates = document_duplicate_service.find_duplicates(
+        db,
+        content_hash=file_hash,
+        filename=Path(filename).name or "document",
+        reference=reference,
+        supplier=supplier,
+        amount_ttc=amount_ttc,
+    )
     db.add(
         DocumentIntake(
             token=token,
             batch_id=batch_id,
+            file_hash=file_hash,
             filename=Path(filename).name or "document",
             mime_type=mime_type or "application/octet-stream",
             size_bytes=len(content),
@@ -323,6 +335,7 @@ def analyze(
         warnings=warning_list,
         text_excerpt=text[:1200],
         ocr_used=ocr_used,
+        duplicates=duplicates,
     )
 
 

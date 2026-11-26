@@ -124,7 +124,8 @@ se configurent depuis l'administration.
   de la licence ou de la facture budgétaire, et archivage du fichier source dans la documentation.
   **Import en lot** : sélection multiple, analyse avec statut par fichier, vérification individuelle
   et archivage rapide de tout le lot. **OCR local Tesseract** pour les PDF scannés et les images,
-  configurable dans les paramètres, et **historique des imports** avec statut, destination et erreurs.
+  configurable dans les paramètres, **détection de doublons** (fichier, référence, fournisseur +
+  montant) et **historique des imports** avec statut, destination et erreurs.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
   répartitions et détail.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, achats,

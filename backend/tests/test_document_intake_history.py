@@ -91,6 +91,18 @@ def test_document_intake_history_and_ocr_settings(admin_client, csrf_headers, mo
     assert item["ocr_used"] is False
     assert item["link"] == "/documentation"
 
+    duplicate = client.post(
+        "/api/v1/documents/analyze",
+        headers=csrf_headers(csrf),
+        data={"batch_id": batch_id},
+        files={"file": ("contrat.txt", b"Contrat 1000 EUR HT", "text/plain")},
+    )
+    assert duplicate.status_code == 200, duplicate.text
+    assert any(
+        entry["reason"] == "same_file"
+        for entry in duplicate.json()["duplicates"]
+    )
+
     ocr = client.get("/api/v1/admin/settings/ocr")
     assert ocr.status_code == 200, ocr.text
     assert "available" in ocr.json()
