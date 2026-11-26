@@ -700,7 +700,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       note(
         "info",
-        "Onglet Statistiques → Achats : filtres par type, statut, fournisseur, engagement et recherche, avec export XLSX/PDF filtré.",
+        "Onglet Statistiques → Achats : filtres par type, statut, fournisseur, engagement et recherche, avec export XLSX/PDF filtré. Les indicateurs, statuts, montants et exports des devis et des bons de commande restent séparés.",
       ),
       note(
         "warning",

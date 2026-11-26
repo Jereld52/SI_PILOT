@@ -766,9 +766,15 @@ def commercial_overview(db: Session, actor: User) -> dict[str, Any]:
     stats = statistics_service.get_commercial_overview(db)
     items = [
         f"Période analysée : {stats.start:%d/%m/%Y} → {stats.end:%d/%m/%Y}.",
+        "Devis (indicateurs séparés) :",
         *[
-            f"{kpi.label} : {kpi.value} {kpi.unit or ''}".strip()
-            for kpi in stats.kpis
+            f"- {kpi.label} : {kpi.value} {kpi.unit or ''}".strip()
+            for kpi in stats.quote_kpis
+        ],
+        "Bons de commande (indicateurs séparés) :",
+        *[
+            f"- {kpi.label} : {kpi.value} {kpi.unit or ''}".strip()
+            for kpi in stats.order_kpis
         ],
     ]
     without_engagement = [

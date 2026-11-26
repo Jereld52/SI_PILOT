@@ -57,6 +57,7 @@ import { cn, formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 import type {
   StatisticsOverview,
   StatsCommercial,
+  StatsCommercialRow,
   StatsKpi,
   StatsPoint,
   SupplierItem,
@@ -272,6 +273,204 @@ function DistributionCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function CommercialSection({
+  title,
+  description,
+  kpis,
+  byStatus,
+  bySupplier,
+  documents,
+  dueLabel,
+  showEngagement = false,
+  exportQuery,
+}: {
+  title: string;
+  description: string;
+  kpis: StatsKpi[];
+  byStatus: StatsPoint[];
+  bySupplier: StatsPoint[];
+  documents: StatsCommercialRow[];
+  dueLabel: string;
+  showEngagement?: boolean;
+  exportQuery: string;
+}) {
+  const maxSupplier = Math.max(1, ...bySupplier.map((item) => item.value));
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+            Achats
+          </p>
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
+          <p className="mt-0.5 text-xs text-muted">{description}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              window.open(
+                `/api/v1/exports/commercial-documents?format=xlsx&${exportQuery}`,
+                "_blank",
+              )
+            }
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" />
+            XLSX
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              window.open(
+                `/api/v1/exports/commercial-documents?format=pdf&${exportQuery}`,
+                "_blank",
+              )
+            }
+          >
+            <FileText className="h-3.5 w-3.5" />
+            PDF
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {kpis.map((kpi) => (
+          <StatKpiCard key={kpi.key} kpi={kpi} />
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <DistributionCard
+          title={`${title} par statut`}
+          description="Documents correspondant aux filtres."
+          points={byStatus}
+        />
+        <Card className="panel-sheen border-primary/20">
+          <CardHeader>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">
+                Montant par fournisseur
+              </h2>
+              <p className="mt-1 text-xs text-muted">
+                Montants TTC des {title.toLowerCase()} filtrés.
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-3">
+            {bySupplier.length === 0 ? (
+              <p className="py-4 text-center text-[11px] text-muted-2">
+                Aucun montant sur la période.
+              </p>
+            ) : (
+              bySupplier.slice(0, 10).map((point, index) => (
+                <div key={`${point.label}-${index}`}>
+                  <div className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="truncate text-muted">{point.label}</span>
+                    <span className="shrink-0 font-medium text-foreground">
+                      {formatCurrency(point.value, 2)}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.max(3, (point.value / maxSupplier) * 100)}%`,
+                        backgroundColor: point.color ?? palette[index % palette.length],
+                      }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="panel-sheen border-primary/20">
+        <CardHeader>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              Détail des {title.toLowerCase()}
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              {documents.length} document(s) correspondant aux filtres.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="max-h-[420px] overflow-auto pt-0">
+          {documents.length === 0 ? (
+            <EmptyState
+              icon={ShoppingCart}
+              title={`Aucun ${title.toLowerCase()}`}
+              description="Aucun document ne correspond aux filtres sélectionnés."
+            />
+          ) : (
+            <table className="w-full text-left text-[11px]">
+              <thead className="sticky top-0 bg-surface">
+                <tr className="border-b border-border-soft text-[10px] uppercase tracking-wide text-muted-2">
+                  <th className="py-2 pr-3 font-medium">Référence</th>
+                  <th className="py-2 pr-3 font-medium">Objet</th>
+                  <th className="py-2 pr-3 font-medium">Fournisseur</th>
+                  <th className="py-2 pr-3 font-medium">Statut</th>
+                  <th className="py-2 pr-3 font-medium">Date</th>
+                  <th className="py-2 pr-3 font-medium">{dueLabel}</th>
+                  {showEngagement ? (
+                    <th className="py-2 pr-3 font-medium">Engagement</th>
+                  ) : null}
+                  <th className="py-2 pr-3 text-right font-medium">TTC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((document) => (
+                  <tr
+                    key={document.id}
+                    className="border-b border-border-soft/60 last:border-0"
+                  >
+                    <td className="py-2 pr-3 font-mono text-foreground">
+                      {document.reference}
+                    </td>
+                    <td className="max-w-[220px] truncate py-2 pr-3 text-foreground">
+                      {document.object}
+                    </td>
+                    <td className="py-2 pr-3 text-muted">{document.supplier}</td>
+                    <td className="py-2 pr-3 text-muted">
+                      {statusLabels[document.status] ?? document.status}
+                    </td>
+                    <td className="whitespace-nowrap py-2 pr-3 text-muted">
+                      {formatDate(document.issue_date)}
+                    </td>
+                    <td className="whitespace-nowrap py-2 pr-3 text-muted">
+                      {document.due_date ? formatDate(document.due_date) : "—"}
+                    </td>
+                    {showEngagement ? (
+                      <td className="py-2 pr-3 font-mono">
+                        {document.engagement_number ? (
+                          <span className="text-foreground">
+                            {document.engagement_number}
+                          </span>
+                        ) : (
+                          <span className="text-danger">—</span>
+                        )}
+                      </td>
+                    ) : null}
+                    <td className="whitespace-nowrap py-2 pr-3 text-right text-foreground">
+                      {document.amount_ttc != null
+                        ? formatCurrency(document.amount_ttc, 2)
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
@@ -851,7 +1050,7 @@ export function StatisticsPage() {
                 <Skeleton className="h-[280px] rounded-xl" />
               </>
             ) : (
-              <>
+              <div className="space-y-7">
                 <Card className="panel-sheen border-primary/20 p-4">
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
                     <div className="flex-1">
@@ -933,176 +1132,40 @@ export function StatisticsPage() {
                   <p className="mt-3 text-[10px] text-muted-2">
                     {commercial.documents.length} document(s) correspondant aux filtres,
                     du {formatDate(commercial.start)} au {formatDate(commercial.end)}.
+                    Les devis et les bons de commande sont comptés séparément.
                   </p>
                 </Card>
 
-                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
-                  {commercial.kpis.map((kpi) => (
-                    <StatKpiCard key={kpi.key} kpi={kpi} />
-                  ))}
-                </section>
+                <CommercialSection
+                  title="Devis"
+                  description="Devis fournisseurs, montants, statuts et conversion en bon de commande."
+                  kpis={commercial.quote_kpis}
+                  byStatus={commercial.quotes_by_status}
+                  bySupplier={commercial.quotes_by_supplier}
+                  documents={commercial.documents.filter(
+                    (document) => document.kind === "quote",
+                  )}
+                  dueLabel="Validité"
+                  exportQuery={buildQuery({ ...commercialFilters, kind: "quote" })}
+                />
 
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <DistributionCard
-                    title="Achats par statut"
-                    description="Documents correspondant aux filtres."
-                    points={commercial.by_status}
-                  />
-                  <Card className="panel-sheen border-primary/20">
-                    <CardHeader>
-                      <div>
-                        <h2 className="text-sm font-semibold text-foreground">
-                          Montant par fournisseur
-                        </h2>
-                        <p className="mt-1 text-xs text-muted">
-                          Montants TTC des documents filtrés.
-                        </p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2 pt-3">
-                      {commercial.by_supplier.length === 0 ? (
-                        <p className="py-4 text-center text-[11px] text-muted-2">
-                          Aucun montant sur la période.
-                        </p>
-                      ) : (
-                        commercial.by_supplier.slice(0, 10).map((point, index) => {
-                          const max = Math.max(
-                            1,
-                            ...commercial.by_supplier.map((item) => item.value),
-                          );
-                          return (
-                            <div key={`${point.label}-${index}`}>
-                              <div className="flex items-center justify-between gap-2 text-[11px]">
-                                <span className="truncate text-muted">{point.label}</span>
-                                <span className="shrink-0 font-medium text-foreground">
-                                  {formatCurrency(point.value, 2)}
-                                </span>
-                              </div>
-                              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{
-                                    width: `${Math.max(3, (point.value / max) * 100)}%`,
-                                    backgroundColor: point.color ?? palette[index % palette.length],
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card className="panel-sheen border-primary/20">
-                  <CardHeader>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-                        Détail
-                      </p>
-                      <h2 className="text-sm font-semibold text-foreground">
-                        Devis et bons de commande
-                      </h2>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          window.open(
-                            `/api/v1/exports/commercial-documents?format=xlsx&${commercialExportQuery}`,
-                            "_blank",
-                          )
-                        }
-                      >
-                        <FileSpreadsheet className="h-3.5 w-3.5" />
-                        XLSX
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          window.open(
-                            `/api/v1/exports/commercial-documents?format=pdf&${commercialExportQuery}`,
-                            "_blank",
-                          )
-                        }
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        PDF
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="max-h-[520px] overflow-auto pt-0">
-                    {commercial.documents.length === 0 ? (
-                      <EmptyState
-                        icon={ShoppingCart}
-                        title="Aucun document"
-                        description="Aucun devis ou bon de commande ne correspond aux filtres."
-                      />
-                    ) : (
-                      <table className="w-full text-left text-[11px]">
-                        <thead className="sticky top-0 bg-surface">
-                          <tr className="border-b border-border-soft text-[10px] uppercase tracking-wide text-muted-2">
-                            <th className="py-2 pr-3 font-medium">Type</th>
-                            <th className="py-2 pr-3 font-medium">Référence</th>
-                            <th className="py-2 pr-3 font-medium">Objet</th>
-                            <th className="py-2 pr-3 font-medium">Fournisseur</th>
-                            <th className="py-2 pr-3 font-medium">Statut</th>
-                            <th className="py-2 pr-3 font-medium">Date</th>
-                            <th className="py-2 pr-3 font-medium">Échéance</th>
-                            <th className="py-2 pr-3 font-medium">Engagement</th>
-                            <th className="py-2 pr-3 text-right font-medium">TTC</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {commercial.documents.map((document) => (
-                            <tr
-                              key={document.id}
-                              className="border-b border-border-soft/60 last:border-0"
-                            >
-                              <td className="py-2 pr-3 text-muted">
-                                {document.kind === "quote" ? "Devis" : "BC"}
-                              </td>
-                              <td className="py-2 pr-3 font-mono text-foreground">
-                                {document.reference}
-                              </td>
-                              <td className="max-w-[220px] truncate py-2 pr-3 text-foreground">
-                                {document.object}
-                              </td>
-                              <td className="py-2 pr-3 text-muted">{document.supplier}</td>
-                              <td className="py-2 pr-3 text-muted">
-                                {statusLabels[document.status] ?? document.status}
-                              </td>
-                              <td className="whitespace-nowrap py-2 pr-3 text-muted">
-                                {formatDate(document.issue_date)}
-                              </td>
-                              <td className="whitespace-nowrap py-2 pr-3 text-muted">
-                                {document.due_date ? formatDate(document.due_date) : "—"}
-                              </td>
-                              <td className="py-2 pr-3 font-mono">
-                                {document.engagement_number ? (
-                                  <span className="text-foreground">
-                                    {document.engagement_number}
-                                  </span>
-                                ) : (
-                                  <span className="text-danger">—</span>
-                                )}
-                              </td>
-                              <td className="whitespace-nowrap py-2 pr-3 text-right text-foreground">
-                                {document.amount_ttc != null
-                                  ? formatCurrency(document.amount_ttc, 2)
-                                  : "—"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </CardContent>
-                </Card>
-              </>
+                <CommercialSection
+                  title="Bons de commande"
+                  description="Commandes fournisseurs, numéros d'engagement, montants engagés et livraisons."
+                  kpis={commercial.order_kpis}
+                  byStatus={commercial.orders_by_status}
+                  bySupplier={commercial.orders_by_supplier}
+                  documents={commercial.documents.filter(
+                    (document) => document.kind === "purchase_order",
+                  )}
+                  dueLabel="Livraison prévue"
+                  showEngagement
+                  exportQuery={buildQuery({
+                    ...commercialFilters,
+                    kind: "purchase_order",
+                  })}
+                />
+              </div>
             )
           ) : null}
         </>

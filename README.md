@@ -119,7 +119,8 @@ se configurent depuis l'administration.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, achats,
   sécurité, projets, téléphonie et documentation, avec export XLSX/PDF. L'onglet **Achats**
   filtre les devis et bons de commande par type, statut, fournisseur, engagement et recherche,
-  puis exporte exactement le périmètre affiché.
+  avec des **indicateurs, statuts, montants et exports séparés** pour les devis et pour les bons
+  de commande.
 - RGPD : registre des traitements, collectes, demandes DPO, droits des personnes et violations.
 - Exports RGPD : registre complet en XLSX/PDF, dossier d'une demande de droits et données
   personnelles détenues sur un agent, avec audit. Les PIN/PUK restent exclus.

@@ -359,6 +359,37 @@ def get_overview(
     )
 
 
+def _commercial_supplier_points(documents: list[Any]) -> list[StatsPoint]:
+    totals: dict[str, float] = {}
+    for document in documents:
+        supplier_name = document.supplier.name if document.supplier else "Non renseigné"
+        totals[supplier_name] = totals.get(supplier_name, 0) + float(
+            document.amount_ttc or 0
+        )
+    return [
+        StatsPoint(label=label, value=round(total, 2))
+        for label, total in sorted(
+            totals.items(), key=lambda item: item[1], reverse=True
+        )
+    ]
+
+
+def _commercial_period_points(
+    documents: list[Any], periods: list[Any], granularity: Granularity
+) -> list[StatsPeriodPoint]:
+    counts = Counter(
+        period_key(document.issue_date, granularity) for document in documents
+    )
+    return [
+        StatsPeriodPoint(
+            key=period.key,
+            label=period.label,
+            created=counts.get(period.key, 0),
+        )
+        for period in periods
+    ]
+
+
 def get_commercial_overview(
     db: Session,
     *,
@@ -391,6 +422,7 @@ def get_commercial_overview(
     quotes = [document for document in documents if document.kind == "quote"]
     orders = [document for document in documents if document.kind == "purchase_order"]
     active_orders = [order for order in orders if order.status != "cancelled"]
+
     quotes_pending = [
         quote for quote in quotes if quote.status in {"draft", "sent", "accepted"}
     ]
@@ -401,8 +433,12 @@ def get_commercial_overview(
         if eligible_quotes
         else 0.0
     )
+    quotes_total = sum(float(quote.amount_ttc or 0) for quote in quotes)
+
     without_engagement = [
-        order for order in orders if not (order.engagement_number or "").strip()
+        order
+        for order in orders
+        if not (order.engagement_number or "").strip()
     ]
     late_orders = [
         order
@@ -411,7 +447,6 @@ def get_commercial_overview(
         and order.expected_date < today
         and order.status != "delivered"
     ]
-    quotes_total = sum(float(quote.amount_ttc or 0) for quote in quotes)
     engaged_total = sum(float(order.amount_ttc or 0) for order in active_orders)
     delivered_total = sum(
         float(order.amount_ttc or 0)
@@ -419,7 +454,7 @@ def get_commercial_overview(
         if order.status == "delivered"
     )
 
-    kpis = [
+    quote_kpis = [
         StatsKpi(
             key="commercial_quotes",
             label="Devis sur la période",
@@ -432,8 +467,15 @@ def get_commercial_overview(
             label="Montant des devis",
             value=round(quotes_total, 2),
             unit="EUR",
-            hint=f"{len(quotes_pending)} devis en attente",
+            hint="montants TTC des devis filtrés",
             severity="neutral",
+        ),
+        StatsKpi(
+            key="commercial_quotes_pending",
+            label="Devis en attente",
+            value=len(quotes_pending),
+            hint="brouillon, envoyé ou accepté",
+            severity="warning" if quotes_pending else "success",
         ),
         StatsKpi(
             key="commercial_conversion_rate",
@@ -443,11 +485,21 @@ def get_commercial_overview(
             hint=f"{len(converted_quotes)} devis converti(s)",
             severity="success" if conversion_rate >= 50 else "warning",
         ),
+    ]
+
+    order_kpis = [
         StatsKpi(
             key="commercial_orders",
             label="Bons de commande",
             value=len(orders),
-            hint=f"{len(active_orders)} actif(s)",
+            hint=f"du {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')}",
+            severity="neutral",
+        ),
+        StatsKpi(
+            key="commercial_orders_active",
+            label="Commandes en cours",
+            value=len(active_orders),
+            hint="hors annulées",
             severity="neutral",
         ),
         StatsKpi(
@@ -482,45 +534,28 @@ def get_commercial_overview(
         ),
     ]
 
-    period_counts = Counter(
-        period_key(document.issue_date, granularity) for document in documents
-    )
-    period_points = [
-        StatsPeriodPoint(
-            key=period.key,
-            label=period.label,
-            created=period_counts.get(period.key, 0),
-        )
-        for period in periods
-    ]
-
-    supplier_totals: dict[str, float] = {}
-    for document in documents:
-        supplier_name = document.supplier.name if document.supplier else "Non renseigné"
-        supplier_totals[supplier_name] = supplier_totals.get(supplier_name, 0) + float(
-            document.amount_ttc or 0
-        )
-    by_supplier = [
-        StatsPoint(label=label, value=round(total, 2))
-        for label, total in sorted(
-            supplier_totals.items(), key=lambda item: item[1], reverse=True
-        )
-    ]
-
-    budget_ids = {document.budget_line_id for document in documents if document.budget_line_id}
+    budget_ids = {
+        document.budget_line_id for document in documents if document.budget_line_id
+    }
     budget_lines = (
         {
             line.id: line.label
-            for line in db.scalars(select(BudgetLine).where(BudgetLine.id.in_(budget_ids))).all()
+            for line in db.scalars(
+                select(BudgetLine).where(BudgetLine.id.in_(budget_ids))
+            ).all()
         }
         if budget_ids
         else {}
     )
-    contract_ids = {document.contract_id for document in documents if document.contract_id}
+    contract_ids = {
+        document.contract_id for document in documents if document.contract_id
+    }
     contracts_map = (
         {
             contract.id: contract.reference
-            for contract in db.scalars(select(Contract).where(Contract.id.in_(contract_ids))).all()
+            for contract in db.scalars(
+                select(Contract).where(Contract.id.in_(contract_ids))
+            ).all()
         }
         if contract_ids
         else {}
@@ -541,10 +576,22 @@ def get_commercial_overview(
                 else document.expected_date
             ),
             engagement_number=document.engagement_number,
-            amount_ht=float(document.amount_ht) if document.amount_ht is not None else None,
-            amount_ttc=float(document.amount_ttc) if document.amount_ttc is not None else None,
-            budget_line=budget_lines.get(document.budget_line_id) if document.budget_line_id else None,
-            contract_reference=contracts_map.get(document.contract_id) if document.contract_id else None,
+            amount_ht=(
+                float(document.amount_ht) if document.amount_ht is not None else None
+            ),
+            amount_ttc=(
+                float(document.amount_ttc) if document.amount_ttc is not None else None
+            ),
+            budget_line=(
+                budget_lines.get(document.budget_line_id)
+                if document.budget_line_id
+                else None
+            ),
+            contract_reference=(
+                contracts_map.get(document.contract_id)
+                if document.contract_id
+                else None
+            ),
             document_id=document.document_id,
             created_at=document.created_at,
         )
@@ -560,15 +607,13 @@ def get_commercial_overview(
         supplier_id=supplier_id,
         with_engagement=with_engagement,
         q=q,
-        kpis=kpis,
-        by_status=_distribution([document.status for document in documents]),
-        by_supplier=by_supplier,
-        by_kind=_distribution(
-            [
-                "Devis" if document.kind == "quote" else "Bon de commande"
-                for document in documents
-            ]
-        ),
-        periods=period_points,
+        quote_kpis=quote_kpis,
+        order_kpis=order_kpis,
+        quotes_by_status=_distribution([quote.status for quote in quotes]),
+        orders_by_status=_distribution([order.status for order in orders]),
+        quotes_by_supplier=_commercial_supplier_points(quotes),
+        orders_by_supplier=_commercial_supplier_points(orders),
+        quote_periods=_commercial_period_points(quotes, periods, granularity),
+        order_periods=_commercial_period_points(orders, periods, granularity),
         documents=rows,
     )

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import io
+from typing import Any
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from reportlab.lib import colors
 from reportlab.lib.units import mm
-from reportlab.platypus import Spacer, TableStyle
+from reportlab.platypus import Spacer
 
 from app.exports.pdf_utils import (
     PdfBranding,
@@ -16,7 +16,7 @@ from app.exports.pdf_utils import (
     make_table,
     meta_line,
 )
-from app.schemas.statistics import StatsCommercial, StatsPoint
+from app.schemas.statistics import StatsCommercial, StatsCommercialRow, StatsPoint
 
 HEADER_FILL = PatternFill("solid", fgColor="772B2F")
 HEADER_FONT = Font(color="F3EFE2", bold=True)
@@ -64,10 +64,7 @@ def _points_rows(points: list[StatsPoint]) -> list[list]:
 
 def _filter_lines(stats: StatsCommercial) -> list[list[str]]:
     lines = [
-        [
-            "Période",
-            f"{stats.start.isoformat()} → {stats.end.isoformat()}",
-        ]
+        ["Période", f"{stats.start.isoformat()} → {stats.end.isoformat()}"],
     ]
     if stats.kind:
         lines.append(["Type", KIND_LABELS.get(stats.kind, stats.kind)])
@@ -82,105 +79,161 @@ def _filter_lines(stats: StatsCommercial) -> list[list[str]]:
     return lines
 
 
+def _quote_row(document: StatsCommercialRow) -> list[Any]:
+    return [
+        document.reference,
+        document.object,
+        document.supplier,
+        STATUS_LABELS.get(document.status, document.status),
+        document.issue_date.isoformat(),
+        document.due_date.isoformat() if document.due_date else "",
+        document.amount_ht if document.amount_ht is not None else "",
+        document.amount_ttc if document.amount_ttc is not None else "",
+        document.budget_line or "",
+        document.contract_reference or "",
+        str(document.document_id) if document.document_id else "",
+    ]
+
+
+def _order_row(document: StatsCommercialRow) -> list[Any]:
+    return [
+        document.reference,
+        document.object,
+        document.supplier,
+        STATUS_LABELS.get(document.status, document.status),
+        document.issue_date.isoformat(),
+        document.due_date.isoformat() if document.due_date else "",
+        document.engagement_number or "",
+        document.amount_ht if document.amount_ht is not None else "",
+        document.amount_ttc if document.amount_ttc is not None else "",
+        document.budget_line or "",
+        document.contract_reference or "",
+        str(document.document_id) if document.document_id else "",
+    ]
+
+
+def _quote_headers() -> list[str]:
+    return [
+        "Référence",
+        "Objet",
+        "Fournisseur",
+        "Statut",
+        "Date",
+        "Valable jusqu'au",
+        "Montant HT",
+        "Montant TTC",
+        "Ligne budgétaire",
+        "Contrat",
+        "Document",
+    ]
+
+
+def _order_headers() -> list[str]:
+    return [
+        "Référence",
+        "Objet",
+        "Fournisseur",
+        "Statut",
+        "Date",
+        "Livraison prévue",
+        "N° engagement",
+        "Montant HT",
+        "Montant TTC",
+        "Ligne budgétaire",
+        "Contrat",
+        "Document",
+    ]
+
+
 def commercial_xlsx(stats: StatsCommercial) -> bytes:
     workbook = Workbook()
     workbook.remove(workbook.active)
+    quotes = [item for item in stats.documents if item.kind == "quote"]
+    orders = [item for item in stats.documents if item.kind == "purchase_order"]
+
     _append_sheet(
         workbook,
-        "Synthèse",
+        "Synthèse devis",
         ["Indicateur", "Valeur", "Unité", "Précision"],
-        [[kpi.label, kpi.value, kpi.unit or "", kpi.hint or ""] for kpi in stats.kpis],
+        [[kpi.label, kpi.value, kpi.unit or "", kpi.hint or ""] for kpi in stats.quote_kpis],
     )
     _append_sheet(
         workbook,
-        "Documents",
-        [
-            "Type",
-            "Référence",
-            "Objet",
-            "Fournisseur",
-            "Statut",
-            "Date",
-            "Échéance",
-            "N° engagement",
-            "Montant HT",
-            "Montant TTC",
-            "Ligne budgétaire",
-            "Contrat",
-            "Document",
-        ],
-        [
-            [
-                KIND_LABELS.get(document.kind, document.kind),
-                document.reference,
-                document.object,
-                document.supplier,
-                STATUS_LABELS.get(document.status, document.status),
-                document.issue_date.isoformat(),
-                document.due_date.isoformat() if document.due_date else "",
-                document.engagement_number or "",
-                document.amount_ht if document.amount_ht is not None else "",
-                document.amount_ttc if document.amount_ttc is not None else "",
-                document.budget_line or "",
-                document.contract_reference or "",
-                str(document.document_id) if document.document_id else "",
-            ]
-            for document in stats.documents
-        ],
+        "Synthèse bons de commande",
+        ["Indicateur", "Valeur", "Unité", "Précision"],
+        [[kpi.label, kpi.value, kpi.unit or "", kpi.hint or ""] for kpi in stats.order_kpis],
     )
     _append_sheet(
         workbook,
-        "Par statut",
+        "Devis",
+        _quote_headers(),
+        [_quote_row(document) for document in quotes],
+    )
+    _append_sheet(
+        workbook,
+        "Bons de commande",
+        _order_headers(),
+        [_order_row(document) for document in orders],
+    )
+    _append_sheet(
+        workbook,
+        "Statuts devis",
         ["Statut", "Nombre"],
         [
             [STATUS_LABELS.get(point.label, point.label), point.value]
-            for point in stats.by_status
+            for point in stats.quotes_by_status
         ],
     )
     _append_sheet(
         workbook,
-        "Par fournisseur",
+        "Statuts bons de commande",
+        ["Statut", "Nombre"],
+        [
+            [STATUS_LABELS.get(point.label, point.label), point.value]
+            for point in stats.orders_by_status
+        ],
+    )
+    _append_sheet(
+        workbook,
+        "Fournisseurs devis",
         ["Fournisseur", "Montant TTC"],
-        _points_rows(stats.by_supplier),
+        _points_rows(stats.quotes_by_supplier),
     )
     _append_sheet(
         workbook,
-        "Par type",
-        ["Type", "Nombre"],
-        _points_rows(stats.by_kind),
+        "Fournisseurs bons de commande",
+        ["Fournisseur", "Montant TTC"],
+        _points_rows(stats.orders_by_supplier),
     )
     _append_sheet(
         workbook,
-        "Par mois",
-        ["Période", "Documents"],
-        [[point.label, point.created] for point in stats.periods],
+        "Évolution devis",
+        ["Période", "Devis"],
+        [[point.label, point.created] for point in stats.quote_periods],
+    )
+    _append_sheet(
+        workbook,
+        "Évolution bons de commande",
+        ["Période", "Bons de commande"],
+        [[point.label, point.created] for point in stats.order_periods],
     )
     summary = workbook.create_sheet("Paramètres", 0)
-    summary.append(["Suivi des achats", "Devis et bons de commande"])
+    summary.append(["Suivi des achats", "Devis et bons de commande séparés"])
     for label, value in _filter_lines(stats):
         summary.append([label, value])
     summary["A1"].font = Font(bold=True, size=14, color="772B2F")
-    summary.column_dimensions["A"].width = 28
-    summary.column_dimensions["B"].width = 52
+    summary.column_dimensions["A"].width = 30
+    summary.column_dimensions["B"].width = 56
     buffer = io.BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()
 
 
-def _table_style() -> TableStyle:
-    return TableStyle(
-        [
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#772B2F")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#F3EFE2")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 6.5),
-            ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CDCDCD")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F4EA")]),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 3),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-        ]
-    )
+def _kpi_rows(kpis: list[Any]) -> list[list[Any]]:
+    return [["Indicateur", "Valeur", "Précision"]] + [
+        [kpi.label, f"{kpi.value} {kpi.unit or ''}".strip(), kpi.hint or ""]
+        for kpi in kpis
+    ]
 
 
 def commercial_pdf(
@@ -197,79 +250,124 @@ def commercial_pdf(
         ),
         branding=branding,
     )
-    story: list = [
-        meta_line(count=len(stats.documents), label="document(s)"),
-        heading("Indicateurs clés"),
-        make_table(
-            [["Indicateur", "Valeur", "Précision"]]
-            + [
-                [kpi.label, f"{kpi.value} {kpi.unit or ''}".strip(), kpi.hint or ""]
-                for kpi in stats.kpis
-            ],
-            [90 * mm, 40 * mm, 125 * mm],
-            font_size=7,
-        ),
-        Spacer(1, 8),
-    ]
+    quotes = [item for item in stats.documents if item.kind == "quote"]
+    orders = [item for item in stats.documents if item.kind == "purchase_order"]
+    story: list = [meta_line(count=len(quotes), label="devis")]
     story.extend(
         [
-            heading("Documents"),
+            heading("Devis"),
+            make_table(_kpi_rows(stats.quote_kpis), [90 * mm, 40 * mm, 125 * mm], font_size=7),
+            Spacer(1, 5),
+            make_table(
+                [["Statut", "Nombre"]]
+                + [
+                    [STATUS_LABELS.get(point.label, point.label), point.value]
+                    for point in stats.quotes_by_status
+                ],
+                [110 * mm, 30 * mm],
+                font_size=7,
+            ),
+            Spacer(1, 5),
+            make_table(
+                [["Fournisseur", "Montant TTC"]]
+                + [[point.label, point.value] for point in stats.quotes_by_supplier],
+                [120 * mm, 40 * mm],
+                font_size=7,
+            ),
+            Spacer(1, 5),
+            make_table(
+                [["Référence", "Objet", "Fournisseur", "Statut", "Date", "Validité", "TTC"]]
+                + [
+                    [
+                        item.reference,
+                        item.object[:50],
+                        item.supplier,
+                        STATUS_LABELS.get(item.status, item.status),
+                        item.issue_date.strftime("%d/%m/%Y"),
+                        item.due_date.strftime("%d/%m/%Y") if item.due_date else "",
+                        f"{item.amount_ttc:,.2f} €".replace(",", " ")
+                        if item.amount_ttc is not None
+                        else "",
+                    ]
+                    for item in quotes
+                ],
+                [
+                    25 * mm,
+                    55 * mm,
+                    38 * mm,
+                    22 * mm,
+                    19 * mm,
+                    19 * mm,
+                    22 * mm,
+                ],
+                font_size=6.5,
+            ),
+            Spacer(1, 10),
+        ]
+    )
+    story.extend(
+        [
+            heading("Bons de commande"),
+            make_table(_kpi_rows(stats.order_kpis), [90 * mm, 40 * mm, 125 * mm], font_size=7),
+            Spacer(1, 5),
+            make_table(
+                [["Statut", "Nombre"]]
+                + [
+                    [STATUS_LABELS.get(point.label, point.label), point.value]
+                    for point in stats.orders_by_status
+                ],
+                [110 * mm, 30 * mm],
+                font_size=7,
+            ),
+            Spacer(1, 5),
+            make_table(
+                [["Fournisseur", "Montant TTC"]]
+                + [[point.label, point.value] for point in stats.orders_by_supplier],
+                [120 * mm, 40 * mm],
+                font_size=7,
+            ),
+            Spacer(1, 5),
             make_table(
                 [
                     [
-                        "Type",
                         "Référence",
+                        "Objet",
                         "Fournisseur",
                         "Statut",
                         "Date",
-                        "Échéance",
+                        "Livraison",
                         "Engagement",
                         "TTC",
                     ]
                 ]
                 + [
                     [
-                        KIND_LABELS.get(item.kind, item.kind),
                         item.reference,
+                        item.object[:45],
                         item.supplier,
                         STATUS_LABELS.get(item.status, item.status),
                         item.issue_date.strftime("%d/%m/%Y"),
                         item.due_date.strftime("%d/%m/%Y") if item.due_date else "",
                         item.engagement_number or "",
-                        f"{item.amount_ttc:,.2f} €".replace(",", " ") if item.amount_ttc is not None else "",
+                        f"{item.amount_ttc:,.2f} €".replace(",", " ")
+                        if item.amount_ttc is not None
+                        else "",
                     ]
-                    for item in stats.documents
+                    for item in orders
                 ],
                 [
-                    26 * mm,
-                    28 * mm,
-                    42 * mm,
-                    22 * mm,
-                    20 * mm,
-                    20 * mm,
-                    32 * mm,
                     25 * mm,
+                    50 * mm,
+                    35 * mm,
+                    22 * mm,
+                    19 * mm,
+                    19 * mm,
+                    26 * mm,
+                    22 * mm,
                 ],
                 font_size=6.5,
             ),
-            Spacer(1, 8),
         ]
     )
-    for title, points in (
-        ("Répartition par statut", stats.by_status),
-        ("Montant par fournisseur", stats.by_supplier),
-    ):
-        story.extend(
-            [
-                heading(title),
-                make_table(
-                    [["Libellé", "Valeur"]]
-                    + [[point.label, point.value] for point in points],
-                    [120 * mm, 40 * mm],
-                    font_size=7,
-                ),
-                Spacer(1, 5),
-            ]
-        )
     document.build(story)
     return buffer.getvalue()

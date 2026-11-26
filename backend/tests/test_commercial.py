@@ -147,7 +147,15 @@ def test_commercial_statistics_and_export(admin_client, csrf_headers):
     assert stats.status_code == 200, stats.text
     body = stats.json()
     assert any(document["id"] == order["id"] for document in body["documents"])
-    assert any(kpi["key"] == "commercial_orders" for kpi in body["kpis"])
+    assert any(kpi["key"] == "commercial_orders" for kpi in body["order_kpis"])
+    assert all(
+        kpi["key"] not in {"commercial_orders", "commercial_engaged_total"}
+        for kpi in body["quote_kpis"]
+    )
+    assert body["quotes_by_status"] is not None
+    assert body["orders_by_status"] is not None
+    assert body["quotes_by_supplier"] is not None
+    assert body["orders_by_supplier"] is not None
 
     filtered = client.get(
         "/api/v1/statistics/commercial",

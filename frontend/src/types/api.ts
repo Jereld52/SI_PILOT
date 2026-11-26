@@ -743,11 +743,14 @@ export interface StatsCommercial {
   supplier_id: string | null;
   with_engagement: boolean | null;
   q: string | null;
-  kpis: StatsKpi[];
-  by_status: StatsPoint[];
-  by_supplier: StatsPoint[];
-  by_kind: StatsPoint[];
-  periods: StatsPeriodPoint[];
+  quote_kpis: StatsKpi[];
+  order_kpis: StatsKpi[];
+  quotes_by_status: StatsPoint[];
+  orders_by_status: StatsPoint[];
+  quotes_by_supplier: StatsPoint[];
+  orders_by_supplier: StatsPoint[];
+  quote_periods: StatsPeriodPoint[];
+  order_periods: StatsPeriodPoint[];
   documents: StatsCommercialRow[];
 }
 

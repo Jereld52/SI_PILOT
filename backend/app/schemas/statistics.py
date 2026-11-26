@@ -71,11 +71,14 @@ class StatsCommercial(BaseModel):
     supplier_id: UUID | None = None
     with_engagement: bool | None = None
     q: str | None = None
-    kpis: list[StatsKpi]
-    by_status: list[StatsPoint]
-    by_supplier: list[StatsPoint]
-    by_kind: list[StatsPoint]
-    periods: list[StatsPeriodPoint]
+    quote_kpis: list[StatsKpi]
+    order_kpis: list[StatsKpi]
+    quotes_by_status: list[StatsPoint]
+    orders_by_status: list[StatsPoint]
+    quotes_by_supplier: list[StatsPoint]
+    orders_by_supplier: list[StatsPoint]
+    quote_periods: list[StatsPeriodPoint]
+    order_periods: list[StatsPeriodPoint]
     documents: list[StatsCommercialRow]
 
 
