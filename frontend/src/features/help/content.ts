@@ -860,6 +860,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Rattachement facultatif à un équipement du parc, à un site et à un responsable.",
         "Adresse IP, MAC, système, rôle, criticité, statut et configuration.",
         "Dépendances réseau, alimentation, stockage, authentification ou applicatif.",
+        "Retrait de l'inventaire actif (statut « retiré ») ou suppression définitive avec confirmation, y compris pour un équipement déjà retiré.",
       ]),
       p(
         "Les dépendances servent à l'analyse d'impact : avant une maintenance, identifiez les services qui dépendent de l'équipement.",

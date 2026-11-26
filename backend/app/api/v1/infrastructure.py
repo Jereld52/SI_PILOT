@@ -226,6 +226,19 @@ def archive_equipment(
     )
 
 
+@router.delete("/equipments/{equipment_id}/permanent", status_code=204)
+def delete_equipment(
+    equipment_id: UUID,
+    request: Request,
+    actor: User = Depends(require_permission("infrastructure.delete")),
+    db: Session = Depends(get_db),
+) -> None:
+    equipment = infrastructure_service.get_equipment(db, equipment_id)
+    infrastructure_service.delete_equipment(
+        db, equipment, actor=actor, request=request
+    )
+
+
 @router.get("/dependencies", response_model=list[InfraDependencyRead])
 def list_dependencies(
     _: User = Depends(require_permission("infrastructure.read")),

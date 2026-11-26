@@ -135,3 +135,13 @@ def test_infrastructure_inventory_and_monitoring(admin_client, csrf_headers):
     )
     assert archived.status_code == 200
     assert archived.json()["status"] == "retired"
+
+    permanent = client.delete(
+        f"/api/v1/infrastructure/equipments/{server_body['id']}/permanent",
+        headers=csrf_headers(csrf),
+    )
+    assert permanent.status_code == 204, permanent.text
+    missing = client.get(
+        f"/api/v1/infrastructure/equipments/{server_body['id']}"
+    )
+    assert missing.status_code == 404

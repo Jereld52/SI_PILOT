@@ -52,6 +52,7 @@ se configurent depuis l'administration.
   export ICS, QR code par matériel et sortie/retour.- Contrats et prestataires : montants, préavis, reconduction, échéances et alertes.
 - Budget informatique : exercices, lignes par catégorie, engagements, factures et disponible réel.
 - Infrastructure : serveurs, VM, réseau, dépendances et supervision autorisée sans scan implicite.
+  Un équipement peut être retiré de l'inventaire actif ou **supprimé définitivement** après confirmation.
 - **Connexion WAPT** dans Administration : URL, identifiants, chemins API, test et synchronisation
   de l'inventaire ; clé privée et certificat importés comme fichiers (plus de chemin à saisir),
   vérification de la paire et signature des actions à distance (`/api/v3/trigger_host_action`).

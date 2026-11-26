@@ -228,6 +228,31 @@ def archive_equipment(
     return InfraEquipmentRead.model_validate(equipment)
 
 
+def delete_equipment(
+    db: Session, equipment: InfraEquipment, *, actor: User, request: Request | None = None
+) -> None:
+    snapshot = {
+        "name": equipment.name,
+        "type": equipment.type,
+        "status": equipment.status,
+        "ip_address": equipment.ip_address,
+        "mac_address": equipment.mac_address,
+    }
+    write_audit(
+        db,
+        module="infrastructure",
+        action="infra_equipment_deleted",
+        actor=actor,
+        entity_type="infra_equipment",
+        entity_id=str(equipment.id),
+        entity_label=equipment.name,
+        before=snapshot,
+        request=request,
+    )
+    db.delete(equipment)
+    db.commit()
+
+
 def list_dependencies(db: Session) -> list[InfraDependencyRead]:
     rows = db.scalars(
         select(InfraDependency).order_by(InfraDependency.dependency_type)

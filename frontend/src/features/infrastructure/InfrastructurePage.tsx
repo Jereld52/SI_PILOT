@@ -129,7 +129,7 @@ export function InfrastructurePage() {
   const [editingCheck, setEditingCheck] = useState<MonitoringCheckItem | null>(null);
   const [resultsCheck, setResultsCheck] = useState<MonitoringCheckItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
-    kind: "equipment" | "dependency" | "check";
+    kind: "equipment" | "equipment-permanent" | "dependency" | "check";
     id: string;
     label: string;
   } | null>(null);
@@ -242,14 +242,18 @@ export function InfrastructurePage() {
       const path =
         deleteTarget.kind === "equipment"
           ? `/infrastructure/equipments/${deleteTarget.id}`
-          : deleteTarget.kind === "dependency"
-            ? `/infrastructure/dependencies/${deleteTarget.id}`
-            : `/infrastructure/checks/${deleteTarget.id}`;
+          : deleteTarget.kind === "equipment-permanent"
+            ? `/infrastructure/equipments/${deleteTarget.id}/permanent`
+            : deleteTarget.kind === "dependency"
+              ? `/infrastructure/dependencies/${deleteTarget.id}`
+              : `/infrastructure/checks/${deleteTarget.id}`;
       await apiFetch(path, { method: "DELETE" });
       toast.success(
         deleteTarget.kind === "equipment"
           ? "Équipement retiré de l'inventaire actif."
-          : "Élément supprimé.",
+          : deleteTarget.kind === "equipment-permanent"
+            ? "Équipement supprimé définitivement."
+            : "Élément supprimé.",
       );
       setDeleteTarget(null);
       refreshEquipments();
@@ -548,6 +552,7 @@ export function InfrastructurePage() {
                               variant="ghost"
                               size="icon"
                               aria-label={`Retirer ${equipment.name}`}
+                              title="Retirer de l'inventaire actif (conserve l'historique)"
                               onClick={() =>
                                 setDeleteTarget({
                                   kind: "equipment",
@@ -557,6 +562,23 @@ export function InfrastructurePage() {
                               }
                             >
                               <Archive className="h-3.5 w-3.5 text-danger" />
+                            </Button>
+                          ) : null}
+                          {canDelete ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Supprimer définitivement ${equipment.name}`}
+                              title="Supprimer définitivement (irréversible)"
+                              onClick={() =>
+                                setDeleteTarget({
+                                  kind: "equipment-permanent",
+                                  id: equipment.id,
+                                  label: equipment.name,
+                                })
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-danger" />
                             </Button>
                           ) : null}
                         </div>
@@ -812,14 +834,24 @@ export function InfrastructurePage() {
         title={
           deleteTarget?.kind === "equipment"
             ? "Retirer cet équipement ?"
-            : "Supprimer cet élément ?"
+            : deleteTarget?.kind === "equipment-permanent"
+              ? "Supprimer définitivement cet équipement ?"
+              : "Supprimer cet élément ?"
         }
         description={
           deleteTarget?.kind === "equipment"
             ? `« ${deleteTarget?.label ?? ""} » passera au statut « retiré ». Les dépendances et contrôles liés sont conservés.`
-            : `« ${deleteTarget?.label ?? ""} » sera supprimé.`
+            : deleteTarget?.kind === "equipment-permanent"
+              ? `« ${deleteTarget?.label ?? ""} » sera supprimé définitivement. Les dépendances, contrôles et résultats de supervision liés seront supprimés. Cette action est irréversible.`
+              : `« ${deleteTarget?.label ?? ""} » sera supprimé.`
         }
-        confirmLabel={deleteTarget?.kind === "equipment" ? "Retirer" : "Supprimer"}
+        confirmLabel={
+          deleteTarget?.kind === "equipment"
+            ? "Retirer"
+            : deleteTarget?.kind === "equipment-permanent"
+              ? "Supprimer définitivement"
+              : "Supprimer"
+        }
         tone="danger"
         loading={deleting}
         onConfirm={() => void remove()}
