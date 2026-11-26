@@ -335,7 +335,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Catégories de contrats, de budget et de documents.",
       ]),
       p(
-        "Le numéro d'inventaire peut être généré par un modèle global simple, configurable dans Administration → Paramètres → Nommage des équipements. Exemples : SI-0001, SI-PC-0001, PC-2026-0001.",
+        "Le numéro d'inventaire est généré par un modèle simple, configurable dans Administration → Paramètres → Nommage des équipements. Exemples : SI-0001, SI-PC-0001, PC-0001. Le numéro ne contient pas d'année.",
       ),
       note(
         "info",
@@ -551,7 +551,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["ticket", "demande", "SLA", "priorité", "Kanban", "commentaire"],
     blocks: [
       p(
-        "Les demandes IT sont identifiées par une référence automatique DEM-AAAA-NNNN. Elles suivent un cycle de vie : nouveau, à qualifier, en cours, en attente, résolu, clos.",
+        "Les demandes IT sont identifiées par une référence automatique DEM-AA-NNNN. Le format exact se règle dans Administration → Paramètres → Numérotation des documents. Elles suivent un cycle de vie : nouveau, à qualifier, en cours, en attente, résolu, clos.",
       ),
       list([
         "Objet, description, catégorie, priorité et demandeur.",
@@ -583,7 +583,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["intervention", "technicien", "prestataire", "coût", "compte rendu"],
     blocks: [
       p(
-        "Une intervention est identifiée par INT-AAAA-NNNN. Elle peut être rattachée à une demande IT ou à un équipement.",
+        "Une intervention est identifiée par INT-AA-NNNN. Elle peut être rattachée à une demande IT ou à un équipement.",
       ),
       list([
         "Type, statut et planification.",
@@ -637,7 +637,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Le stock IT concerne les accessoires et consommables : claviers, souris, écrans, casques, câbles, toners, papier, batteries, etc.",
       ),
       list([
-        "Fiche article avec référence automatique STK-AAAA-NNNN.",
+        "Fiche article avec référence automatique STK-AA-NNNN.",
         "Catégorie, marque, modèle, fournisseur, emplacement et prix unitaire.",
         "Quantité et seuil d'alerte.",
         "Mouvements d'entrée, de sortie et d'ajustement d'inventaire.",
@@ -726,8 +726,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "La section Achats & contrats regroupe les fournisseurs, les devis, les bons de commande et les contrats.",
       ),
       list([
-        "Devis : référence DEV-AAAA-NNNN, fournisseur, objet, date, validité, montants HT/TTC et TVA.",
-        "Bon de commande : référence BC-AAAA-NNNN, numéro d'engagement obligatoire, fournisseur, objet, date, livraison prévue et montants.",
+        "Devis : référence DEV-AA-NNNN, fournisseur, objet, date, validité, montants HT/TTC et TVA.",
+        "Bon de commande : référence BC-AA-NNNN, numéro d'engagement obligatoire, fournisseur, objet, date, livraison prévue et montants.",
         "Statuts des devis : brouillon, envoyé, accepté, refusé, expiré, converti, annulé.",
         "Statuts des bons de commande : brouillon, envoyé, confirmé, livré, annulé.",
         "La conversion d'un devis en bon de commande n'est jamais automatique : elle demande le numéro d'engagement et une confirmation.",
@@ -1014,7 +1014,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Le module Cybersécurité centralise les incidents, les actions correctives, les vulnérabilités, les sauvegardes, les certificats et les audits.",
       ),
       list([
-        "Incidents INC-AAAA-NNNN avec gravité, catégorie, détection, responsable et retour d'expérience.",
+        "Incidents INC-AA-NNNN avec gravité, catégorie, détection, responsable et retour d'expérience.",
         "Actions correctives ou préventives avec priorité, échéance, responsable et preuve.",
         "Vulnérabilités avec CVE, score CVSS, gravité, équipement et remédiation.",
         "Sauvegardes avec résultat, taille, durée et test de restauration.",
