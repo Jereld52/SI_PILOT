@@ -35,6 +35,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import {
   DataBreachDialog,
   DataCollectionDialog,
@@ -275,6 +276,10 @@ export function RgpdPage() {
         description="Registre des traitements, collectes, demandes DPO, droits des personnes et violations."
         actions={
           <>
+            <AiAssistButton
+              prompt="Quels traitements RGPD arrivent à revue et quelles demandes sont ouvertes ?"
+              hint="Analyse les traitements, demandes DPO, droits des personnes et violations."
+            />
             {canExport ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

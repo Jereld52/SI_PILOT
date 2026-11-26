@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ChangePasswordDialog } from "@/features/auth/ChangePasswordDialog";
 import { useBranding } from "@/features/branding/BrandingProvider";
+import { AiContextDock } from "@/features/ai/AiContextDock";
 import { ModuleDisabledPage } from "@/features/modules/ModuleDisabledPage";
 import { useModules } from "@/features/modules/ModulesProvider";
 import { cn } from "@/lib/utils";
@@ -100,6 +101,7 @@ export function AppLayout() {
       </div>
 
       <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
+      <AiContextDock />
     </div>
   );
 }

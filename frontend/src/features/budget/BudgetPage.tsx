@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import {
   BudgetLineDialog,
   BudgetYearDialog,
@@ -224,6 +225,10 @@ export function BudgetPage() {
         description="Exercices, lignes par catégorie, engagements, factures et disponible réel."
         actions={
           <>
+            <AiAssistButton
+              prompt="Analyse le budget informatique : engagements, factures, disponible et points d'attention."
+              hint="Analyse les engagements, les factures, le disponible et les dépassements budgétaires."
+            />
             {canCreate ? (
               <Button
                 size="sm"

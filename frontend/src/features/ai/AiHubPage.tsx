@@ -31,7 +31,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
@@ -439,14 +438,58 @@ export function AiHubPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        eyebrow="Assistant IA"
-        title="Centre d'aide IA"
-        description="Un point d'entrée unique pour analyser, rédiger, importer et piloter tous les domaines de SI PILOT."
-        actions={
-          <>
-            <Button size="sm" onClick={() => openAi(null, undefined)}>
-              <Sparkles className="h-3.5 w-3.5" />
+      <section className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/20 via-surface to-accent/10 p-5 shadow-2xl sm:p-7">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
+
+        <div className="relative flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-primary/30 bg-primary/20 text-primary-strong shadow-lg">
+                <Sparkles className="h-5 w-5" />
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-accent" />
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">
+                  Assistant IA
+                </p>
+                <p className="text-[10px] text-muted">Votre copilote SI PILOT</p>
+              </div>
+            </div>
+            <h1 className="mt-4 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Que voulez-vous simplifier aujourd'hui ?
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+              Analysez le parc, les achats, les contrats, l'infrastructure, la sécurité,
+              les documents et le pilotage. L'assistant choisit les outils, résume les
+              données et propose des actions à confirmer.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] text-muted">
+              <span className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1">
+                Fournisseur{" "}
+                <strong className="text-foreground">{status?.provider || "—"}</strong>
+              </span>
+              <span className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1">
+                Modèle <strong className="text-foreground">{status?.model || "—"}</strong>
+              </span>
+              <span className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1">
+                {tools.length} outil(s)
+              </span>
+              <span
+                className={cn(
+                  "rounded-full border px-2.5 py-1",
+                  status?.enabled && status.configured
+                    ? "border-success/30 bg-success/10 text-success"
+                    : "border-warning/30 bg-warning/10 text-warning",
+                )}
+              >
+                {status?.enabled && status.configured ? "Prêt" : "À configurer"}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="md" onClick={() => openAi(null, undefined)}>
+              <Sparkles className="h-4 w-4" />
               Ouvrir l'assistant
             </Button>
             {canImport ? (
@@ -454,7 +497,7 @@ export function AiHubPage() {
                 to="/import-documents"
                 className={buttonVariants({ variant: "secondary", size: "md" })}
               >
-                <FileUp className="h-3.5 w-3.5" />
+                <FileUp className="h-4 w-4" />
                 Import intelligent
               </Link>
             ) : null}
@@ -463,118 +506,140 @@ export function AiHubPage() {
                 to="/admin/ai"
                 className={buttonVariants({ variant: "secondary", size: "md" })}
               >
-                <Settings className="h-3.5 w-3.5" />
+                <Settings className="h-4 w-4" />
                 Configuration
               </Link>
             ) : null}
-          </>
-        }
-      />
-
-      <Card className="panel-sheen border-primary/20">
-        <CardHeader>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-              Dialogue avec l'assistant
-            </p>
-            <h2 className="text-base font-semibold text-foreground">
-              Posez votre question, l'assistant choisit les bons outils
-            </h2>
           </div>
-          <Badge tone={status?.enabled && status.configured ? "success" : "warning"}>
-            {status?.enabled && status.configured ? "Prêt" : "À configurer"}
-          </Badge>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-3">
-          {statusQuery.isError ? (
+        </div>
+
+        {statusQuery.isError ? (
+          <div className="relative mt-4">
             <ErrorState
               message="Impossible de charger l'état de l'assistant."
               onRetry={() => void statusQuery.refetch()}
             />
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2 text-[11px] text-muted">
-                <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
-                  Fournisseur{" "}
-                  <strong className="text-foreground">{status?.provider || "—"}</strong>
-                </span>
-                <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
-                  Modèle <strong className="text-foreground">{status?.model || "—"}</strong>
-                </span>
-                <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
-                  {tools.length} outil(s) disponible(s)
-                </span>
-                {status && !status.enabled ? (
-                  <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-warning">
-                    Assistant désactivé
-                  </span>
-                ) : null}
-              </div>
+          </div>
+        ) : null}
 
-              <form
-                className="space-y-2"
-                onSubmit={(event) => {
+        <form
+          className="relative mt-5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submitQuestion();
+          }}
+        >
+          <div className="rounded-2xl border border-primary/20 bg-background/75 p-3 shadow-2xl backdrop-blur">
+            <Textarea
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              rows={6}
+              placeholder="Exemple : analyse les achats, les livraisons en retard et les bons de commande sans engagement. Propose un plan d'action."
+              className="min-h-[160px] resize-y border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
+              onKeyDown={(event) => {
+                if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
                   event.preventDefault();
                   submitQuestion();
-                }}
+                }
+              }}
+            />
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  "Fais-moi le briefing du jour.",
+                  "Quels bons de commande sont en retard ?",
+                  "Quels équipements sont à renouveler ?",
+                  "Analyse les anomalies de qualité des données.",
+                ].map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => setQuestion(prompt)}
+                    className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1 text-[10px] text-muted transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openAi(null, question.trim() || undefined)}
+                  disabled={!canUse}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Plein écran
+                </Button>
+                <Button type="submit" size="sm" disabled={!question.trim() || !canUse}>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Demander
+                </Button>
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-2">
+              Ctrl + Entrée pour envoyer. L'assistant ne modifie aucune donnée sans
+              confirmation et respecte vos permissions.
+            </p>
+          </div>
+        </form>
+
+        <div className="relative mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            {
+              title: "Briefing du jour",
+              text: "Contrôles, sauvegardes, tickets et alertes.",
+              icon: LifeBuoy,
+              prompt: "Fais-moi le briefing du jour.",
+            },
+            {
+              title: "Achats & livraisons",
+              text: "Devis, commandes, engagement et retards.",
+              icon: ShoppingCart,
+              prompt:
+                "Analyse les achats : devis en attente, bons de commande sans engagement et livraisons en retard.",
+            },
+            {
+              title: "Parc & renouvellement",
+              text: "Pannes, garanties et postes à remplacer.",
+              icon: MonitorSmartphone,
+              prompt:
+                "Quels équipements sont en panne, à renouveler ou hors garantie ?",
+            },
+            {
+              title: "Qualité des données",
+              text: "Anomalies et plan de correction.",
+              icon: ShieldCheck,
+              prompt:
+                "Analyse les anomalies de qualité des données et propose un plan de correction priorisé.",
+            },
+          ].map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.title}
+                type="button"
+                onClick={() => openAi(null, action.prompt)}
+                disabled={!canUse}
+                className="group rounded-xl border border-border-soft bg-background/55 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-background/80 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Textarea
-                  value={question}
-                  onChange={(event) => setQuestion(event.target.value)}
-                  rows={5}
-                  placeholder="Exemple : analyse les achats, les livraisons en retard et les bons de commande sans engagement. Propose un plan d'action."
-                  className="min-h-[130px] resize-y text-sm"
-                  onKeyDown={(event) => {
-                    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-                      event.preventDefault();
-                      submitQuestion();
-                    }
-                  }}
-                />
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      "Fais-moi le briefing du jour.",
-                      "Quels bons de commande sont en retard ?",
-                      "Quels équipements sont à renouveler ?",
-                      "Prépare une synthèse pour la direction.",
-                    ].map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => setQuestion(prompt)}
-                        className="rounded-full border border-border-soft bg-background/40 px-2.5 py-1 text-[10px] text-muted transition-colors hover:border-primary/40 hover:text-foreground"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => openAi(null, question.trim() || undefined)}
-                      disabled={!canUse}
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Plein écran
-                    </Button>
-                    <Button type="submit" size="sm" disabled={!question.trim() || !canUse}>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Demander
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-[10px] leading-4 text-muted-2">
-                  Ctrl + Entrée pour envoyer. L'assistant ne modifie aucune donnée sans
-                  confirmation et respecte vos permissions.
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary-strong">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <p className="mt-2 text-[11px] font-semibold text-foreground">
+                  {action.title}
                 </p>
-              </form>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                <p className="mt-0.5 text-[10px] leading-4 text-muted">{action.text}</p>
+                <span className="mt-2 inline-flex items-center gap-1 text-[9px] uppercase tracking-wide text-accent">
+                  Demander à l'IA
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <Card className="panel-sheen border-primary/20 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

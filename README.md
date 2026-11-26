@@ -333,7 +333,10 @@ npm run build
   peuvent être chargés depuis le fournisseur.
 - **Centre d'aide IA** : menu dédié regroupant les aides par domaine (support, parc, achats,
   contrats, budget, infrastructure, sécurité, agents, documents, RGPD, pilotage), l'import
-  intelligent, les outils disponibles et l'historique des demandes IA.
+  intelligent, les outils disponibles et l'historique des demandes IA. Page immersive avec grand
+  composeur, actions rapides et **dock flottant contextuel** sur tous les onglets.
+- **Boutons Assistant IA contextuels** dans les pages métier, avec une bulle expliquant ce que
+  l'assistant peut faire sur l'écran courant.
 - **Assistant IA contextuel** : bouton « Analyser avec l'IA » sur une fiche équipement, une demande
   IT ou un poste de la page Logiciels. Contexte ciblé (état, garantie, affectation, mises à jour
   WAPT, description, commentaires, équipements liés), actions rapides, suggestions de suivi,

@@ -1193,6 +1193,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       list([
         "Centre d'aide IA : aides prêtes à l'emploi pour le support, le parc, les achats, les contrats, le budget, l'infrastructure, la sécurité, les agents, les documents, le RGPD et le pilotage.",
+        "Bouton Assistant IA dans les pages métier, avec une bulle qui explique ce qu'il peut faire sur l'écran courant.",
+        "Dock flottant en bas à droite : il change de contexte selon l'onglet et propose deux questions rapides.",
+        "Page d'accueil IA immersive : grand zone de dialogue, raccourcis, statut du fournisseur et actions rapides.",
         "Zone de dialogue pleine largeur, raccourcis en un clic et bouton Plein écran pour ouvrir l'assistant dans une grande fenêtre.",
         "Historique compact en bas de page : dernières demandes, statut et durée.",
         "Import intelligent : analyser un contrat, un devis, un bon de commande, une facture ou une licence et l'intégrer dans le bon module.",

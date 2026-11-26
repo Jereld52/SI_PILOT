@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { ProjectDialog } from "@/features/projects/ProjectDialogs";
 import { ProjectDetailDialog } from "@/features/projects/ProjectDetailDialog";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
@@ -139,18 +140,24 @@ export function ProjectsPage() {
         title="Projets informatiques"
         description="Jalons, tâches, risques, décisions et suivi budgétaire des projets."
         actions={
-          canCreate ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Nouveau projet
-            </Button>
-          ) : null
+          <>
+            <AiAssistButton
+              prompt="Quels projets sont en retard, bloqués ou à risque ? Propose un plan d'action."
+              hint="Repère les projets en retard ou à risque et propose des actions concrètes."
+            />
+            {canCreate ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouveau projet
+              </Button>
+            ) : null}
+          </>
         }
       />
 

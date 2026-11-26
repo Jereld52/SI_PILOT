@@ -33,6 +33,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { InterventionDialog } from "@/features/tickets/InterventionDialog";
 import { TicketDetailDialog } from "@/features/tickets/TicketDetailDialog";
 import { TicketFormDialog } from "@/features/tickets/TicketFormDialog";
@@ -232,6 +233,10 @@ export function TicketsPage() {
         description="Tickets, priorités, SLA, commentaires, temps passé et interventions liées au parc."
         actions={
           <>
+            <AiAssistButton
+              prompt="Analyse les demandes ouvertes, les priorités et les retards. Propose une priorisation et les réponses à apporter."
+              hint="Résume une demande, propose une qualification, détecte les doublons et rédige une réponse."
+            />
             {tab === "tickets" ? (
               <>
                 <Select

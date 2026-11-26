@@ -57,6 +57,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { formatDateTime, fullName } from "@/lib/utils";
 import type {
@@ -254,6 +255,10 @@ export function AssetsPage() {
         description="Équipements, affectations, garanties, états et historique des mouvements."
         actions={
           <>
+            <AiAssistButton
+              prompt="Fais-moi un bilan du parc : pannes, renouvellements, garanties et affectations."
+              hint="Analyse le parc, repère les postes en panne, hors garantie ou à renouveler."
+            />
             {hasPermission("exports.run") ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

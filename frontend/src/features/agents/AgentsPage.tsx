@@ -38,6 +38,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { formatDate, fullName } from "@/lib/utils";
 import type { AgentItem, LocationItem, Page, ServiceItem } from "@/types/api";
@@ -132,6 +133,10 @@ export function AgentsPage() {
         description="Fiches agents, rattachement aux services et sites, arrivées et départs."
         actions={
           <>
+            <AiAssistButton
+              prompt="Quels agents n'ont pas d'équipement ou de compte ? Analyse aussi les arrivées et départs incomplets."
+              hint="Analyse les agents, leurs équipements, comptes et dossiers d'arrivée ou de départ."
+            />
             {canImport ? (
               <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
                 <Upload className="h-3.5 w-3.5" />

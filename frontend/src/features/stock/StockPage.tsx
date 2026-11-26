@@ -33,6 +33,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { StockHistoryDialog } from "@/features/stock/StockHistoryDialog";
 import { StockItemDialog } from "@/features/stock/StockItemDialog";
 import { StockMovementDialog } from "@/features/stock/StockMovementDialog";
@@ -140,18 +141,24 @@ export function StockPage() {
         title="Stock IT"
         description="Claviers, souris, écrans, casques et consommables : quantités, seuils, mouvements et alertes."
         actions={
-          canManage ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingItem(null);
-                setItemDialogOpen(true);
-              }}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Nouvel article
-            </Button>
-          ) : null
+          <>
+            <AiAssistButton
+              prompt="Quels articles du stock sont sous le seuil ou épuisés ? Prépare une liste de réapprovisionnement."
+              hint="Repère les articles sous le seuil ou épuisés et prépare les réapprovisionnements."
+            />
+            {canManage ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingItem(null);
+                  setItemDialogOpen(true);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouvel article
+              </Button>
+            ) : null}
+          </>
         }
       />
 

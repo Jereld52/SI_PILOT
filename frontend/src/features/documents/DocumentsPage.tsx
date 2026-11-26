@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { DocumentDialog, UploadVersionDialog } from "@/features/documents/DocumentDialogs";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { formatDateTime, formatNumber } from "@/lib/utils";
@@ -129,18 +130,24 @@ export function DocumentsPage() {
         title="Documentation"
         description="Procédures, guides, fiches techniques, versions et fichiers associés."
         actions={
-          canCreate ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Nouveau document
-            </Button>
-          ) : null
+          <>
+            <AiAssistButton
+              prompt="Quels documents de documentation sont à mettre à jour, à classer ou à compléter ?"
+              hint="Identifie les documents à mettre à jour, à classer ou à compléter, et propose une organisation."
+            />
+            {canCreate ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouveau document
+              </Button>
+            ) : null}
+          </>
         }
       />
 

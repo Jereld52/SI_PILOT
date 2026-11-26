@@ -44,6 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import {
   InfraDependencyDialog,
   InfraEquipmentDialog,
@@ -280,6 +281,10 @@ export function InfrastructurePage() {
         description="Exploitation des serveurs, VM et équipements réseau : IP, OS, supervision et carte. L'inventaire administratif reste dans le parc."
         actions={
           <>
+            <AiAssistButton
+              prompt="Fais-moi un point sur l'infrastructure : équipements, contrôles en échec et dépendances."
+              hint="Diagnostique l'infrastructure, les contrôles en échec et les dépendances à risque."
+            />
             {canTopology ? (
               <Button variant="secondary" size="sm" onClick={() => navigate("/supervision")}>
                 <Radar className="h-3.5 w-3.5" />

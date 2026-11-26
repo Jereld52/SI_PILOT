@@ -6,7 +6,6 @@ import {
   FileText,
   Pencil,
   ShoppingCart,
-  Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -34,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { CommercialDocumentItem, SupplierItem } from "@/types/api";
@@ -114,7 +113,6 @@ const emptyForm = (): FormState => ({
 
 export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
   const { hasPermission } = useAuth();
-  const { open: openAi } = useAiAssistant();
   const canRead = hasPermission("suppliers.read");
   const canManage = hasPermission("suppliers.manage");
   const label = kindLabels[kind];
@@ -306,21 +304,19 @@ export function CommercialDocumentsPage({ kind }: { kind: Kind }) {
         }
         actions={
           <>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                openAi(
-                  null,
-                  kind === "quote"
-                    ? "Analyse les devis : devis en attente, montants, taux de conversion et devis à relancer. Propose les prochaines actions."
-                    : "Analyse les bons de commande : engagement, montants, livraisons en retard et commandes à relancer. Propose les prochaines actions.",
-                )
+            <AiAssistButton
+              prompt={
+                kind === "quote"
+                  ? "Analyse les devis : devis en attente, montants, taux de conversion et devis à relancer. Propose les prochaines actions."
+                  : "Analyse les bons de commande : engagement, montants, livraisons en retard et commandes à relancer. Propose les prochaines actions."
               }
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Assistant achats
-            </Button>
+              hint={
+                kind === "quote"
+                  ? "Analyse les devis, les montants, les relances et la conversion en bon de commande."
+                  : "Analyse les bons de commande, les engagements et les livraisons en retard."
+              }
+              label="Assistant achats"
+            />
             {canManage ? (
               <Button size="sm" onClick={openCreate} disabled={suppliers.length === 0}>
                 <FilePlus2 className="h-3.5 w-3.5" />

@@ -37,6 +37,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { formatDate, formatPhone } from "@/lib/utils";
 import type { MobileLineItem, Page } from "@/types/api";
@@ -122,6 +123,10 @@ export function MobileLinesPage() {
         description="Inventaire des lignes, titulaires, forfaits, terminaux et engagements."
         actions={
           <>
+            <AiAssistButton
+              prompt="Analyse les lignes mobiles : fins d'engagement, coûts, terminaux et lignes sans titulaire."
+              hint="Analyse les lignes, forfaits, terminaux et engagements à anticiper."
+            />
             {hasPermission("exports.run") ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

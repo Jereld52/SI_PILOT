@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import { ContractDialog } from "@/features/contracts/ContractDialog";
 import { ApiError, apiFetch, buildQuery } from "@/lib/api";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
@@ -166,18 +167,24 @@ export function ContractsPage() {
         title="Contrats"
         description="Contrats, abonnements et prestations : montants, préavis, échéances et reconduction."
         actions={
-          canCreate ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Nouveau contrat
-            </Button>
-          ) : null
+          <>
+            <AiAssistButton
+              prompt="Quels contrats arrivent à échéance dans les 90 jours et lesquels nécessitent une action ?"
+              hint="Anticipe les échéances, les préavis, les reconductions et les contrats sans date de fin."
+            />
+            {canCreate ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouveau contrat
+              </Button>
+            ) : null}
+          </>
         }
       />
 

@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { AiAssistButton } from "@/features/ai/AiAssistButton";
 import {
   BackupDialog,
   CertificateDialog,
@@ -328,6 +329,10 @@ export function SecurityPage() {
         description="Incidents, actions correctives, vulnérabilités, sauvegardes, certificats et audits."
         actions={
           <>
+            <AiAssistButton
+              prompt="Quels incidents de sécurité sont ouverts et quelles actions mener en priorité ?"
+              hint="Analyse les incidents, vulnérabilités, certificats et actions de sécurité."
+            />
             {tab === "incidents" && canCreate ? (
               <Button
                 size="sm"
