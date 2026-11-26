@@ -2183,6 +2183,15 @@ export interface AiToolInfo {
   permission: string;
 }
 
+export interface AiRunItem {
+  id: string;
+  feature_code: string;
+  status: string;
+  request_summary: string | null;
+  duration_ms: number | null;
+  created_at: string;
+}
+
 export interface BackupFileItem {
   name: string;
   size: number;

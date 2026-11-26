@@ -656,7 +656,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["document", "contrat", "devis", "facture", "licence", "IA", "import"],
     blocks: [
       p(
-        "Gestion → Import intelligent analyse un PDF texte ou un fichier texte, puis propose une destination : documentation, contrat, licence ou facture budgétaire.",
+        "Assistant IA → Import intelligent analyse un PDF texte ou un fichier texte, puis propose une destination : documentation, devis, bon de commande, contrat, licence ou facture budgétaire.",
       ),
       list([
         "Extraction du type de document, du fournisseur, de la référence, des dates et des montants.",
@@ -692,7 +692,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Statuts des bons de commande : brouillon, envoyé, confirmé, livré, annulé.",
         "La conversion d'un devis en bon de commande n'est jamais automatique : elle demande le numéro d'engagement et une confirmation.",
         "Le numéro d'engagement est unique et obligatoire pour tout bon de commande, y compris ceux créés par l'IA ou l'import intelligent.",
-        "Les documents peuvent être créés manuellement, importés depuis Gestion → Import intelligent ou préparés avec l'assistant IA.",
+        "Les documents peuvent être créés manuellement, importés depuis Assistant IA → Import intelligent ou préparés avec l'assistant IA.",
       ]),
       note(
         "info",
@@ -1145,8 +1145,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["IA", "OpenAI", "Mistral", "Gemini", "Anthropic", "Ollama", "assistant"],
     blocks: [
       p(
+        "Le menu Assistant IA regroupe le Centre d'aide IA, l'Import intelligent et la Configuration IA. Le Centre d'aide IA centralise les raccourcis par domaine, les outils disponibles et l'historique de vos demandes.",
+      ),
+      p(
         "Administration → Assistant IA connecte l'assistant à un fournisseur externe ou local. La configuration est facultative : SI PILOT fonctionne sans IA.",
       ),
+      list([
+        "Centre d'aide IA : aides prêtes à l'emploi pour le support, le parc, les achats, les contrats, le budget, l'infrastructure, la sécurité, les agents, les documents, le RGPD et le pilotage.",
+        "Import intelligent : analyser un contrat, un devis, un bon de commande, une facture ou une licence et l'intégrer dans le bon module.",
+        "Historique : les dernières conversations et analyses IA de l'utilisateur, avec leur statut et leur durée.",
+      ]),
       list([
         "Fournisseurs cloud : OpenAI, Azure OpenAI, Mistral, Groq, OpenRouter, Google Gemini, Anthropic Claude et Albert API (État). Fournisseurs locaux : Ollama et Open WebUI.",
         "URL de base, modèle, clé d'API, température, nombre de jetons et délai sont configurables.",
@@ -1170,8 +1178,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Outils de lecture : recherche d'équipements, pannes, renouvellements, garanties, demandes ouvertes ou en retard, mises à jour WAPT, logiciels d'un poste, contrats, partages réseau, incidents, certificats, infrastructure, utilisateurs, Veeam, découverte réseau et activité récente.",
         "L'assistant choisit automatiquement les outils adaptés à la question, respecte vos permissions et affiche les outils utilisés.",
         "Après chaque réponse, des suggestions permettent de poursuivre l'analyse en un clic.",
-        "L'assistant peut proposer une action de suivi, une demande IT, une réunion ou un brouillon de communication : elle n'est créée qu'après confirmation et vérification des permissions.",
-        "Import intelligent : analyser un contrat, un devis, une facture ou une licence et l'intégrer dans le bon module.",
+        "L'assistant peut proposer une action de suivi, une demande IT, une réunion, un brouillon de communication, un devis ou un bon de commande : elle n'est créée qu'après confirmation et vérification des permissions.",
+        "Import intelligent : analyser un contrat, un devis, un bon de commande, une facture ou une licence et l'intégrer dans le bon module.",
         "Réponses mises en forme (titres, listes, gras) et bouton de copie.",
       ]),
       note(

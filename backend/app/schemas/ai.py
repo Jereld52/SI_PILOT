@@ -128,3 +128,12 @@ class AiToolInfo(BaseModel):
     label: str
     description: str
     permission: str
+
+
+class AiRunRead(BaseModel):
+    id: UUID
+    feature_code: str
+    status: str
+    request_summary: str | None = None
+    duration_ms: int | None = None
+    created_at: datetime

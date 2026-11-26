@@ -28,6 +28,7 @@ from app.schemas.ai import (
     AiConfigUpdate,
     AiContext,
     AiModelsResponse,
+    AiRunRead,
     AiStatusRead,
     AiTestResponse,
 )
@@ -914,6 +915,26 @@ def _record_run(
     )
     db.add(run)
     db.commit()
+
+
+def list_runs(db: Session, *, actor: User, limit: int = 20) -> list[AiRunRead]:
+    rows = db.scalars(
+        select(AiRun)
+        .where(AiRun.user_id == actor.id)
+        .order_by(AiRun.created_at.desc())
+        .limit(min(max(limit, 1), 100))
+    ).all()
+    return [
+        AiRunRead(
+            id=row.id,
+            feature_code=row.feature_code,
+            status=row.status,
+            request_summary=row.request_summary,
+            duration_ms=row.duration_ms,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
 
 
 def list_models(db: Session) -> AiModelsResponse:

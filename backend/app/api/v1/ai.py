@@ -20,6 +20,7 @@ from app.schemas.ai import (
     AiConfigRead,
     AiConfigUpdate,
     AiModelsResponse,
+    AiRunRead,
     AiStatusRead,
     AiTestResponse,
     AiToolInfo,
@@ -56,6 +57,15 @@ def list_tools(
     actor: User = Depends(require_permission("ai.use")),
 ) -> list[dict[str, str]]:
     return ai_tools_service.list_tools(actor)
+
+
+@router.get("/runs", response_model=list[AiRunRead])
+def list_runs(
+    limit: int = 20,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> list[AiRunRead]:
+    return ai_service.list_runs(db, actor=actor, limit=limit)
 
 
 @router.post("/chat", response_model=AiChatResponse)

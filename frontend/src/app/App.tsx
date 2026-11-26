@@ -142,6 +142,11 @@ const DocumentIntakePage = lazy(() =>
     default: module.DocumentIntakePage,
   })),
 );
+const AiHubPage = lazy(() =>
+  import("@/features/ai/AiHubPage").then((module) => ({
+    default: module.AiHubPage,
+  })),
+);
 const ExportsPage = lazy(() =>
   import("@/features/exports/ExportsPage").then((module) => ({
     default: module.ExportsPage,
@@ -617,6 +622,15 @@ export function App() {
             element={
               <RequirePermission permission="documents.read">
                 <DocumentsPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="assistant-ia"
+            element={
+              <RequirePermission permission="ai.use">
+                <AiHubPage />
               </RequirePermission>
             }
           />

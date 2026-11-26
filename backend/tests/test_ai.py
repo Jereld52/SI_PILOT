@@ -81,6 +81,13 @@ def test_ai_chat_records_run(admin_client, csrf_headers, monkeypatch):
         assert run.status == "success"
         assert "bilan du parc" in (run.request_summary or "").lower()
 
+    runs = client.get("/api/v1/ai/runs", params={"limit": 5})
+    assert runs.status_code == 200, runs.text
+    assert any(
+        "bilan du parc" in (item["request_summary"] or "").lower()
+        for item in runs.json()
+    )
+
 
 def test_ai_action_proposal_and_execution(admin_client, csrf_headers, monkeypatch):
     client, csrf = admin_client

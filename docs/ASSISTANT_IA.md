@@ -63,6 +63,11 @@ affichés dans la réponse.
 
 ## 4. Usages pour la gestion du parc
 
+Le menu **Assistant IA** regroupe le **Centre d'aide IA**, l'**Import intelligent** et la
+**Configuration IA**. Le centre d'aide propose des raccourcis par domaine (support, parc, achats,
+contrats, budget, infrastructure, sécurité, agents, documents, RGPD, pilotage), la liste des
+outils accessibles et l'historique des demandes.
+
 - Bilan mensuel du parc et synthèse pour la direction.
 - Identification des postes en panne, à renouveler ou hors garantie.
 - Suivi des mises à jour WAPT et des logiciels à déployer.
@@ -84,6 +89,7 @@ affichés dans la réponse.
 
 - `GET /api/v1/ai/status` : état de l'intégration (`ai.use`).
 - `GET /api/v1/ai/tools` : outils disponibles selon les permissions (`ai.use`).
+- `GET /api/v1/ai/runs` : historique des dernières demandes IA de l'utilisateur (`ai.use`).
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
 - `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action : `actions.create`, `tickets.create`, `meetings.manage`, `communications.manage` ou `suppliers.manage`). Les actions `create_quote` et `create_purchase_order` créent un devis ou un bon de commande ; le numéro d'engagement est obligatoire pour un bon de commande et n'est jamais inventé par l'IA.
 - `GET /api/v1/admin/ai/models` : liste des modèles du fournisseur (`ai.configure`).

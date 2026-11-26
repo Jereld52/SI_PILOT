@@ -315,6 +315,9 @@ npm run build
   OpenRouter, Gemini, Anthropic, Albert API, Ollama, Open WebUI ou tout endpoint compatible
   OpenAI. La clé est chiffrée, le contexte du parc est optionnel et les modèles disponibles
   peuvent être chargés depuis le fournisseur.
+- **Centre d'aide IA** : menu dédié regroupant les aides par domaine (support, parc, achats,
+  contrats, budget, infrastructure, sécurité, agents, documents, RGPD, pilotage), l'import
+  intelligent, les outils disponibles et l'historique des demandes IA.
 - **Assistant IA contextuel** : bouton « Analyser avec l'IA » sur une fiche équipement, une demande
   IT ou un poste de la page Logiciels. Contexte ciblé (état, garantie, affectation, mises à jour
   WAPT, description, commentaires, équipements liés), actions rapides, suggestions de suivi,
