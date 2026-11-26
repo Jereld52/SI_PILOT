@@ -122,6 +122,8 @@ se configurent depuis l'administration.
 - **Import intelligent de documents** : analyse IA de contrats, devis, bons de commande, factures
   et licences, extraction des dates et montants, création du contrat, du devis, du bon de commande,
   de la licence ou de la facture budgétaire, et archivage du fichier source dans la documentation.
+  **Import en lot** : sélection multiple, analyse avec statut par fichier, vérification individuelle
+  et archivage rapide de tout le lot.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
   répartitions et détail.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, achats,

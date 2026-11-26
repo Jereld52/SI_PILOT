@@ -659,14 +659,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
   {
     slug: "import-intelligent",
     title: "Import intelligent de documents",
-    summary: "Analyser un contrat, un devis ou une facture et l'intégrer au bon endroit.",
+    summary: "Analyser un ou plusieurs documents et les intégrer au bon endroit.",
     category: "gestion",
-    tags: ["document", "contrat", "devis", "facture", "licence", "IA", "import"],
+    tags: ["document", "contrat", "devis", "facture", "licence", "IA", "import", "lot"],
     blocks: [
       p(
-        "Assistant IA → Import intelligent analyse un PDF texte ou un fichier texte, puis propose une destination : documentation, devis, bon de commande, contrat, licence ou facture budgétaire.",
+        "Assistant IA → Import intelligent analyse un ou plusieurs PDF texte ou fichiers texte, puis propose une destination : documentation, devis, bon de commande, contrat, licence ou facture budgétaire.",
       ),
       list([
+        "Import en lot : sélection multiple, analyse séquentielle avec statut par fichier, puis vérification individuelle.",
+        "Archivage rapide de tout le lot dans la documentation avec les métadonnées extraites.",
         "Extraction du type de document, du fournisseur, de la référence, des dates et des montants.",
         "Vérification et correction des informations avant toute écriture.",
         "Création d'un contrat en brouillon, d'une licence ou d'une facture budgétaire selon la destination choisie.",
