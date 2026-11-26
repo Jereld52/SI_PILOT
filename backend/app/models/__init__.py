@@ -47,6 +47,7 @@ from app.models.communication import (
     Training,
 )
 from app.models.contracts import Contract, ContractCategory
+from app.models.document_intake import DocumentIntake
 from app.models.documents import (
     Document,
     DocumentAcl,
@@ -157,6 +158,7 @@ __all__ = [
     "DocumentSequence",
     "DocumentTag",
     "DocumentVersion",
+    "DocumentIntake",
     "EquipmentReservation",
     "DpoRequest",
     "EmailOutbox",

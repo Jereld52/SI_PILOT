@@ -6,11 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
 from app.core.errors import PermissionDeniedError
+from app.core.pagination import PageParams, page_params
 from app.core.permissions import has_permission
 from app.db.session import get_db
 from app.models.auth import User
+from app.schemas.common import Page
 from app.schemas.document_ai import (
     DocumentAnalysisRead,
+    DocumentIntakeHistoryRead,
     DocumentIntegrationRead,
     DocumentIntegrationRequest,
 )
@@ -38,6 +41,7 @@ def document_categories(
 @router.post("/analyze", response_model=DocumentAnalysisRead)
 async def analyze_document(
     file: UploadFile = File(...),
+    batch_id: str | None = Form(None),
     actor: User = Depends(require_permission("documents.create")),
     db: Session = Depends(get_db),
 ) -> DocumentAnalysisRead:
@@ -50,6 +54,7 @@ async def analyze_document(
         filename=file.filename or "document",
         mime_type=file.content_type or "application/octet-stream",
         actor=actor,
+        batch_id=batch_id,
     )
 
 
@@ -61,8 +66,25 @@ def integrate_document(
     actor: User = Depends(require_permission("documents.create")),
     db: Session = Depends(get_db),
 ) -> DocumentIntegrationRead:
-    return document_ai_service.integrate(
-        db, token, payload, actor=actor, request=request
+    try:
+        return document_ai_service.integrate(
+            db, token, payload, actor=actor, request=request
+        )
+    except Exception as exc:
+        document_ai_service.mark_intake_error(db, token, str(exc))
+        raise
+
+
+@router.get("/intake/history", response_model=Page[DocumentIntakeHistoryRead])
+def intake_history(
+    q: str | None = Query(None, max_length=120),
+    status: str | None = Query(None, max_length=20),
+    params: PageParams = Depends(page_params),
+    _: User = Depends(require_permission("documents.read")),
+    db: Session = Depends(get_db),
+) -> Page[DocumentIntakeHistoryRead]:
+    return document_ai_service.list_history(
+        db, params, q=q, status=status
     )
 
 

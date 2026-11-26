@@ -44,5 +44,6 @@ desktop.ini
 *.bak
 test_si_pnfor.db
 backend/test_uploads/
+backend/tessdata/
 *.dump
 *.zip.sha256

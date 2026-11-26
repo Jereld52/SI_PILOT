@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { BrandingSettingsCard } from "@/features/admin/BrandingSettingsCard";
 import { AssetNamingSettingsCard } from "@/features/admin/AssetNamingSettingsCard";
+import { OcrSettingsCard } from "@/features/admin/OcrSettingsCard";
 import { SmtpSettingsCard } from "@/features/admin/SmtpSettingsCard";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -48,6 +49,15 @@ const ASSET_NAMING_KEYS = new Set([
   "assets.naming_sequence_mode",
   "assets.naming_sequence_length",
   "assets.naming_template",
+]);
+
+const OCR_KEYS = new Set([
+  "ocr.enabled",
+  "ocr.tesseract_command",
+  "ocr.language",
+  "ocr.max_pages",
+  "ocr.dpi",
+  "ocr.tessdata_dir",
 ]);
 
 function toInputValue(value: unknown): string {
@@ -107,6 +117,7 @@ export function SettingsPage() {
       if (
         BRANDING_KEYS.has(setting.key) ||
         ASSET_NAMING_KEYS.has(setting.key) ||
+        OCR_KEYS.has(setting.key) ||
         setting.key.startsWith("smtp.") ||
         setting.key.startsWith("scheduler.") ||
         setting.key === "notifications.email_enabled"
@@ -165,6 +176,8 @@ export function SettingsPage() {
       <BrandingSettingsCard canManage={canManage} />
 
       <AssetNamingSettingsCard canManage={canManage} />
+
+      <OcrSettingsCard canManage={canManage} />
 
       <SmtpSettingsCard canManage={canManage} />
 

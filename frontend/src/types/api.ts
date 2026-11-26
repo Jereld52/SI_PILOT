@@ -251,6 +251,17 @@ export interface AssetNamingSettings {
   sample_category_prefix: string;
 }
 
+export interface OcrSettings {
+  enabled: boolean;
+  tesseract_command: string;
+  language: string;
+  max_pages: number;
+  dpi: number;
+  tessdata_dir: string;
+  available: boolean;
+  version: string | null;
+}
+
 export interface BrandingInfo {
   app_name: string;
   organization_name: string;
@@ -1806,6 +1817,27 @@ export interface DocumentAiAnalysis {
   confidence: number;
   warnings: string[];
   text_excerpt: string;
+  ocr_used: boolean;
+}
+
+export interface DocumentIntakeHistoryItem {
+  id: string;
+  token: string;
+  batch_id: string | null;
+  filename: string;
+  status: string;
+  document_type: string;
+  title: string | null;
+  supplier: string | null;
+  reference: string | null;
+  amount_ttc: number | null;
+  target: string | null;
+  link: string | null;
+  document_id: string | null;
+  error_message: string | null;
+  ocr_used: boolean;
+  created_at: string;
+  integrated_at: string | null;
 }
 
 export interface DocumentAiIntegration {

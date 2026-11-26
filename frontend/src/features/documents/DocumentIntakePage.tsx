@@ -25,8 +25,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { ApiError, apiFetch } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { ApiError, apiFetch, buildQuery } from "@/lib/api";
+import { cn, formatDateTime } from "@/lib/utils";
 import type {
   BudgetDetailItem,
   BudgetItem,
@@ -34,6 +34,8 @@ import type {
   DocumentAiIntegration,
   DocumentAiKind,
   DocumentAiTarget,
+  DocumentIntakeHistoryItem,
+  Page,
 } from "@/types/api";
 
 const typeLabels: Record<DocumentAiKind, string> = {
@@ -94,6 +96,7 @@ export function DocumentIntakePage() {
 
   const [queue, setQueue] = useState<IntakeQueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [batchId, setBatchId] = useState<string>(() => crypto.randomUUID());
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<DocumentAiAnalysis | null>(null);
   const [target, setTarget] = useState<DocumentAiTarget>("documentation");
@@ -113,6 +116,9 @@ export function DocumentIntakePage() {
   const [integrating, setIntegrating] = useState(false);
   const [result, setResult] = useState<DocumentAiIntegration | null>(null);
   const [archiveAllOpen, setArchiveAllOpen] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatus, setHistoryStatus] = useState("");
 
   const budgetsQuery = useQuery({
     queryKey: ["budgets", "document-intake"],
@@ -126,6 +132,20 @@ export function DocumentIntakePage() {
   });
   const budgets = budgetsQuery.data ?? [];
   const budgetLines = budgetDetailQuery.data?.lines ?? [];
+
+  const historyQuery = useQuery({
+    queryKey: ["document-intake", "history", historyPage, historySearch, historyStatus],
+    queryFn: () =>
+      apiFetch<Page<DocumentIntakeHistoryItem>>(
+        `/documents/intake/history${buildQuery({
+          page: historyPage,
+          page_size: 10,
+          q: historySearch.trim() || undefined,
+          status: historyStatus || undefined,
+        })}`,
+      ),
+  });
+  const historyItems = historyQuery.data?.items ?? [];
 
   const availableTargets = (analysis?.suggested_targets ?? ["documentation"]).filter(
     (item) =>
@@ -181,6 +201,7 @@ export function DocumentIntakePage() {
       status: "pending" as QueueStatus,
     }));
     if (incoming.length === 0) return;
+    setBatchId(crypto.randomUUID());
     setQueue((current) => {
       const keys = new Set(
         current.map((item) => `${item.file.name}:${item.file.size}:${item.file.lastModified}`),
@@ -198,6 +219,7 @@ export function DocumentIntakePage() {
   const analyzeItem = async (item: IntakeQueueItem) => {
     const form = new FormData();
     form.append("file", item.file);
+    form.append("batch_id", batchId);
     return apiFetch<DocumentAiAnalysis>("/documents/analyze", {
       method: "POST",
       body: form,
@@ -257,6 +279,7 @@ export function DocumentIntakePage() {
       }
     }
     setAnalyzing(false);
+    void historyQuery.refetch();
     if (firstReady) {
       selectQueueItem(firstReady);
       toast.success(
@@ -284,6 +307,7 @@ export function DocumentIntakePage() {
         ),
       );
       selectQueueItem({ ...item, status: "ready", analysis: data });
+      void historyQuery.refetch();
     } catch (error) {
       setQueue((current) =>
         current.map((row) =>
@@ -351,6 +375,7 @@ export function DocumentIntakePage() {
     setArchiveAllOpen(false);
     setAnalysis(null);
     setSelectedId(null);
+    void historyQuery.refetch();
     toast.success(
       `${done} document(s) archivé(s) dans la documentation${
         failed ? `, ${failed} échec(s)` : ""
@@ -409,6 +434,7 @@ export function DocumentIntakePage() {
         setResult(data);
       }
       toast.success(data.message);
+      void historyQuery.refetch();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Intégration impossible.");
     } finally {
@@ -431,7 +457,7 @@ export function DocumentIntakePage() {
       <PageHeader
         eyebrow="Gestion documentaire"
         title="Import intelligent de documents"
-        description="Analysez un contrat, un devis, une facture ou une licence, puis intégrez-le au bon endroit."
+        description="Analysez un ou plusieurs documents, y compris les PDF scannés via OCR, puis intégrez-les au bon endroit."
       />
 
       <Card>
@@ -439,8 +465,8 @@ export function DocumentIntakePage() {
           <div>
             <CardTitle className="text-sm">1. Choisir un ou plusieurs documents</CardTitle>
             <CardDescription>
-              Import en lot : PDF texte ou fichiers texte. Les PDF scannés doivent être
-              passés par un OCR.
+              Import en lot : PDF texte, PDF scanné, image ou fichier texte. L'OCR local
+              est utilisé lorsque le PDF ne contient pas de texte.
             </CardDescription>
           </div>
           <Badge tone="info">IA cloud ou locale</Badge>
@@ -449,7 +475,7 @@ export function DocumentIntakePage() {
           <Input
             type="file"
             multiple
-            accept=".pdf,.txt,.md,application/pdf,text/plain"
+            accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.tif,.tiff,.bmp,.webp,application/pdf,text/plain,image/*"
             onChange={(event) => {
               addFiles(event.target.files);
               event.target.value = "";
@@ -570,6 +596,7 @@ export function DocumentIntakePage() {
                         {item.analysis.amount_ttc != null ? (
                           <span>{item.analysis.amount_ttc.toFixed(2)} EUR TTC</span>
                         ) : null}
+                        {item.analysis.ocr_used ? <Badge tone="info">OCR</Badge> : null}
                         <span>confiance {Math.round(item.analysis.confidence * 100)} %</span>
                       </>
                     ) : null}
@@ -892,6 +919,178 @@ export function DocumentIntakePage() {
         </Card>
       ) : null}
 
+      <Card>
+        <CardHeader>
+          <div className="flex items-start gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border-soft bg-background/40 text-accent">
+              <ListChecks className="h-4 w-4" />
+            </span>
+            <div>
+              <CardTitle>Historique des imports</CardTitle>
+              <CardDescription>
+                Derniers documents analysés, intégrés ou en erreur.
+              </CardDescription>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Actualiser l'historique"
+            onClick={() => void historyQuery.refetch()}
+          >
+            <FileSearch className="h-3.5 w-3.5" />
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={historySearch}
+              onChange={(event) => {
+                setHistorySearch(event.target.value);
+                setHistoryPage(1);
+              }}
+              placeholder="Rechercher un fichier, un fournisseur, une référence…"
+              className="sm:max-w-xs"
+            />
+            <Select
+              value={historyStatus}
+              onChange={(event) => {
+                setHistoryStatus(event.target.value);
+                setHistoryPage(1);
+              }}
+              className="sm:w-44"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="analyzed">Analysé</option>
+              <option value="integrated">Intégré</option>
+              <option value="error">Erreur</option>
+            </Select>
+          </div>
+
+          {historyQuery.isLoading ? (
+            <p className="py-4 text-center text-[11px] text-muted-2">Chargement…</p>
+          ) : historyItems.length === 0 ? (
+            <EmptyState
+              icon={FileSearch}
+              title="Aucun import"
+              description="Les documents analysés apparaîtront ici avec leur destination."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[11px]">
+                <thead>
+                  <tr className="border-b border-border-soft text-[10px] uppercase tracking-wide text-muted-2">
+                    <th className="py-2 pr-3 font-medium">Date</th>
+                    <th className="py-2 pr-3 font-medium">Fichier</th>
+                    <th className="py-2 pr-3 font-medium">Type</th>
+                    <th className="py-2 pr-3 font-medium">Titre / fournisseur</th>
+                    <th className="py-2 pr-3 font-medium">Statut</th>
+                    <th className="py-2 pr-3 font-medium">Destination</th>
+                    <th className="py-2 pr-3 font-medium">OCR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyItems.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-border-soft/60 last:border-0"
+                    >
+                      <td className="whitespace-nowrap py-2 pr-3 text-muted">
+                        {formatDateTime(item.created_at)}
+                      </td>
+                      <td className="max-w-[180px] truncate py-2 pr-3 text-foreground">
+                        {item.filename}
+                      </td>
+                      <td className="py-2 pr-3 text-muted">
+                        {typeLabels[item.document_type as DocumentAiKind] ??
+                          item.document_type}
+                      </td>
+                      <td className="max-w-[220px] py-2 pr-3">
+                        <p className="truncate text-foreground">{item.title ?? "—"}</p>
+                        <p className="truncate text-[9px] text-muted-2">
+                          {item.supplier ?? "—"}
+                          {item.amount_ttc != null
+                            ? ` · ${item.amount_ttc.toFixed(2)} EUR TTC`
+                            : ""}
+                        </p>
+                      </td>
+                      <td className="py-2 pr-3">
+                        <Badge
+                          tone={
+                            item.status === "integrated"
+                              ? "success"
+                              : item.status === "error"
+                                ? "danger"
+                                : "info"
+                          }
+                        >
+                          {item.status === "integrated"
+                            ? "Intégré"
+                            : item.status === "error"
+                              ? "Erreur"
+                              : "Analysé"}
+                        </Badge>
+                        {item.error_message ? (
+                          <p className="mt-1 max-w-[220px] truncate text-[9px] text-danger">
+                            {item.error_message}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {item.link ? (
+                          <Link
+                            to={item.link}
+                            className="text-accent hover:underline"
+                          >
+                            Ouvrir
+                          </Link>
+                        ) : (
+                          <span className="text-muted-2">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {item.ocr_used ? (
+                          <Badge tone="info">OCR</Badge>
+                        ) : (
+                          <span className="text-muted-2">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {historyQuery.data && historyQuery.data.pages > 1 ? (
+            <div className="flex items-center justify-between text-[10px] text-muted-2">
+              <span>
+                Page {historyQuery.data.page} sur {historyQuery.data.pages} ·{" "}
+                {historyQuery.data.total} import(s)
+              </span>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={historyPage <= 1}
+                  onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={historyPage >= historyQuery.data.pages}
+                  onClick={() => setHistoryPage((page) => page + 1)}
+                >
+                  Suivant
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
       <ConfirmDialog
         open={archiveAllOpen}
         onOpenChange={setArchiveAllOpen}
@@ -904,8 +1103,9 @@ export function DocumentIntakePage() {
 
       <p className="flex items-start gap-1.5 text-[10px] leading-4 text-muted-2">
         <Upload className="mt-0.5 h-3 w-3 shrink-0" />
-        Formats pris en charge : PDF texte et fichiers texte. Les documents scannés
-        nécessitent un OCR. Vérifiez toujours les montants et dates extraits avant validation.
+        Formats pris en charge : PDF texte, PDF scanné via OCR, images et fichiers texte.
+        L'OCR est local et limité aux premières pages configurées. Vérifiez toujours les
+        montants et dates extraits avant validation.
       </p>
     </div>
   );

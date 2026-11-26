@@ -68,6 +68,10 @@ Le menu **Assistant IA** regroupe le **Centre d'aide IA**, l'**Import intelligen
 contrats, budget, infrastructure, sécurité, agents, documents, RGPD, pilotage), la liste des
 outils accessibles et l'historique des demandes.
 
+L'**Import intelligent** accepte un ou plusieurs fichiers, les PDF texte, les PDF scannés via
+**OCR Tesseract local** et les images. Les imports sont suivis dans un historique avec statut,
+destination, OCR et erreurs. L'OCR se configure dans **Administration → Paramètres → OCR**.
+
 - Bilan mensuel du parc et synthèse pour la direction.
 - Identification des postes en panne, à renouveler ou hors garantie.
 - Suivi des mises à jour WAPT et des logiciels à déployer.
@@ -93,7 +97,8 @@ outils accessibles et l'historique des demandes.
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
 - `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action : `actions.create`, `tickets.create`, `meetings.manage`, `communications.manage` ou `suppliers.manage`). Les actions `create_quote` et `create_purchase_order` créent un devis ou un bon de commande ; le numéro d'engagement est obligatoire pour un bon de commande et n'est jamais inventé par l'IA.
 - `GET /api/v1/admin/ai/models` : liste des modèles du fournisseur (`ai.configure`).
-- `POST /api/v1/documents/analyze` : analyse IA d'un document (`documents.create` + `ai.use`).
+- `POST /api/v1/documents/analyze` : analyse IA d'un document (`documents.create` + `ai.use`). Le paramètre `batch_id` regroupe un lot.
+- `GET /api/v1/documents/intake/history` : historique des imports (`documents.read`).
 - `POST /api/v1/documents/intake/{token}/integrate` : intégration du document analysé vers la documentation, un devis, un bon de commande, un contrat, une licence ou une facture budgétaire (`documents.create` + permission du module cible).
 - `POST /api/v1/tickets/{id}/ai/triage` : résumé, qualification, doublons et réponse suggérée (`tickets.read`).
 - `GET /api/v1/admin/ai/config` : configuration (`ai.configure`).

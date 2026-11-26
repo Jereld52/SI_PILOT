@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -30,6 +30,7 @@ class DocumentAnalysisRead(BaseModel):
     confidence: float = 0.0
     warnings: list[str] = Field(default_factory=list)
     text_excerpt: str = ""
+    ocr_used: bool = False
 
 
 class DocumentIntegrationRequest(BaseModel):
@@ -52,3 +53,23 @@ class DocumentIntegrationRead(BaseModel):
     message: str
     link: str = ""
     document_id: UUID | None = None
+
+
+class DocumentIntakeHistoryRead(BaseModel):
+    id: UUID
+    token: str
+    batch_id: str | None = None
+    filename: str
+    status: str
+    document_type: str
+    title: str | None = None
+    supplier: str | None = None
+    reference: str | None = None
+    amount_ttc: float | None = None
+    target: str | None = None
+    link: str | None = None
+    document_id: UUID | None = None
+    error_message: str | None = None
+    ocr_used: bool = False
+    created_at: datetime
+    integrated_at: datetime | None = None

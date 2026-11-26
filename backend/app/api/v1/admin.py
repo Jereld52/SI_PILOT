@@ -25,7 +25,8 @@ from app.schemas.auth import (
 )
 from app.schemas.common import MessageResponse, Page
 from app.schemas.mail import SmtpSettingsRead, SmtpSettingsUpdate, SmtpTestRequest
-from app.services import asset_naming_service, auth_service, email_service
+from app.schemas.ocr import OcrSettingsRead, OcrSettingsUpdate
+from app.services import asset_naming_service, auth_service, email_service, ocr_service
 from app.services.audit_service import write_audit
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
@@ -352,6 +353,26 @@ def update_asset_naming_settings(
     db: Session = Depends(get_db),
 ) -> AssetNamingRead:
     return asset_naming_service.update_settings(
+        db, payload, actor=actor, request=request
+    )
+
+
+@router.get("/settings/ocr", response_model=OcrSettingsRead)
+def get_ocr_settings(
+    _: User = Depends(require_permission("admin.settings.read")),
+    db: Session = Depends(get_db),
+) -> OcrSettingsRead:
+    return ocr_service.read_settings(db)
+
+
+@router.put("/settings/ocr", response_model=OcrSettingsRead)
+def update_ocr_settings(
+    payload: OcrSettingsUpdate,
+    request: Request,
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> OcrSettingsRead:
+    return ocr_service.update_settings(
         db, payload, actor=actor, request=request
     )
 

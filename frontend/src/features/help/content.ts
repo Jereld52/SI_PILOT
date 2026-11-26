@@ -664,11 +664,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
     tags: ["document", "contrat", "devis", "facture", "licence", "IA", "import", "lot"],
     blocks: [
       p(
-        "Assistant IA → Import intelligent analyse un ou plusieurs PDF texte ou fichiers texte, puis propose une destination : documentation, devis, bon de commande, contrat, licence ou facture budgétaire.",
+        "Assistant IA → Import intelligent analyse un ou plusieurs PDF, images ou fichiers texte, puis propose une destination : documentation, devis, bon de commande, contrat, licence ou facture budgétaire.",
       ),
       list([
+        "OCR local Tesseract pour les PDF scannés et les images, avec langue française et anglaise.",
         "Import en lot : sélection multiple, analyse séquentielle avec statut par fichier, puis vérification individuelle.",
         "Archivage rapide de tout le lot dans la documentation avec les métadonnées extraites.",
+        "Historique des imports : fichier, type, fournisseur, montant, statut, destination, OCR et erreurs.",
         "Extraction du type de document, du fournisseur, de la référence, des dates et des montants.",
         "Vérification et correction des informations avant toute écriture.",
         "Création d'un contrat en brouillon, d'une licence ou d'une facture budgétaire selon la destination choisie.",
@@ -677,7 +679,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ]),
       note(
         "warning",
-        "Les PDF scannés sans texte doivent être passés par un OCR avant l'import. Vérifiez toujours les montants, dates et références extraits : l'IA peut se tromper.",
+        "Vérifiez toujours les montants, dates et références extraits : l'IA et l'OCR peuvent se tromper. L'OCR est configurable dans Administration → Paramètres → OCR (activation, langues, pages, DPI, chemin Tesseract).",
       ),
       note(
         "info",

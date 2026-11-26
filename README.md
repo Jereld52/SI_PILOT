@@ -123,7 +123,8 @@ se configurent depuis l'administration.
   et licences, extraction des dates et montants, création du contrat, du devis, du bon de commande,
   de la licence ou de la facture budgétaire, et archivage du fichier source dans la documentation.
   **Import en lot** : sélection multiple, analyse avec statut par fichier, vérification individuelle
-  et archivage rapide de tout le lot.
+  et archivage rapide de tout le lot. **OCR local Tesseract** pour les PDF scannés et les images,
+  configurable dans les paramètres, et **historique des imports** avec statut, destination et erreurs.
 - Exports statistiques des tickets en XLSX/PDF par jour, semaine, mois ou année, avec synthèse,
   répartitions et détail.
 - Page **Statistiques** consolidée : tickets, interventions, parc, contrats, budget, achats,
@@ -247,6 +248,7 @@ configurée.
 - **Docker** : voir [`docs/DOCKER.md`](docs/DOCKER.md).
 - **Sauvegarde / restauration** : voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 - **Assistant IA et fournisseurs** : voir [`docs/ASSISTANT_IA.md`](docs/ASSISTANT_IA.md).
+- **OCR des documents** : voir [`docs/OCR.md`](docs/OCR.md).
 - **Arrivées et départs** : voir [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 - **Réunions interparcs et rapports** : voir [`docs/MEETING_REPORTS.md`](docs/MEETING_REPORTS.md).
 - **Veille et planification** : voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).

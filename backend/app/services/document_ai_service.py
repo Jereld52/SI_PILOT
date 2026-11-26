@@ -4,6 +4,7 @@ import json
 import re
 import time
 from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Literal
@@ -11,15 +12,19 @@ from uuid import UUID, uuid4
 
 from app.core.config import settings
 from app.core.errors import NotFoundError, PermissionDeniedError, ValidationAppError
+from app.core.pagination import PageParams, paginate
 from app.core.permissions import has_permission
 from app.models.assets import Supplier
 from app.models.auth import User
 from app.models.budget import BudgetLine
+from app.models.document_intake import DocumentIntake
 from app.schemas.budget import BudgetInvoiceCreate
 from app.schemas.commercial import CommercialDocumentCreate
+from app.schemas.common import Page
 from app.schemas.contracts import ContractCreate
 from app.schemas.document_ai import (
     DocumentAnalysisRead,
+    DocumentIntakeHistoryRead,
     DocumentIntegrationRead,
     DocumentIntegrationRequest,
 )
@@ -33,11 +38,12 @@ from app.services import (
     contracts_service,
     documents_service,
     licenses_service,
+    ocr_service,
     suppliers_service,
 )
 from fastapi import Request, UploadFile
 from pypdf import PdfReader
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from starlette.datastructures import Headers
 
@@ -64,7 +70,9 @@ def _intake_root() -> Path:
     return root
 
 
-def _extract_text(content: bytes, filename: str, mime_type: str) -> str:
+def _extract_text(
+    db: Session, content: bytes, filename: str, mime_type: str
+) -> tuple[str, bool]:
     suffix = Path(filename).suffix.lower()
     if suffix == ".pdf" or mime_type == "application/pdf":
         try:
@@ -75,20 +83,27 @@ def _extract_text(content: bytes, filename: str, mime_type: str) -> str:
             text = "\n".join(parts).strip()
         except Exception as exc:  # noqa: BLE001 - message explicite
             raise ValidationAppError(f"Lecture du PDF impossible : {exc}") from exc
-        if not text:
-            raise ValidationAppError(
-                "Ce PDF ne contient pas de texte exploitable. Les documents scannés "
-                "doivent d'abord être passés par un OCR."
-            )
-        return text[:MAX_TEXT_CHARS]
+        if len(text) >= 80:
+            return text[:MAX_TEXT_CHARS], False
+        ocr_text = ocr_service.extract_pdf_text(
+            content, ocr_service.get_config(db)
+        )
+        return ocr_text[:MAX_TEXT_CHARS], True
+    if suffix in {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"} or mime_type.startswith(
+        "image/"
+    ):
+        ocr_text = ocr_service.extract_image_text(
+            content, ocr_service.get_config(db)
+        )
+        return ocr_text[:MAX_TEXT_CHARS], True
     try:
-        return content.decode("utf-8")[:MAX_TEXT_CHARS]
+        return content.decode("utf-8")[:MAX_TEXT_CHARS], False
     except UnicodeDecodeError:
         try:
-            return content.decode("latin-1")[:MAX_TEXT_CHARS]
+            return content.decode("latin-1")[:MAX_TEXT_CHARS], False
         except UnicodeDecodeError as exc:
             raise ValidationAppError(
-                "Format non pris en charge. Utilisez un PDF ou un fichier texte."
+                "Format non pris en charge. Utilisez un PDF, une image ou un fichier texte."
             ) from exc
 
 
@@ -126,6 +141,15 @@ def _number(value: Any) -> float | None:
         return None
 
 
+def _decimal_amount(value: float | None) -> Decimal | None:
+    if value is None:
+        return None
+    try:
+        return Decimal(str(value)).quantize(Decimal("0.01"))
+    except (InvalidOperation, ValueError):
+        return None
+
+
 def _suggested_targets(kind: str, raw: Any) -> list[str]:
     defaults = {
         "contract": ["contract", "documentation"],
@@ -158,6 +182,7 @@ def analyze(
     filename: str,
     mime_type: str,
     actor: User,
+    batch_id: str | None = None,
 ) -> DocumentAnalysisRead:
     max_bytes = settings.max_upload_mb * 1024 * 1024
     if len(content) > max_bytes:
@@ -166,7 +191,7 @@ def analyze(
         )
     if not content:
         raise ValidationAppError("Le fichier est vide.")
-    text = _extract_text(content, filename, mime_type)
+    text, ocr_used = _extract_text(db, content, filename, mime_type)
     config = ai_service.get_config(db)
     if not config.enabled or not config.ready:
         raise ValidationAppError(
@@ -247,6 +272,27 @@ def analyze(
         ),
         encoding="utf-8",
     )
+    title = str(payload.get("title") or Path(filename).stem or "Document importé")
+    supplier = str(payload.get("supplier") or "").strip() or None
+    reference = str(payload.get("reference") or "").strip() or None
+    amount_ttc = _number(payload.get("amount_ttc"))
+    db.add(
+        DocumentIntake(
+            token=token,
+            batch_id=batch_id,
+            filename=Path(filename).name or "document",
+            mime_type=mime_type or "application/octet-stream",
+            size_bytes=len(content),
+            status="analyzed",
+            document_type=kind,
+            title=title,
+            supplier=supplier,
+            reference=reference,
+            amount_ttc=_decimal_amount(amount_ttc),
+            ocr_used=ocr_used,
+            created_by_id=actor.id,
+        )
+    )
     ai_service._record_run(
         db,
         actor=actor,
@@ -262,20 +308,21 @@ def analyze(
         token=token,
         filename=Path(filename).name or "document",
         document_type=kind,  # type: ignore[arg-type]
-        title=str(payload.get("title") or Path(filename).stem or "Document importé"),
-        supplier=str(payload.get("supplier") or "").strip() or None,
-        reference=str(payload.get("reference") or "").strip() or None,
+        title=title,
+        supplier=supplier,
+        reference=reference,
         engagement_number=str(payload.get("engagement_number") or "").strip() or None,
         start_date=_date(payload.get("start_date")),
         end_date=_date(payload.get("end_date")),
         amount_ht=_number(payload.get("amount_ht")),
-        amount_ttc=_number(payload.get("amount_ttc")),
+        amount_ttc=amount_ttc,
         vat_rate=_number(payload.get("vat_rate")),
         summary=str(payload.get("summary") or "").strip(),
         suggested_targets=_suggested_targets(kind, payload.get("suggested_targets")),  # type: ignore[arg-type]
         confidence=confidence,
         warnings=warning_list,
         text_excerpt=text[:1200],
+        ocr_used=ocr_used,
     )
 
 
@@ -510,8 +557,89 @@ def integrate(
         document_row = commercial_service.get_document(db, commercial_document_id)
         document_row.document_id = document_id
         db.commit()
+    record = db.scalar(
+        select(DocumentIntake).where(DocumentIntake.token == token)
+    )
+    if record is not None:
+        record.status = "integrated"
+        record.target = payload.target
+        record.link = link
+        document_id_value = document_id
+        record.document_id = document_id_value
+        record.title = payload.title
+        record.supplier = payload.supplier
+        record.reference = payload.reference
+        record.amount_ttc = _decimal_amount(payload.amount_ttc)
+        record.integrated_at = datetime.now(UTC)
+        record.error_message = None
+        db.commit()
     return DocumentIntegrationRead(
         message=f"{message} Fichier source archivé dans la documentation.",
         link=link,
         document_id=document_id,
+    )
+
+
+def mark_intake_error(db: Session, token: str, message: str) -> None:
+    db.rollback()
+    record = db.scalar(
+        select(DocumentIntake).where(DocumentIntake.token == token)
+    )
+    if record is None:
+        return
+    record.status = "error"
+    record.error_message = message[:2000]
+    db.commit()
+
+
+def list_history(
+    db: Session,
+    params: PageParams,
+    *,
+    q: str | None = None,
+    status: str | None = None,
+) -> Page[DocumentIntakeHistoryRead]:
+    statement = select(DocumentIntake)
+    if status:
+        statement = statement.where(DocumentIntake.status == status)
+    if q and q.strip():
+        pattern = f"%{q.strip()}%"
+        statement = statement.where(
+            or_(
+                DocumentIntake.filename.ilike(pattern),
+                DocumentIntake.title.ilike(pattern),
+                DocumentIntake.supplier.ilike(pattern),
+                DocumentIntake.reference.ilike(pattern),
+            )
+        )
+    statement = statement.order_by(DocumentIntake.created_at.desc())
+    page = paginate(db, statement, params)
+    items = [
+        DocumentIntakeHistoryRead(
+            id=row.id,
+            token=row.token,
+            batch_id=row.batch_id,
+            filename=row.filename,
+            status=row.status,
+            document_type=row.document_type,
+            title=row.title,
+            supplier=row.supplier,
+            reference=row.reference,
+            amount_ttc=float(row.amount_ttc) if row.amount_ttc is not None else None,
+            target=row.target,
+            link=row.link,
+            document_id=row.document_id,
+            error_message=row.error_message,
+            ocr_used=row.ocr_used,
+            created_at=row.created_at,
+            integrated_at=row.integrated_at,
+        )
+        for row in page["items"]
+    ]
+    return Page[DocumentIntakeHistoryRead](
+        items=items,
+        total=page["total"],
+        page=page["page"],
+        page_size=page["page_size"],
+        pages=page["pages"],
     )
