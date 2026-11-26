@@ -89,6 +89,48 @@ def test_ai_chat_records_run(admin_client, csrf_headers, monkeypatch):
     )
 
 
+def test_ai_compose_text(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    client.put(
+        "/api/v1/admin/ai/config",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "provider": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4.1-mini",
+            "api_key": None,
+        },
+    )
+
+    def fake_complete(config, messages, max_tokens=None):  # noqa: ANN001, ARG001
+        assert any("demande IT" in message["content"] for message in messages)
+        return (
+            "Le poste ne démarre plus depuis ce matin. L'utilisateur ne peut plus "
+            "travailler. Vérifier l'alimentation et le disque.",
+            {"total_tokens": 50},
+        )
+
+    monkeypatch.setattr(ai_service, "_complete", fake_complete)
+    response = client.post(
+        "/api/v1/ai/compose",
+        headers=csrf_headers(csrf),
+        json={
+            "kind": "ticket",
+            "field": "description",
+            "title": "Poste ne démarre plus",
+            "tone": "professional",
+            "length": "medium",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["text"].startswith("Le poste ne démarre")
+    assert body["kind"] == "ticket"
+    assert body["field"] == "description"
+    assert body["duration_ms"] >= 0
+
+
 def test_ai_action_proposal_and_execution(admin_client, csrf_headers, monkeypatch):
     client, csrf = admin_client
     client.put(

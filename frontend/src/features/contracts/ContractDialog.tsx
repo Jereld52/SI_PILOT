@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { AiTextSuggestionButton } from "@/features/ai/AiTextSuggestionButton";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
   ContractCategoryItem,
@@ -358,7 +359,16 @@ export function ContractDialog({
             <Switch checked={autoRenew} onCheckedChange={setAutoRenew} label="Reconduction tacite" />
           </div>
           <div>
-            <Label htmlFor="contract-comments">Commentaires</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="contract-comments">Commentaires</Label>
+              <AiTextSuggestionButton
+                kind="contract"
+                field="notes"
+                title={object}
+                value={comments}
+                onApply={setComments}
+              />
+            </div>
             <Textarea
               id="contract-comments"
               value={comments}

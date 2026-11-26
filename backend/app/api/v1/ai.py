@@ -17,6 +17,8 @@ from app.schemas.ai import (
     AiActionProposal,
     AiChatRequest,
     AiChatResponse,
+    AiComposeRequest,
+    AiComposeResponse,
     AiConfigRead,
     AiConfigUpdate,
     AiModelsResponse,
@@ -83,6 +85,16 @@ def chat(
         context=payload.context,
         request=request,
     )
+
+
+@router.post("/compose", response_model=AiComposeResponse)
+def compose(
+    payload: AiComposeRequest,
+    request: Request,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> AiComposeResponse:
+    return ai_service.compose_text(db, payload, actor=actor, request=request)
 
 
 def _ticket_category(db: Session, code: str | None):

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AiTextSuggestionButton } from "@/features/ai/AiTextSuggestionButton";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
   AssetItem,
@@ -275,7 +276,16 @@ export function InterventionDialog({
             </div>
           </div>
           <div>
-            <Label htmlFor="intervention-description">Description</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="intervention-description">Description</Label>
+              <AiTextSuggestionButton
+                kind="intervention"
+                field="description"
+                title={title}
+                value={description}
+                onApply={setDescription}
+              />
+            </div>
             <Textarea
               id="intervention-description"
               value={description}
@@ -284,7 +294,18 @@ export function InterventionDialog({
             />
           </div>
           <div>
-            <Label htmlFor="intervention-report">Compte rendu</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="intervention-report">Compte rendu</Label>
+              <AiTextSuggestionButton
+                kind="intervention"
+                field="summary"
+                title={title}
+                value={report}
+                context={description}
+                onApply={setReport}
+                label="Aide IA"
+              />
+            </div>
             <Textarea
               id="intervention-report"
               value={report}

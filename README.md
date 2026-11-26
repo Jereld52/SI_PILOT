@@ -337,6 +337,9 @@ npm run build
   composeur, actions rapides et **dock flottant contextuel** sur tous les onglets.
 - **Boutons Assistant IA contextuels** dans les pages métier, avec une bulle expliquant ce que
   l'assistant peut faire sur l'écran courant.
+- **Suggestion IA dans les formulaires** : demande IT, communication, réunion, intervention,
+  projet et contrat. Le texte est généré à partir du titre et du contexte, avec aperçu modifiable,
+  choix du ton et de la longueur.
 - **Assistant IA contextuel** : bouton « Analyser avec l'IA » sur une fiche équipement, une demande
   IT ou un poste de la page Logiciels. Contexte ciblé (état, garantie, affectation, mises à jour
   WAPT, description, commentaires, équipements liés), actions rapides, suggestions de suivi,

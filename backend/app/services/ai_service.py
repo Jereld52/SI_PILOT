@@ -24,6 +24,8 @@ from app.schemas.ai import (
     AiActionProposal,
     AiChatMessage,
     AiChatResponse,
+    AiComposeRequest,
+    AiComposeResponse,
     AiConfigRead,
     AiConfigUpdate,
     AiContext,
@@ -1121,6 +1123,162 @@ def _suggestions(tools_used: list[str]) -> list[str]:
         if item not in unique:
             unique.append(item)
     return unique[:3]
+
+
+def compose_text(
+    db: Session,
+    payload: AiComposeRequest,
+    *,
+    actor: User,
+    request: Request | None = None,
+) -> AiComposeResponse:
+    config = get_config(db)
+    if not config.enabled or not config.ready:
+        raise ValidationAppError(
+            "L'assistant IA doit être activé et configuré pour proposer un texte."
+        )
+    kind_labels = {
+        "ticket": "demande IT",
+        "communication": "communication interne",
+        "meeting": "réunion",
+        "intervention": "intervention technique",
+        "project": "projet",
+        "contract": "contrat",
+        "generic": "document",
+    }
+    field_labels = {
+        "description": "description",
+        "body": "contenu",
+        "agenda": "ordre du jour",
+        "notes": "notes",
+        "summary": "résumé",
+        "title": "titre",
+    }
+    field_rules = {
+        "ticket": (
+            "Rédige une description de demande IT structurée et factuelle. "
+            "Présente le contexte, le problème observé, l'impact et les informations "
+            "manquantes. N'invente aucun fait et ne promets aucune résolution."
+        ),
+        "communication": (
+            "Rédige un message de communication interne professionnel, clair et prêt à "
+            "envoyer. Commence par une phrase de contexte, explique le changement ou "
+            "l'information, puis indique l'action attendue et les contacts utiles."
+        ),
+        "meeting": (
+            "Rédige un ordre du jour de réunion numéroté, avec 4 à 8 points et des durées "
+            "indicatives. Reste concret et orienté décisions."
+        ),
+        "intervention": (
+            "Rédige un compte rendu d'intervention technique : constat, actions réalisées, "
+            "résultat et suites éventuelles. Reste factuel."
+        ),
+        "project": (
+            "Rédige un cadrage de projet synthétique : objectif, périmètre, livrables, "
+            "risques et prochaines étapes."
+        ),
+        "contract": (
+            "Rédige une note de contrat claire : objet, engagements, points de vigilance "
+            "et échéances."
+        ),
+        "generic": (
+            "Rédige un texte professionnel clair, structuré et directement utilisable."
+        ),
+    }
+    length_rules = {
+        "short": "Sois concis : 2 à 4 phrases ou 3 à 5 puces.",
+        "medium": "Vise un texte de longueur moyenne : 5 à 10 phrases ou 4 à 6 puces.",
+        "long": "Développe davantage : 10 à 18 phrases ou 6 à 9 puces.",
+    }
+    tone_rules = {
+        "professional": "Ton professionnel, neutre et courtois.",
+        "friendly": "Ton chaleureux et accessible, sans familiarité excessive.",
+        "direct": "Ton direct et opérationnel, sans détour.",
+        "technical": "Ton technique et précis, adapté à une équipe informatique.",
+    }
+    rule = field_rules.get(payload.kind, field_rules["generic"])
+    if payload.kind == "meeting" and payload.field == "summary":
+        rule = (
+            "Rédige un compte rendu de réunion synthétique : décisions, actions, "
+            "responsables et échéances. Reste factuel et n'invente aucun élément."
+        )
+    elif payload.kind == "project" and payload.field == "summary":
+        rule = (
+            "Rédige des objectifs de projet mesurables et priorisés, sous forme de liste "
+            "courte. Reste concret."
+        )
+    elif payload.kind == "intervention" and payload.field == "summary":
+        rule = (
+            "Rédige un compte rendu d'intervention technique : constat, actions réalisées, "
+            "résultat et suites éventuelles. Reste factuel."
+        )
+    system = (
+        "Tu es l'assistant rédactionnel de SI PILOT. Tu aides à préparer des textes "
+        "professionnels pour la gestion informatique. Réponds uniquement avec le texte "
+        "demandé, en français, sans commentaire ni bloc de code. "
+        f"{rule} "
+        f"{tone_rules.get(payload.tone, tone_rules['professional'])} "
+        f"{length_rules.get(payload.length, length_rules['medium'])} "
+        "Si un texte actuel est fourni, améliore-le sans changer les faits. "
+        "N'invente jamais de nom, de date, de montant ou de référence."
+    )
+    context_parts = [
+        f"Type de document : {kind_labels.get(payload.kind, payload.kind)}.",
+        f"Champ à produire : {field_labels.get(payload.field, payload.field)}.",
+    ]
+    if payload.title and payload.title.strip():
+        context_parts.append(f"Titre ou objet déjà saisi : {payload.title.strip()}.")
+    if payload.current and payload.current.strip():
+        context_parts.append(f"Texte actuel à améliorer :\n{payload.current.strip()}")
+    if payload.context and payload.context.strip():
+        context_parts.append(f"Contexte complémentaire :\n{payload.context.strip()}")
+    if payload.instructions and payload.instructions.strip():
+        context_parts.append(f"Consigne supplémentaire : {payload.instructions.strip()}")
+    context_parts.append(
+        "Produis uniquement le texte final, sans introduction ni explication."
+    )
+    started = time.perf_counter()
+    try:
+        answer, _usage = _complete(
+            config,
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": "\n\n".join(context_parts)},
+            ],
+        )
+    except Exception:
+        _record_run(
+            db,
+            actor=actor,
+            request_summary=f"Rédaction IA {payload.kind}/{payload.field}",
+            include_context=False,
+            status="error",
+            duration_ms=round((time.perf_counter() - started) * 1000),
+            feature_code="ai_compose",
+            error_code="AI_ERROR",
+        )
+        raise
+    clean = answer.strip()
+    clean = re.sub(r"^```(?:markdown|text)?\s*", "", clean)
+    clean = re.sub(r"\s*```$", "", clean).strip()
+    duration = round((time.perf_counter() - started) * 1000)
+    _record_run(
+        db,
+        actor=actor,
+        request_summary=f"Rédaction IA {payload.kind}/{payload.field}",
+        include_context=False,
+        status="success",
+        duration_ms=duration,
+        feature_code="ai_compose",
+        response_text=clean[:4000],
+        http_status=200,
+    )
+    return AiComposeResponse(
+        text=clean,
+        kind=payload.kind,
+        field=payload.field,
+        duration_ms=duration,
+    )
 
 
 def chat(

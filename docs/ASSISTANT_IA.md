@@ -97,6 +97,7 @@ dans **Administration → Paramètres → OCR**.
 - `GET /api/v1/ai/tools` : outils disponibles selon les permissions (`ai.use`).
 - `GET /api/v1/ai/runs` : historique des dernières demandes IA de l'utilisateur (`ai.use`).
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
+- `POST /api/v1/ai/compose` : suggestion de texte pour un ticket, une communication, une réunion, une intervention, un projet ou un contrat (`ai.use`).
 - `POST /api/v1/ai/actions/execute` : exécution d'une action proposée, après confirmation (`ai.use` + permission de l'action : `actions.create`, `tickets.create`, `meetings.manage`, `communications.manage` ou `suppliers.manage`). Les actions `create_quote` et `create_purchase_order` créent un devis ou un bon de commande ; le numéro d'engagement est obligatoire pour un bon de commande et n'est jamais inventé par l'IA.
 - `GET /api/v1/admin/ai/models` : liste des modèles du fournisseur (`ai.configure`).
 - `POST /api/v1/documents/analyze` : analyse IA d'un document (`documents.create` + `ai.use`). Le paramètre `batch_id` regroupe un lot.

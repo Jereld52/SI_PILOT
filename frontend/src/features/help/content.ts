@@ -1193,6 +1193,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       list([
         "Centre d'aide IA : aides prêtes à l'emploi pour le support, le parc, les achats, les contrats, le budget, l'infrastructure, la sécurité, les agents, les documents, le RGPD et le pilotage.",
+        "Bouton Suggestion IA dans les formulaires de demande, communication, réunion, intervention, projet et contrat : génère un texte à partir du titre et du contexte, avec aperçu modifiable, ton et longueur.",
         "Bouton Assistant IA dans les pages métier, avec une bulle qui explique ce qu'il peut faire sur l'écran courant.",
         "Dock flottant en bas à droite : il change de contexte selon l'onglet et propose deux questions rapides.",
         "Page d'accueil IA immersive : grand zone de dialogue, raccourcis, statut du fournisseur et actions rapides.",

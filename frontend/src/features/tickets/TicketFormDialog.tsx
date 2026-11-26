@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AiTextSuggestionButton } from "@/features/ai/AiTextSuggestionButton";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
   AgentItem,
@@ -120,7 +121,19 @@ export function TicketFormDialog({
             </p>
           ) : null}
           <div>
-            <Label htmlFor="ticket-subject">Objet</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="ticket-subject">Objet</Label>
+              <AiTextSuggestionButton
+                kind="ticket"
+                field="title"
+                title={subject}
+                value={description}
+                context="Propose un objet court, clair et professionnel pour une demande IT, à partir de la description."
+                onApply={setSubject}
+                label="Suggestion"
+                disabled={!description.trim()}
+              />
+            </div>
             <Input
               id="ticket-subject"
               value={subject}
@@ -248,7 +261,16 @@ export function TicketFormDialog({
             </div>
           </details>
           <div>
-            <Label htmlFor="ticket-description">Description</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="ticket-description">Description</Label>
+              <AiTextSuggestionButton
+                kind="ticket"
+                field="description"
+                title={subject}
+                value={description}
+                onApply={setDescription}
+              />
+            </div>
             <Textarea
               id="ticket-description"
               value={description}

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { AiTextSuggestionButton } from "@/features/ai/AiTextSuggestionButton";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
   AgentItem,
@@ -218,7 +219,16 @@ export function CommunicationDialog({
             />
           </div>
           <div>
-            <Label htmlFor="communication-body">Contenu</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="communication-body">Contenu</Label>
+              <AiTextSuggestionButton
+                kind="communication"
+                field="body"
+                title={title}
+                value={body}
+                onApply={setBody}
+              />
+            </div>
             <Textarea
               id="communication-body"
               rows={6}
@@ -590,7 +600,16 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="meeting-agenda">Ordre du jour</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="meeting-agenda">Ordre du jour</Label>
+                <AiTextSuggestionButton
+                  kind="meeting"
+                  field="agenda"
+                  title={title}
+                  value={agenda}
+                  onApply={setAgenda}
+                />
+              </div>
               <Textarea
                 id="meeting-agenda"
                 rows={4}
@@ -599,7 +618,18 @@ export function MeetingDialog({ open, onOpenChange, meeting, users, onSaved }: M
               />
             </div>
             <div>
-              <Label htmlFor="meeting-notes">Compte rendu</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="meeting-notes">Compte rendu</Label>
+                <AiTextSuggestionButton
+                  kind="meeting"
+                  field="summary"
+                  title={title}
+                  value={notes}
+                  context={agenda}
+                  onApply={setNotes}
+                  label="Aide IA"
+                />
+              </div>
               <Textarea
                 id="meeting-notes"
                 rows={4}

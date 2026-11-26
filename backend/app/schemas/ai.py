@@ -137,3 +137,33 @@ class AiRunRead(BaseModel):
     request_summary: str | None = None
     duration_ms: int | None = None
     created_at: datetime
+
+
+AiComposeKind = Literal[
+    "ticket",
+    "communication",
+    "meeting",
+    "intervention",
+    "project",
+    "contract",
+    "generic",
+]
+AiComposeField = Literal["description", "body", "agenda", "notes", "summary", "title"]
+
+
+class AiComposeRequest(BaseModel):
+    kind: AiComposeKind = "generic"
+    field: AiComposeField = "description"
+    title: str | None = Field(default=None, max_length=500)
+    current: str | None = Field(default=None, max_length=8000)
+    context: str | None = Field(default=None, max_length=8000)
+    tone: Literal["professional", "friendly", "direct", "technical"] = "professional"
+    length: Literal["short", "medium", "long"] = "medium"
+    instructions: str | None = Field(default=None, max_length=1000)
+
+
+class AiComposeResponse(BaseModel):
+    text: str
+    kind: str
+    field: str
+    duration_ms: int

@@ -2261,6 +2261,31 @@ export interface AiActionProposal {
   source_quote_reference: string | null;
 }
 
+export interface AiComposeRequest {
+  kind:
+    | "ticket"
+    | "communication"
+    | "meeting"
+    | "intervention"
+    | "project"
+    | "contract"
+    | "generic";
+  field: "description" | "body" | "agenda" | "notes" | "summary" | "title";
+  title?: string | null;
+  current?: string | null;
+  context?: string | null;
+  tone?: "professional" | "friendly" | "direct" | "technical";
+  length?: "short" | "medium" | "long";
+  instructions?: string | null;
+}
+
+export interface AiComposeResponse {
+  text: string;
+  kind: string;
+  field: string;
+  duration_ms: number;
+}
+
 export interface AiActionExecuteResponse {
   message: string;
   link: string;

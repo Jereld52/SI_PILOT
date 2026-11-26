@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AiTextSuggestionButton } from "@/features/ai/AiTextSuggestionButton";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
   MilestoneItem,
@@ -158,7 +159,16 @@ export function ProjectDialog({ open, onOpenChange, project, users, onSaved }: P
             </div>
           </div>
           <div>
-            <Label htmlFor="project-description">Description</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="project-description">Description</Label>
+              <AiTextSuggestionButton
+                kind="project"
+                field="description"
+                title={name}
+                value={description}
+                onApply={setDescription}
+              />
+            </div>
             <Textarea
               id="project-description"
               value={description}
@@ -167,7 +177,18 @@ export function ProjectDialog({ open, onOpenChange, project, users, onSaved }: P
             />
           </div>
           <div>
-            <Label htmlFor="project-objectives">Objectifs</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="project-objectives">Objectifs</Label>
+              <AiTextSuggestionButton
+                kind="project"
+                field="summary"
+                title={name}
+                value={objectives}
+                context={description}
+                onApply={setObjectives}
+                label="Aide IA"
+              />
+            </div>
             <Textarea
               id="project-objectives"
               value={objectives}
