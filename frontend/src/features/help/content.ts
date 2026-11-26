@@ -887,11 +887,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Résolution du nom DNS inverse lorsqu'elle est disponible.",
         "Rapprochement automatique avec les adresses IP et MAC déjà présentes dans l'infrastructure et le parc.",
         "Type d'équipement pressenti selon les ports et le nom : serveur, switch, routeur, pare-feu, NAS ou point d'accès.",
-        "Ajout manuel d'un nouvel hôte vers l'infrastructure, après confirmation. Les champs sont préremplis.",
+        "Ajout manuel d'un nouvel hôte après confirmation : un formulaire permet de modifier le nom, l'IP, la MAC, le site, le système et les notes.",
+        "Classement au choix : Infrastructure (type, rôle, criticité), Parc informatique (catégorie, marque, modèle, série) ou les deux avec des fiches liées.",
       ]),
       note(
         "info",
-        "Le scan ne modifie ni le réseau ni la base. Il nécessite la permission infrastructure.read ; l'ajout d'un équipement nécessite infrastructure.create. Le résultat est limité au sous-réseau demandé et chaque scan est journalisé.",
+        "Le scan ne modifie ni le réseau ni la base. Il nécessite la permission infrastructure.read ; l'ajout dans l'infrastructure nécessite infrastructure.create et l'ajout au parc nécessite assets.create. Le résultat est limité au sous-réseau demandé et chaque scan est journalisé.",
       ),
       note(
         "warning",

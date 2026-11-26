@@ -111,6 +111,7 @@ export function InfrastructurePage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("infrastructure.create");
+  const canCreateAsset = hasPermission("assets.create");
   const canUpdate = hasPermission("infrastructure.update");
   const canDelete = hasPermission("infrastructure.delete");
   const canAuthorize = hasPermission("infrastructure.monitoring.authorize");
@@ -398,7 +399,8 @@ export function InfrastructurePage() {
 
       {tab === "discovery" ? (
         <NetworkDiscoveryPanel
-          canCreate={canCreate}
+          canCreateInfra={canCreate}
+          canCreateAsset={canCreateAsset}
           onEquipmentAdded={refreshEquipments}
         />
       ) : (

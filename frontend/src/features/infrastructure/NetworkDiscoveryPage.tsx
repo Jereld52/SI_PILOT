@@ -20,7 +20,8 @@ export function NetworkDiscoveryPage() {
         }
       />
       <NetworkDiscoveryPanel
-        canCreate={hasPermission("infrastructure.create")}
+        canCreateInfra={hasPermission("infrastructure.create")}
+        canCreateAsset={hasPermission("assets.create")}
         onEquipmentAdded={() => undefined}
       />
     </div>

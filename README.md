@@ -98,8 +98,9 @@ se configurent depuis l'administration.
 - Calendrier et actions : vue mensuelle, événements, échéances et actions à réaliser. Les
   réunions de Communication et les réservations de matériel apparaissent dans le calendrier.
 - **Découverte réseau** : scan en lecture seule d'un sous-réseau privé, rapprochement avec le
-  parc et l'infrastructure, ajout manuel des nouveaux hôtes. L'assistant IA expose l'outil
-  `network_discovery`.
+  parc et l'infrastructure, ajout manuel des nouveaux hôtes dans un formulaire modifiable avec
+  classement au choix : infrastructure, parc informatique ou fiches liées. L'assistant IA expose
+  l'outil `network_discovery`.
 - Administration → **Import / Export** : imports CSV/XLSX pour agents, parc, mobiles, fournisseurs,
   licences et infrastructure, avec prévisualisation, rapport et historique ; exports XLSX/PDF du
   parc, des lignes mobiles, de l'infrastructure, des tickets et des statistiques.
