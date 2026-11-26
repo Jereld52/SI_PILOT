@@ -99,3 +99,28 @@ class DashboardTiles(BaseModel):
 
 class DashboardTilesUpdate(BaseModel):
     tiles: list[str]
+
+
+class TodayItem(BaseModel):
+    id: str
+    title: str
+    detail: str | None = None
+    severity: str = "info"
+    href: str = ""
+    action_label: str = "Ouvrir"
+    due_date: date | None = None
+    permission: str | None = None
+    module_key: str | None = None
+
+
+class TodaySection(BaseModel):
+    key: str
+    label: str
+    items: list[TodayItem]
+
+
+class DashboardToday(BaseModel):
+    generated_at: datetime
+    total: int
+    urgent: int
+    sections: list[TodaySection]

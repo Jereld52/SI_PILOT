@@ -30,6 +30,9 @@ se configurent depuis l'administration.
 - Notifications e-mail avec serveur SMTP externe configurable (STARTTLS ou SSL), mot de passe
   chiffré, test d'envoi et boîte d'envoi interne avec statut.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
+- **Page Aujourd'hui** : actions prioritaires tous modules confondus (demandes, achats, contrats,
+  supervision, sécurité, arrivées, stock, budget, RGPD), avec liens directs et filtrage par
+  permissions et modules actifs.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
 - **Arrivées & départs** : dossiers d'intégration et de sortie, checklists obligatoires ou
   facultatives, progression, échéances, détection des arrivées/départs sans dossier, dossiers en

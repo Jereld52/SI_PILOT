@@ -132,6 +132,11 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 );
+const TodayPage = lazy(() =>
+  import("@/features/dashboard/TodayPage").then((module) => ({
+    default: module.TodayPage,
+  })),
+);
 const DocumentsPage = lazy(() =>
   import("@/features/documents/DocumentsPage").then((module) => ({
     default: module.DocumentsPage,
@@ -280,6 +285,15 @@ export function App() {
             element={
               <RequirePermission permission="dashboard.read">
                 <DashboardPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="aujourdhui"
+            element={
+              <RequirePermission permission="dashboard.read">
+                <TodayPage />
               </RequirePermission>
             }
           />

@@ -222,7 +222,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
       p(
         "Le tableau de bord est organisé en trois onglets : Cockpit, Analyses et Alertes & activité. Il s'appuie uniquement sur les données réelles de l'application.",
       ),
+      p(
+        "La page Aujourd'hui, dans le menu Pilotage, va plus loin : elle liste les actions concrètes à traiter, tous modules confondus, avec un lien direct vers l'écran concerné.",
+      ),
       list([
+        "Aujourd'hui : demandes en retard, livraisons, engagements, contrats, supervision, sécurité, arrivées, stock, budget et conformité.",
+        "Chaque action est classée par urgence et filtrée selon vos permissions et les modules actifs.",
         "Cockpit : chiffres clés, état des modules, échéances à 90 jours et alertes prioritaires.",
         "Analyses : graphiques et répartitions sur le parc, le support, les contrats, le budget et la sécurité.",
         "Alertes & activité : actions attendues et dernières opérations enregistrées.",
@@ -1153,6 +1158,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       ),
       list([
         "Centre d'aide IA : aides prêtes à l'emploi pour le support, le parc, les achats, les contrats, le budget, l'infrastructure, la sécurité, les agents, les documents, le RGPD et le pilotage.",
+        "Zone de dialogue pleine largeur, raccourcis en un clic et bouton Plein écran pour ouvrir l'assistant dans une grande fenêtre.",
+        "Historique compact en bas de page : dernières demandes, statut et durée.",
         "Import intelligent : analyser un contrat, un devis, un bon de commande, une facture ou une licence et l'intégrer dans le bon module.",
         "Historique : les dernières conversations et analyses IA de l'utilisateur, avec leur statut et leur durée.",
       ]),

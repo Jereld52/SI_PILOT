@@ -5,6 +5,23 @@ def test_dashboard_summary(admin_client):
     assert len(response.json()["kpis"]) == 13
 
 
+def test_dashboard_today(admin_client):
+    client, _ = admin_client
+    response = client.get("/api/v1/dashboard/today")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert isinstance(body["total"], int)
+    assert isinstance(body["urgent"], int)
+    assert isinstance(body["sections"], list)
+    for section in body["sections"]:
+        assert section["key"]
+        assert section["label"]
+        for item in section["items"]:
+            assert item["title"]
+            assert item["href"]
+            assert item["severity"] in {"danger", "warning", "info", "success"}
+
+
 def test_dashboard_cockpit(admin_client):
     client, _ = admin_client
     response = client.get("/api/v1/dashboard/cockpit")

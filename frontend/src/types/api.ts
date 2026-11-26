@@ -167,6 +167,31 @@ export interface DashboardTiles {
   tiles: string[];
 }
 
+export interface TodayItem {
+  id: string;
+  title: string;
+  detail: string | null;
+  severity: string;
+  href: string;
+  action_label: string;
+  due_date: string | null;
+  permission: string | null;
+  module_key: string | null;
+}
+
+export interface TodaySection {
+  key: string;
+  label: string;
+  items: TodayItem[];
+}
+
+export interface DashboardToday {
+  generated_at: string;
+  total: number;
+  urgent: number;
+  sections: TodaySection[];
+}
+
 export interface NotificationItem {
   id: string;
   type: string;

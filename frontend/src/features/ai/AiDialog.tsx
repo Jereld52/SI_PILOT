@@ -403,7 +403,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[88vh] max-w-3xl flex-col overflow-hidden">
+      <DialogContent className="flex max-h-[92vh] max-w-5xl flex-col overflow-hidden">
         <DialogHeader>
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl border border-primary-strong/20 bg-primary/15 text-primary-strong">
             <Sparkles className="h-5 w-5" aria-hidden="true" />

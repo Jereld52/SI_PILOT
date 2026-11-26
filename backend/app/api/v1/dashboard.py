@@ -12,8 +12,9 @@ from app.schemas.dashboard import (
     DashboardSummary,
     DashboardTiles,
     DashboardTilesUpdate,
+    DashboardToday,
 )
-from app.services import dashboard_cockpit_service, dashboard_service
+from app.services import dashboard_cockpit_service, dashboard_service, dashboard_today_service
 
 router = APIRouter(prefix="/dashboard", tags=["Vue générale"])
 
@@ -24,6 +25,14 @@ def cockpit(
     db: Session = Depends(get_db),
 ) -> DashboardCockpit:
     return dashboard_cockpit_service.get_cockpit(db)
+
+
+@router.get("/today", response_model=DashboardToday)
+def today(
+    _: User = Depends(require_permission("dashboard.read")),
+    db: Session = Depends(get_db),
+) -> DashboardToday:
+    return dashboard_today_service.get_today(db)
 
 
 @router.get("/summary", response_model=DashboardSummary)

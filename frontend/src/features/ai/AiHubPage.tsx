@@ -33,6 +33,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
@@ -470,133 +471,110 @@ export function AiHubPage() {
         }
       />
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="panel-sheen border-primary/20">
-          <CardHeader>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-                État de l'assistant
-              </p>
-              <h2 className="text-sm font-semibold text-foreground">
-                {status?.enabled ? "Assistant IA actif" : "Assistant IA désactivé"}
-              </h2>
-            </div>
-            <Badge tone={status?.enabled && status.configured ? "success" : "warning"}>
-              {status?.enabled && status.configured ? "Prêt" : "À configurer"}
-            </Badge>
-          </CardHeader>
-          <CardContent className="pt-3">
-            {statusQuery.isError ? (
-              <ErrorState
-                message="Impossible de charger l'état de l'assistant."
-                onRetry={() => void statusQuery.refetch()}
-              />
-            ) : statusQuery.isLoading || !status ? (
-              <Skeleton className="h-20 rounded-lg" />
-            ) : (
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2 text-[11px] text-muted">
-                  <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
-                    Fournisseur <strong className="text-foreground">{status.provider || "—"}</strong>
+      <Card className="panel-sheen border-primary/20">
+        <CardHeader>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Dialogue avec l'assistant
+            </p>
+            <h2 className="text-base font-semibold text-foreground">
+              Posez votre question, l'assistant choisit les bons outils
+            </h2>
+          </div>
+          <Badge tone={status?.enabled && status.configured ? "success" : "warning"}>
+            {status?.enabled && status.configured ? "Prêt" : "À configurer"}
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-3">
+          {statusQuery.isError ? (
+            <ErrorState
+              message="Impossible de charger l'état de l'assistant."
+              onRetry={() => void statusQuery.refetch()}
+            />
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2 text-[11px] text-muted">
+                <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
+                  Fournisseur{" "}
+                  <strong className="text-foreground">{status?.provider || "—"}</strong>
+                </span>
+                <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
+                  Modèle <strong className="text-foreground">{status?.model || "—"}</strong>
+                </span>
+                <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
+                  {tools.length} outil(s) disponible(s)
+                </span>
+                {status && !status.enabled ? (
+                  <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-warning">
+                    Assistant désactivé
                   </span>
-                  <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
-                    Modèle <strong className="text-foreground">{status.model || "—"}</strong>
-                  </span>
-                  <span className="rounded-md border border-border-soft bg-background/40 px-2 py-1">
-                    {tools.length} outil(s) disponible(s)
-                  </span>
-                </div>
-                {status.enabled && status.configured ? (
-                  <p className="text-xs leading-5 text-muted">
-                    Pose une question ou choisis une aide ci-dessous. L'assistant ne modifie
-                    aucune donnée sans confirmation et respecte vos permissions.
-                  </p>
-                ) : (
-                  <p className="text-xs leading-5 text-warning">
-                    Activez et configurez l'assistant pour utiliser les aides IA. Un
-                    administrateur peut le faire depuis Administration → Assistant IA.
-                  </p>
-                )}
-                <form
-                  className="flex flex-col gap-2 sm:flex-row"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    submitQuestion();
-                  }}
-                >
-                  <Input
-                    value={question}
-                    onChange={(event) => setQuestion(event.target.value)}
-                    placeholder="Posez une question sur le parc, les achats, les tickets…"
-                    className="flex-1"
-                  />
-                  <Button type="submit" disabled={!question.trim() || !canUse}>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Demander
-                  </Button>
-                </form>
+                ) : null}
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <Card className="panel-sheen border-primary/20">
-          <CardHeader>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-                Activité récente
-              </p>
-              <h2 className="text-sm font-semibold text-foreground">
-                Vos dernières demandes IA
-              </h2>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Actualiser l'historique"
-              onClick={() => void runsQuery.refetch()}
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-2 pt-3">
-            {runsQuery.isLoading ? (
-              <Skeleton className="h-20 rounded-lg" />
-            ) : runs.length === 0 ? (
-              <p className="py-4 text-center text-[11px] text-muted-2">
-                Aucune conversation enregistrée pour le moment.
-              </p>
-            ) : (
-              runs.slice(0, 6).map((run) => (
-                <div
-                  key={run.id}
-                  className="flex items-start justify-between gap-2 rounded-lg border border-border-soft bg-background/40 px-2.5 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[11px] font-medium text-foreground">
-                      {run.request_summary || featureLabels[run.feature_code] || run.feature_code}
-                    </p>
-                    <p className="mt-0.5 text-[9px] text-muted-2">
-                      {featureLabels[run.feature_code] ?? run.feature_code} ·{" "}
-                      {formatDateTime(run.created_at)}
-                      {run.duration_ms != null
-                        ? ` · ${formatNumber(run.duration_ms / 1000, 1)} s`
-                        : ""}
-                    </p>
+              <form
+                className="space-y-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitQuestion();
+                }}
+              >
+                <Textarea
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  rows={5}
+                  placeholder="Exemple : analyse les achats, les livraisons en retard et les bons de commande sans engagement. Propose un plan d'action."
+                  className="min-h-[130px] resize-y text-sm"
+                  onKeyDown={(event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                      event.preventDefault();
+                      submitQuestion();
+                    }
+                  }}
+                />
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      "Fais-moi le briefing du jour.",
+                      "Quels bons de commande sont en retard ?",
+                      "Quels équipements sont à renouveler ?",
+                      "Prépare une synthèse pour la direction.",
+                    ].map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => setQuestion(prompt)}
+                        className="rounded-full border border-border-soft bg-background/40 px-2.5 py-1 text-[10px] text-muted transition-colors hover:border-primary/40 hover:text-foreground"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
                   </div>
-                  <Badge tone={statusTones[run.status] ?? "neutral"}>
-                    {run.status === "success"
-                      ? "OK"
-                      : run.status === "error"
-                        ? "Erreur"
-                        : run.status}
-                  </Badge>
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openAi(null, question.trim() || undefined)}
+                      disabled={!canUse}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Plein écran
+                    </Button>
+                    <Button type="submit" size="sm" disabled={!question.trim() || !canUse}>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Demander
+                    </Button>
+                  </div>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                <p className="text-[10px] leading-4 text-muted-2">
+                  Ctrl + Entrée pour envoyer. L'assistant ne modifie aucune donnée sans
+                  confirmation et respecte vos permissions.
+                </p>
+              </form>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="panel-sheen border-primary/20 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -788,6 +766,63 @@ export function AiHubPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="panel-sheen border-primary/20">
+        <CardHeader>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Historique récent
+            </p>
+            <h2 className="text-sm font-semibold text-foreground">
+              Vos dernières demandes IA
+            </h2>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Actualiser l'historique"
+            onClick={() => void runsQuery.refetch()}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+        </CardHeader>
+        <CardContent className="max-h-56 space-y-1.5 overflow-auto pt-2">
+          {runsQuery.isLoading ? (
+            <Skeleton className="h-16 rounded-lg" />
+          ) : runs.length === 0 ? (
+            <p className="py-3 text-center text-[11px] text-muted-2">
+              Aucune conversation enregistrée pour le moment.
+            </p>
+          ) : (
+            runs.slice(0, 8).map((run) => (
+              <div
+                key={run.id}
+                className="flex items-center justify-between gap-2 rounded-md border border-border-soft bg-background/40 px-2.5 py-1.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[10px] font-medium text-foreground">
+                    {run.request_summary || featureLabels[run.feature_code] || run.feature_code}
+                  </p>
+                  <p className="text-[9px] text-muted-2">
+                    {featureLabels[run.feature_code] ?? run.feature_code} ·{" "}
+                    {formatDateTime(run.created_at)}
+                    {run.duration_ms != null
+                      ? ` · ${formatNumber(run.duration_ms / 1000, 1)} s`
+                      : ""}
+                  </p>
+                </div>
+                <Badge tone={statusTones[run.status] ?? "neutral"}>
+                  {run.status === "success"
+                    ? "OK"
+                    : run.status === "error"
+                      ? "Erreur"
+                      : run.status}
+                </Badge>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-primary/20 bg-primary/5 p-4">
         <div className="flex items-start gap-3">

@@ -75,6 +75,13 @@ export const navigationSections: NavSection[] = [
     icon: BarChart3,
     items: [
       {
+        label: "Aujourd'hui",
+        to: "/aujourdhui",
+        icon: CalendarCheck,
+        permission: "dashboard.read",
+        moduleKey: "dashboard",
+      },
+      {
         label: "Statistiques",
         to: "/statistiques",
         icon: BarChart3,
