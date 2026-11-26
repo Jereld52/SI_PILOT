@@ -192,6 +192,35 @@ export interface DashboardToday {
   sections: TodaySection[];
 }
 
+export interface DataQualityItem {
+  id: string;
+  title: string;
+  detail: string | null;
+  severity: string;
+  href: string;
+  action_label: string;
+  permission: string | null;
+  module_key: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+}
+
+export interface DataQualitySection {
+  key: string;
+  label: string;
+  description: string;
+  items: DataQualityItem[];
+  total: number;
+  critical: number;
+}
+
+export interface DataQualityOverview {
+  generated_at: string;
+  total: number;
+  critical: number;
+  sections: DataQualitySection[];
+}
+
 export interface NotificationItem {
   id: string;
   type: string;

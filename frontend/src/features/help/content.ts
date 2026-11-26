@@ -242,6 +242,32 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "qualite-donnees",
+    title: "Qualité des données",
+    summary: "Détecter et corriger les anomalies du parc, des achats, des contrats et des imports.",
+    category: "exploitation",
+    tags: ["qualité", "anomalies", "doublons", "engagement", "contrats", "imports"],
+    blocks: [
+      p(
+        "Pilotage → Qualité des données regroupe les anomalies qui empêchent un suivi fiable ou une automatisation correcte.",
+      ),
+      list([
+        "Bons de commande sans numéro d'engagement.",
+        "Contrats actifs sans date de fin.",
+        "Équipements sans site ou sans affectation alors qu'ils sont en service.",
+        "Adresses IP ou MAC utilisées par plusieurs équipements.",
+        "Imports en erreur ou analysés depuis plus de 48 heures sans intégration.",
+      ]),
+      p(
+        "Chaque anomalie propose un lien direct vers l'écran concerné et une action : compléter, affecter, vérifier, réessayer ou finaliser.",
+      ),
+      note(
+        "info",
+        "La page est filtrée par les permissions et les modules actifs. Elle s'actualise toutes les cinq minutes et peut être rafraîchie manuellement.",
+      ),
+    ],
+  },
+  {
     slug: "profil-et-mot-de-passe",
     title: "Profil et mot de passe",
     summary: "Modifier son mot de passe et adopter les bonnes pratiques de sécurité.",

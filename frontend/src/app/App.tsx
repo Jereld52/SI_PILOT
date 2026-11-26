@@ -137,6 +137,11 @@ const TodayPage = lazy(() =>
     default: module.TodayPage,
   })),
 );
+const DataQualityPage = lazy(() =>
+  import("@/features/data-quality/DataQualityPage").then((module) => ({
+    default: module.DataQualityPage,
+  })),
+);
 const DocumentsPage = lazy(() =>
   import("@/features/documents/DocumentsPage").then((module) => ({
     default: module.DocumentsPage,
@@ -294,6 +299,15 @@ export function App() {
             element={
               <RequirePermission permission="dashboard.read">
                 <TodayPage />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="qualite-donnees"
+            element={
+              <RequirePermission permission="dashboard.read">
+                <DataQualityPage />
               </RequirePermission>
             }
           />

@@ -33,6 +33,9 @@ se configurent depuis l'administration.
 - **Page Aujourd'hui** : actions prioritaires tous modules confondus (demandes, achats, contrats,
   supervision, sécurité, arrivées, stock, budget, RGPD), avec liens directs et filtrage par
   permissions et modules actifs.
+- **Qualité des données** : détection des bons de commande sans engagement, contrats sans date de
+  fin, équipements sans site ou affectation, doublons IP/MAC et imports en erreur ou non finalisés,
+  avec liens de correction directs.
 - Référentiels, agents, parc informatique, affectations et imports CSV/XLSX.
 - **Nommage des équipements configurable** dans Administration → Paramètres : préfixe,
   catégorie, année, compteur annuel ou global, longueur du compteur et aperçu en direct.
@@ -250,6 +253,7 @@ configurée.
 - **Sauvegarde / restauration** : voir [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 - **Assistant IA et fournisseurs** : voir [`docs/ASSISTANT_IA.md`](docs/ASSISTANT_IA.md).
 - **OCR des documents** : voir [`docs/OCR.md`](docs/OCR.md).
+- **Contrôle qualité des données** : voir [`docs/DATA_QUALITY.md`](docs/DATA_QUALITY.md).
 - **Arrivées et départs** : voir [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 - **Réunions interparcs et rapports** : voir [`docs/MEETING_REPORTS.md`](docs/MEETING_REPORTS.md).
 - **Veille et planification** : voir [`docs/SCHEDULER.md`](docs/SCHEDULER.md).
