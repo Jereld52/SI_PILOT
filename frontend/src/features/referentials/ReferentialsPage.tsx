@@ -250,7 +250,6 @@ export function ReferentialsPage() {
                   <TableHead>Catégorie</TableHead>
                   <TableHead>Préfixe</TableHead>
                   <TableHead>Modèle de numérotation</TableHead>
-                  <TableHead>Séquence</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="w-10 text-right">Actions</TableHead>
                 </TableRow>
@@ -264,9 +263,6 @@ export function ReferentialsPage() {
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted">{category.tag_prefix ?? "—"}</TableCell>
                     <TableCell className="font-mono text-[10px] text-muted">{category.tag_template}</TableCell>
-                    <TableCell className="text-xs text-muted">
-                      {category.tag_sequence_mode === "global" ? "Continue" : "Annuelle"}
-                    </TableCell>
                     <TableCell>
                       <Badge tone={category.is_active ? "success" : "neutral"}>
                         {category.is_active ? "Active" : "Inactive"}

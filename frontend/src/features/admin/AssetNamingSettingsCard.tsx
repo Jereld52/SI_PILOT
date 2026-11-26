@@ -22,7 +22,6 @@ interface NamingDraft {
   enabled: boolean;
   scheme: AssetNamingSettings["scheme"];
   prefix: string;
-  sequence_mode: "year" | "global";
   sequence_length: number;
   template: string;
 }
@@ -30,16 +29,14 @@ interface NamingDraft {
 const SCHEME_TEMPLATES: Record<NamingDraft["scheme"], string> = {
   prefix_seq: "{PREFIX}-{SEQ}",
   prefix_category_seq: "{PREFIX}-{CATEGORY}-{SEQ}",
-  category_year_seq: "{CATEGORY}-{YEAR}-{SEQ}",
-  prefix_year_seq: "{PREFIX}-{YEAR}-{SEQ}",
+  category_seq: "{CATEGORY}-{SEQ}",
   custom: "{PREFIX}-{SEQ:4}",
 };
 
 const schemeLabels: Record<NamingDraft["scheme"], string> = {
   prefix_seq: "Préfixe + compteur · SI-0001",
   prefix_category_seq: "Préfixe + catégorie + compteur · SI-PC-0001",
-  category_year_seq: "Catégorie + année + compteur · PC-2026-0001",
-  prefix_year_seq: "Préfixe + année + compteur · SI-2026-0001",
+  category_seq: "Catégorie + compteur · PC-0001",
   custom: "Modèle personnalisé",
 };
 
@@ -51,11 +48,9 @@ function buildPreview(draft: NamingDraft, sample: AssetNamingSettings | undefine
           "{SEQ}",
           `{SEQ:${draft.sequence_length}}`,
         );
-  const year = String(new Date().getFullYear());
   return base
     .replaceAll("{PREFIX}", (draft.prefix || "SI").toUpperCase())
     .replaceAll("{CATEGORY}", sample?.sample_category_prefix ?? "PC")
-    .replaceAll("{YEAR}", year)
     .replace(/\{SEQ(?::(\d+))?\}/g, (_match, width: string | undefined) =>
       "1".padStart(Number(width ?? draft.sequence_length), "0"),
     );
@@ -76,7 +71,6 @@ export function AssetNamingSettingsCard({ canManage }: AssetNamingSettingsCardPr
       enabled: query.data.enabled,
       scheme: query.data.scheme,
       prefix: query.data.prefix,
-      sequence_mode: query.data.sequence_mode,
       sequence_length: query.data.sequence_length,
       template: query.data.template,
     });
@@ -121,7 +115,6 @@ export function AssetNamingSettingsCard({ canManage }: AssetNamingSettingsCardPr
     enabled: query.data?.enabled,
     scheme: query.data?.scheme,
     prefix: query.data?.prefix,
-    sequence_mode: query.data?.sequence_mode,
     sequence_length: query.data?.sequence_length,
     template: query.data?.template,
   });
@@ -214,23 +207,6 @@ export function AssetNamingSettingsCard({ canManage }: AssetNamingSettingsCardPr
               ))}
             </Select>
           </div>
-          <div>
-            <Label htmlFor="naming-mode">Compteur</Label>
-            <Select
-              id="naming-mode"
-              value={draft.sequence_mode}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  sequence_mode: event.target.value as "year" | "global",
-                })
-              }
-              disabled={!canManage || saveMutation.isPending}
-            >
-              <option value="year">Remis à zéro chaque année</option>
-              <option value="global">Continu, sans remise à zéro</option>
-            </Select>
-          </div>
           {draft.scheme === "custom" ? (
             <div className="sm:col-span-2 xl:col-span-3">
               <Label htmlFor="naming-template">Modèle personnalisé</Label>
@@ -240,13 +216,13 @@ export function AssetNamingSettingsCard({ canManage }: AssetNamingSettingsCardPr
                 onChange={(event) =>
                   setDraft({ ...draft, template: event.target.value })
                 }
-                placeholder="{PREFIX}-{CATEGORY}-{YEAR}-{SEQ:4}"
+                placeholder="{PREFIX}-{CATEGORY}-{SEQ:4}"
                 className="font-mono text-[11px]"
                 disabled={!canManage || saveMutation.isPending}
               />
               <p className="mt-1 text-[10px] text-muted-2">
-                Variables : {"{PREFIX}"}, {"{CATEGORY}"}, {"{YEAR}"}, {"{SEQ}"} ou{" "}
-                {"{SEQ:4}"}.
+                Variables : {"{PREFIX}"}, {"{CATEGORY}"}, {"{SEQ}"} ou{" "}
+                {"{SEQ:4}"}. Le compteur est continu, sans année.
               </p>
             </div>
           ) : null}

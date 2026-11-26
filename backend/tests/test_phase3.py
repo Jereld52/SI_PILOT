@@ -68,17 +68,20 @@ def test_referentials_and_custom_asset_naming(base_data):
     headers = base_data["headers"]
     categories = client.get("/api/v1/asset-categories").json()
     desktop = next(item for item in categories if item["code"] == "desktop")
+    original_template = desktop["tag_template"]
+    original_prefix = desktop["tag_prefix"]
+    original_sequence_mode = desktop["tag_sequence_mode"]
     response = client.patch(
         f"/api/v1/asset-categories/{desktop['id']}",
         headers=headers,
         json={
             "tag_prefix": "PC",
-            "tag_template": "PNFOR-PC-{YEAR}-{SEQ:3}",
-            "tag_sequence_mode": "year",
+            "tag_template": "PNFOR-PC-{SEQ:3}",
+            "tag_sequence_mode": "global",
         },
     )
     assert response.status_code == 200, response.text
-    assert response.json()["tag_template"] == "PNFOR-PC-{YEAR}-{SEQ:3}"
+    assert response.json()["tag_template"] == "PNFOR-PC-{SEQ:3}"
 
     preview = client.get("/api/v1/assets/next-tag", params={"category_id": desktop["id"]})
     assert preview.status_code == 200
@@ -107,6 +110,17 @@ def test_referentials_and_custom_asset_naming(base_data):
     assert history.status_code == 200
     assert len(history.json()) == 1
     assert history.json()[0]["agent_name"] == "Jean Test"
+
+    restored = client.patch(
+        f"/api/v1/asset-categories/{desktop['id']}",
+        headers=headers,
+        json={
+            "tag_prefix": original_prefix,
+            "tag_template": original_template,
+            "tag_sequence_mode": original_sequence_mode,
+        },
+    )
+    assert restored.status_code == 200, restored.text
 
 
 def test_agent_csv_import(base_data):
@@ -165,7 +179,7 @@ def test_asset_csv_import_and_duplicate(base_data):
     found = client.get("/api/v1/assets", params={"q": f"Imprimante {suffix}"})
     assert found.status_code == 200
     assert found.json()["total"] == 1
-    assert found.json()["items"][0]["asset_tag"].startswith("PNFOR-IMP-")
+    assert found.json()["items"][0]["asset_tag"].startswith("IMP-")
 
     duplicate = client.post(
         "/api/v1/imports/preview",

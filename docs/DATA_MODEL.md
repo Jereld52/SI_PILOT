@@ -10,8 +10,8 @@
 - États fixes en `VARCHAR` + `CHECK`; référentiels en tables dédiées.
 - Clés étrangères `RESTRICT` par défaut, `SET NULL` pour les liens facultatifs.
 - Suppression logique ou anonymisation pour les données sensibles.
-- `document_sequences` pour les références métier (`TCK-2026-000001`, etc.) et les numéros
-  d'inventaire (`asset:{categorie}`, remise à zéro annuelle ou séquence globale).
+- `document_sequences` pour les références métier (`DEM-26-0001`, etc.) et les numéros
+  d'inventaire (`asset:{categorie}`, compteur continu sans année).
 
 ## Domaines
 

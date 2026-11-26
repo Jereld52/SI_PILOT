@@ -265,19 +265,20 @@ export interface SettingItem {
 
 export interface AssetNamingSettings {
   enabled: boolean;
-  scheme:
-    | "prefix_seq"
-    | "prefix_category_seq"
-    | "category_year_seq"
-    | "prefix_year_seq"
-    | "custom";
+  scheme: "prefix_seq" | "prefix_category_seq" | "category_seq" | "custom";
   prefix: string;
-  sequence_mode: "year" | "global";
   sequence_length: number;
   template: string;
   preview: string;
   sample_category_code: string;
   sample_category_prefix: string;
+}
+
+export interface DocumentNumberingSettings {
+  scheme: "short_year" | "full_year" | "simple";
+  sequence_length: number;
+  preview: string;
+  sample_year: number;
 }
 
 export interface OcrSettings {
@@ -562,7 +563,6 @@ export interface AssetTagPreview {
   prefix: string | null;
   template: string;
   next_sequence: number;
-  year: number;
 }
 
 export interface ImportJob {

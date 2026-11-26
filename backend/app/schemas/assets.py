@@ -120,7 +120,6 @@ class AssetTagPreview(BaseModel):
     prefix: str | None = None
     template: str
     next_sequence: int
-    year: int
 
 
 class AssetAssignRequest(BaseModel):

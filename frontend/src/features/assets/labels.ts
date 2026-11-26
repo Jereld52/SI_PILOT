@@ -33,11 +33,15 @@ export const assetConditionTones: Record<string, "success" | "info" | "warning" 
 };
 
 export function renderTagPreview(template: string, prefix: string | null, code: string): string {
-  const year = new Date().getFullYear();
-  return template
+  const cleaned = template
+    .replace("{YEAR}-", "")
+    .replace("-{YEAR}", "")
+    .replace("{YEAR}", "")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return cleaned
     .replaceAll("{PREFIX}", (prefix || code).toUpperCase())
     .replaceAll("{CATEGORY}", code.toUpperCase())
-    .replaceAll("{YEAR}", String(year))
     .replace(/\{SEQ(?::(\d+))?\}/g, (_match, width: string | undefined) =>
       "1".padStart(Number(width || 4), "0"),
     );

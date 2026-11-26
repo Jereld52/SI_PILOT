@@ -340,8 +340,8 @@ def seed_reference_data(db: Session) -> dict[str, int]:
                 "requires_network_fields": network,
                 "default_life_months": life_months,
                 "tag_prefix": prefix,
-                "tag_template": "PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
-                "tag_sequence_mode": "year",
+                "tag_template": "{PREFIX}-{SEQ:4}",
+                "tag_sequence_mode": "global",
             },
         )
         stats["categories"] += 1

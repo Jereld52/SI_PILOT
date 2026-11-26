@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { BrandingSettingsCard } from "@/features/admin/BrandingSettingsCard";
 import { AssetNamingSettingsCard } from "@/features/admin/AssetNamingSettingsCard";
+import { DocumentNumberingSettingsCard } from "@/features/admin/DocumentNumberingSettingsCard";
 import { OcrSettingsCard } from "@/features/admin/OcrSettingsCard";
 import { SmtpSettingsCard } from "@/features/admin/SmtpSettingsCard";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -58,6 +59,11 @@ const OCR_KEYS = new Set([
   "ocr.max_pages",
   "ocr.dpi",
   "ocr.tessdata_dir",
+]);
+
+const DOCUMENT_NUMBERING_KEYS = new Set([
+  "documents.numbering_scheme",
+  "documents.numbering_sequence_length",
 ]);
 
 function toInputValue(value: unknown): string {
@@ -117,6 +123,7 @@ export function SettingsPage() {
       if (
         BRANDING_KEYS.has(setting.key) ||
         ASSET_NAMING_KEYS.has(setting.key) ||
+        DOCUMENT_NUMBERING_KEYS.has(setting.key) ||
         OCR_KEYS.has(setting.key) ||
         setting.key.startsWith("smtp.") ||
         setting.key.startsWith("scheduler.") ||
@@ -176,6 +183,8 @@ export function SettingsPage() {
       <BrandingSettingsCard canManage={canManage} />
 
       <AssetNamingSettingsCard canManage={canManage} />
+
+      <DocumentNumberingSettingsCard canManage={canManage} />
 
       <OcrSettingsCard canManage={canManage} />
 

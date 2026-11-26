@@ -24,9 +24,19 @@ from app.schemas.auth import (
     UserUpdateRequest,
 )
 from app.schemas.common import MessageResponse, Page
+from app.schemas.document_numbering import (
+    DocumentNumberingRead,
+    DocumentNumberingUpdate,
+)
 from app.schemas.mail import SmtpSettingsRead, SmtpSettingsUpdate, SmtpTestRequest
 from app.schemas.ocr import OcrSettingsRead, OcrSettingsUpdate
-from app.services import asset_naming_service, auth_service, email_service, ocr_service
+from app.services import (
+    asset_naming_service,
+    auth_service,
+    document_numbering_service,
+    email_service,
+    ocr_service,
+)
 from app.services.audit_service import write_audit
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
@@ -353,6 +363,26 @@ def update_asset_naming_settings(
     db: Session = Depends(get_db),
 ) -> AssetNamingRead:
     return asset_naming_service.update_settings(
+        db, payload, actor=actor, request=request
+    )
+
+
+@router.get("/settings/document-numbering", response_model=DocumentNumberingRead)
+def get_document_numbering_settings(
+    _: User = Depends(require_permission("admin.settings.read")),
+    db: Session = Depends(get_db),
+) -> DocumentNumberingRead:
+    return document_numbering_service.read_settings(db)
+
+
+@router.put("/settings/document-numbering", response_model=DocumentNumberingRead)
+def update_document_numbering_settings(
+    payload: DocumentNumberingUpdate,
+    request: Request,
+    actor: User = Depends(require_permission("admin.settings.manage")),
+    db: Session = Depends(get_db),
+) -> DocumentNumberingRead:
+    return document_numbering_service.update_settings(
         db, payload, actor=actor, request=request
     )
 

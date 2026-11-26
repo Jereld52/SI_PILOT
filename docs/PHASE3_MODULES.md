@@ -22,7 +22,7 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 - Module dédié aux accessoires et consommables : claviers, souris, écrans, casques, stations
   d'accueil, webcams, câbles, adaptateurs, toners, papier, batteries et divers.
-- Fiche article : référence interne automatique `STK-AAAA-NNNN`, catégorie, marque, modèle,
+- Fiche article : référence interne automatique `STK-AA-NNNN`, catégorie, marque, modèle,
   fournisseur, emplacement, unité, quantité, seuil d'alerte, prix unitaire et notes.
 - Quantité mise à jour uniquement par mouvements :
   - entrée en stock ;
@@ -278,7 +278,7 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 ## Demandes IT et interventions
 
-- Références automatiques `DEM-AAAA-NNNN` et `INT-AAAA-NNNN`.
+- Références automatiques `DEM-AA-NNNN` et `INT-AA-NNNN`.
 - Cycle de vie : nouveau, à qualifier, en cours, en attente, résolu, clos.
 - Priorités avec délais de réponse et de résolution ; échéance calculée automatiquement.
 - Assignation à un utilisateur, commentaires publics ou internes, temps passé.
@@ -362,7 +362,7 @@ Cette tranche complète les modules métier livrés après le socle et l'inventa
 
 ## Cybersécurité
 
-- Incidents : référence `INC-AAAA-NNNN`, gravité, catégorie, détection, responsable, mesures,
+- Incidents : référence `INC-AA-NNNN`, gravité, catégorie, détection, responsable, mesures,
   retour d'expérience et clôture sans suppression.
 - Actions correctives ou préventives : priorité, échéance, responsable, preuve et rattachement
   à un incident ou à un équipement.

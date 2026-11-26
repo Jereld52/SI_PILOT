@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import secrets
-from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
@@ -42,9 +41,9 @@ def render_asset_tag(
     *,
     prefix: str | None,
     category_code: str,
-    year: int,
     sequence: int,
 ) -> str:
+    template = asset_naming_service.strip_year_tokens(template)
     if "{SEQ" not in template:
         raise ValidationAppError(
             "Le modèle de nommage doit contenir {SEQ} ou {SEQ:4}.",
@@ -55,18 +54,15 @@ def render_asset_tag(
         width = int(match.group(1) or 4)
         return str(sequence).zfill(width)
 
-    result = (
-        template.replace("{PREFIX}", (prefix or category_code).upper())
-        .replace("{CATEGORY}", category_code.upper())
-        .replace("{YEAR}", str(year))
+    result = template.replace("{PREFIX}", (prefix or category_code).upper()).replace(
+        "{CATEGORY}", category_code.upper()
     )
     result = re.sub(r"\{SEQ(?::(\d+))?\}", replace_sequence, result)
     return result.strip()
 
 
 def _sequence_scope(category: AssetCategory) -> tuple[str, int]:
-    year = date.today().year if category.tag_sequence_mode != "global" else 0
-    return f"asset:{category.code}", year
+    return f"asset:{category.code}", 0
 
 
 def peek_asset_tag(db: Session, category: AssetCategory) -> AssetTagPreview:
@@ -87,7 +83,6 @@ def peek_asset_tag(db: Session, category: AssetCategory) -> AssetTagPreview:
         tag = asset_naming_service.render_tag(
             config,
             category,
-            year=date.today().year,
             sequence=next_sequence,
         )
         prefix = config.prefix
@@ -97,7 +92,6 @@ def peek_asset_tag(db: Session, category: AssetCategory) -> AssetTagPreview:
             category.tag_template,
             prefix=category.tag_prefix,
             category_code=category.code,
-            year=date.today().year,
             sequence=next_sequence,
         )
         prefix = category.tag_prefix
@@ -107,7 +101,6 @@ def peek_asset_tag(db: Session, category: AssetCategory) -> AssetTagPreview:
         prefix=prefix,
         template=template,
         next_sequence=next_sequence,
-        year=date.today().year,
     )
 
 
@@ -136,14 +129,12 @@ def generate_asset_tag(db: Session, category: AssetCategory) -> str:
         return asset_naming_service.render_tag(
             config,
             category,
-            year=date.today().year,
             sequence=value,
         )
     return render_asset_tag(
         category.tag_template,
         prefix=category.tag_prefix,
         category_code=category.code,
-        year=date.today().year,
         sequence=value,
     )
 

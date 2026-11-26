@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { renderTagPreview } from "@/features/assets/labels";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -31,8 +30,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
     code: "",
     name: "",
     tag_prefix: "",
-    tag_template: "PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
-    tag_sequence_mode: "year",
+    tag_template: "{PREFIX}-{SEQ:4}",
     default_life_months: "60",
     is_workstation: false,
     is_infrastructure: false,
@@ -48,8 +46,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
       code: category?.code ?? "",
       name: category?.name ?? "",
       tag_prefix: category?.tag_prefix ?? "",
-      tag_template: category?.tag_template ?? "PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
-      tag_sequence_mode: category?.tag_sequence_mode ?? "year",
+      tag_template: category?.tag_template ?? "{PREFIX}-{SEQ:4}",
       default_life_months: String(category?.default_life_months ?? 60),
       is_workstation: category?.is_workstation ?? false,
       is_infrastructure: category?.is_infrastructure ?? false,
@@ -64,7 +61,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
 
   const label = category?.name ?? form.name ?? "Catégorie";
   const preview = renderTagPreview(
-    form.tag_template || "PNFOR-{PREFIX}-{YEAR}-{SEQ:4}",
+    form.tag_template || "{PREFIX}-{SEQ:4}",
     form.tag_prefix || form.code || "CAT",
     form.code || "categorie",
   );
@@ -82,6 +79,10 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
       setError("Le modèle de nommage doit contenir {SEQ} ou {SEQ:4}.");
       return;
     }
+    if (form.tag_template.includes("{YEAR}")) {
+      setError("Le nommage des équipements ne doit pas contenir d'année.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -89,7 +90,6 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
         name: form.name,
         tag_prefix: form.tag_prefix || null,
         tag_template: form.tag_template,
-        tag_sequence_mode: form.tag_sequence_mode,
         default_life_months: Number(form.default_life_months) || 0,
         is_workstation: form.is_workstation,
         is_infrastructure: form.is_infrastructure,
@@ -160,7 +160,8 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
                 </p>
                 <p className="mt-0.5 font-mono text-sm text-foreground">{preview}</p>
                 <p className="mt-1 text-[10px] text-muted-2">
-                  Variables disponibles : {"{PREFIX}"}, {"{YEAR}"}, {"{SEQ}"} ou {"{SEQ:4}"}.
+                  Variables disponibles : {"{PREFIX}"}, {"{CATEGORY}"}, {"{SEQ}"} ou{" "}
+                  {"{SEQ:4}"}.
                 </p>
               </div>
             </div>
@@ -176,16 +177,10 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
                 placeholder="PC"
               />
             </div>
-            <div>
-              <Label htmlFor="category-sequence">Séquence</Label>
-              <Select
-                id="category-sequence"
-                value={form.tag_sequence_mode}
-                onChange={(event) => update("tag_sequence_mode", event.target.value)}
-              >
-                <option value="year">Remise à zéro chaque année</option>
-                <option value="global">Séquence continue</option>
-              </Select>
+            <div className="flex items-end pb-2">
+              <p className="text-[10px] text-muted-2">
+                Le compteur est continu et ne contient pas d'année.
+              </p>
             </div>
           </div>
 
@@ -198,7 +193,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSaved }: Catego
               className="font-mono text-xs"
             />
             <p className="mt-1 text-[10px] text-muted-2">
-              Exemple : PNFOR-PC-{"{YEAR}"}-{"{SEQ:4}"} → PNFOR-PC-2026-0001
+              Exemple : {"{PREFIX}"}-{"{SEQ:4}"} → PC-0001
             </p>
           </div>
 

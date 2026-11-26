@@ -1,5 +1,6 @@
 import io
 import uuid
+from datetime import date
 
 from openpyxl import Workbook
 
@@ -209,7 +210,8 @@ def test_wapt_csv_import(admin_client, csrf_headers):
     assert found.json()["total"] == 1
     asset = found.json()["items"][0]
     assert asset["external_id"]
-    assert asset["asset_tag"].startswith("PNFOR-PC-")
+    assert asset["asset_tag"]
+    assert str(date.today().year) not in asset["asset_tag"]
     assert asset["hostname"] == f"pc-test-{suffix}.ecb.pn.local"
 
     detail = client.get(f"/api/v1/assets/{asset['id']}")

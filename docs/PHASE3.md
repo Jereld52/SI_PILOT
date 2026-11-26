@@ -35,10 +35,11 @@
 Chaque catégorie possède :
 
 - `tag_prefix` : préfixe, par exemple `PC`, `PORT`, `IMP` ;
-- `tag_template` : modèle, par exemple `PNFOR-{PREFIX}-{YEAR}-{SEQ:4}` ;
-- `tag_sequence_mode` : `year` (remise à zéro annuelle) ou `global`.
+- `tag_template` : modèle, par exemple `{PREFIX}-{SEQ:4}` ;
+- `tag_sequence_mode` : conservé pour compatibilité, le compteur est désormais continu.
 
-Variables : `{PREFIX}`, `{CATEGORY}`, `{YEAR}`, `{SEQ}` ou `{SEQ:4}`.
+Variables : `{PREFIX}`, `{CATEGORY}`, `{SEQ}` ou `{SEQ:4}`. L'année n'est plus utilisée dans le
+nommage des équipements.
 Le modèle doit contenir `{SEQ...}` pour garantir l'unicité. Les numéros existants ne sont jamais
 modifiés lorsqu'un modèle change.
 
@@ -46,10 +47,10 @@ Exemples par défaut :
 
 | Catégorie | Préfixe | Numéro |
 |---|---|---|
-| PC fixe | PC | `PNFOR-PC-2026-0001` |
-| PC portable | PORT | `PNFOR-PORT-2026-0001` |
-| Imprimante | IMP | `PNFOR-IMP-2026-0001` |
-| Serveur | SRV | `PNFOR-SRV-2026-0001` |
+| PC fixe | PC | `PC-0001` |
+| PC portable | PORT | `PORT-0001` |
+| Imprimante | IMP | `IMP-0001` |
+| Serveur | SRV | `SRV-0001` |
 
 ### Téléphonie mobile
 

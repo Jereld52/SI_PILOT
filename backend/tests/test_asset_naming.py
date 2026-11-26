@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 
 def _desktop_category(client):
@@ -22,7 +23,6 @@ def test_asset_naming_settings_and_generation(admin_client, csrf_headers):
             "enabled": True,
             "scheme": "prefix_seq",
             "prefix": "TST",
-            "sequence_mode": "global",
             "sequence_length": 3,
             "template": "{PREFIX}-{SEQ:4}",
         },
@@ -31,6 +31,7 @@ def test_asset_naming_settings_and_generation(admin_client, csrf_headers):
     body = updated.json()
     assert body["enabled"] is True
     assert body["preview"].startswith("TST-")
+    assert str(date.today().year) not in body["preview"]
 
     preview = client.get(
         "/api/v1/assets/next-tag", params={"category_id": category["id"]}
@@ -58,12 +59,24 @@ def test_asset_naming_settings_and_generation(admin_client, csrf_headers):
             "enabled": True,
             "scheme": "custom",
             "prefix": "TST",
-            "sequence_mode": "year",
             "sequence_length": 4,
             "template": "SANS-COMPTEUR",
         },
     )
     assert invalid.status_code == 422, invalid.text
+
+    with_year = client.put(
+        "/api/v1/admin/settings/asset-naming",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "scheme": "custom",
+            "prefix": "TST",
+            "sequence_length": 4,
+            "template": "{PREFIX}-{YEAR}-{SEQ:4}",
+        },
+    )
+    assert with_year.status_code == 422, with_year.text
 
     restored = client.put(
         "/api/v1/admin/settings/asset-naming",
@@ -72,7 +85,6 @@ def test_asset_naming_settings_and_generation(admin_client, csrf_headers):
             "enabled": False,
             "scheme": "prefix_seq",
             "prefix": "TST",
-            "sequence_mode": "year",
             "sequence_length": 4,
             "template": "{PREFIX}-{SEQ:4}",
         },

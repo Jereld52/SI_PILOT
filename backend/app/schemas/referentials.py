@@ -88,8 +88,8 @@ class AssetCategoryCreate(BaseModel):
     requires_network_fields: bool = False
     default_life_months: int = Field(default=60, ge=0, le=240)
     tag_prefix: str | None = Field(default=None, max_length=20)
-    tag_template: str = Field(default="PNFOR-{PREFIX}-{YEAR}-{SEQ:4}", max_length=120)
-    tag_sequence_mode: Literal["year", "global"] = "year"
+    tag_template: str = Field(default="{PREFIX}-{SEQ:4}", max_length=120)
+    tag_sequence_mode: Literal["year", "global"] = "global"
     is_active: bool = True
     sort_order: int = 0
 
@@ -98,6 +98,8 @@ class AssetCategoryCreate(BaseModel):
     def template_has_sequence(cls, value: str) -> str:
         if "{SEQ" not in value:
             raise ValueError("Le modèle doit contenir {SEQ} ou {SEQ:4} pour garantir l'unicité.")
+        if "{YEAR}" in value:
+            raise ValueError("Le nommage des équipements ne doit pas contenir d'année.")
         return value
 
 
@@ -119,6 +121,8 @@ class AssetCategoryUpdate(BaseModel):
     def template_has_sequence(cls, value: str | None) -> str | None:
         if value is not None and "{SEQ" not in value:
             raise ValueError("Le modèle doit contenir {SEQ} ou {SEQ:4} pour garantir l'unicité.")
+        if value is not None and "{YEAR}" in value:
+            raise ValueError("Le nommage des équipements ne doit pas contenir d'année.")
         return value
 
 

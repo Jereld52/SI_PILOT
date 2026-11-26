@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date
 from typing import Any, Literal
 
 from app.core.errors import ValidationAppError
@@ -18,22 +17,19 @@ from sqlalchemy.orm import Session
 AssetNamingScheme = Literal[
     "prefix_seq",
     "prefix_category_seq",
-    "category_year_seq",
-    "prefix_year_seq",
+    "category_seq",
     "custom",
 ]
 
 SCHEME_TEMPLATES: dict[str, str] = {
     "prefix_seq": "{PREFIX}-{SEQ}",
     "prefix_category_seq": "{PREFIX}-{CATEGORY}-{SEQ}",
-    "category_year_seq": "{CATEGORY}-{YEAR}-{SEQ}",
-    "prefix_year_seq": "{PREFIX}-{YEAR}-{SEQ}",
+    "category_seq": "{CATEGORY}-{SEQ}",
     "custom": "{PREFIX}-{SEQ}",
 }
 
 DEFAULT_PREFIX = "SI"
 DEFAULT_SEQUENCE_LENGTH = 4
-DEFAULT_SEQUENCE_MODE = "year"
 
 
 @dataclass(frozen=True)
@@ -41,16 +37,22 @@ class AssetNamingConfig:
     enabled: bool
     scheme: AssetNamingScheme
     prefix: str
-    sequence_mode: Literal["year", "global"]
     sequence_length: int
     template: str
 
     @property
     def effective_template(self) -> str:
         if self.scheme == "custom":
-            return self.template
+            return strip_year_tokens(self.template)
         base = SCHEME_TEMPLATES.get(self.scheme, SCHEME_TEMPLATES["prefix_seq"])
         return base.replace("{SEQ}", f"{{SEQ:{self.sequence_length}}}")
+
+
+def strip_year_tokens(template: str) -> str:
+    """Retire toute référence à l'année d'un modèle de nommage d'équipement."""
+    result = template.replace("{YEAR}-", "").replace("-{YEAR}", "").replace("{YEAR}", "")
+    result = re.sub(r"-{2,}", "-", result).strip("- ")
+    return result or "{PREFIX}-{SEQ:4}"
 
 
 def _value(db: Session, key: str, default: Any) -> Any:
@@ -60,6 +62,11 @@ def _value(db: Session, key: str, default: Any) -> Any:
 
 def _normalize_scheme(value: Any) -> AssetNamingScheme:
     scheme = str(value or "prefix_seq")
+    legacy = {
+        "prefix_year_seq": "prefix_seq",
+        "category_year_seq": "category_seq",
+    }
+    scheme = legacy.get(scheme, scheme)
     if scheme not in SCHEME_TEMPLATES:
         return "prefix_seq"
     return scheme  # type: ignore[return-value]
@@ -71,12 +78,6 @@ def get_config(db: Session) -> AssetNamingConfig:
         scheme=_normalize_scheme(_value(db, "assets.naming_scheme", "prefix_seq")),
         prefix=str(_value(db, "assets.naming_prefix", DEFAULT_PREFIX)).strip()
         or DEFAULT_PREFIX,
-        sequence_mode=(
-            "global"
-            if str(_value(db, "assets.naming_sequence_mode", DEFAULT_SEQUENCE_MODE))
-            == "global"
-            else "year"
-        ),
         sequence_length=max(
             1,
             min(
@@ -90,10 +91,10 @@ def get_config(db: Session) -> AssetNamingConfig:
                 ),
             ),
         ),
-        template=str(
-            _value(db, "assets.naming_template", "{PREFIX}-{SEQ:4}")
-        ).strip()
-        or "{PREFIX}-{SEQ:4}",
+        template=strip_year_tokens(
+            str(_value(db, "assets.naming_template", "{PREFIX}-{SEQ:4}")).strip()
+            or "{PREFIX}-{SEQ:4}"
+        ),
     )
 
 
@@ -101,13 +102,17 @@ def render_tag(
     config: AssetNamingConfig,
     category: AssetCategory | None,
     *,
-    year: int,
     sequence: int,
 ) -> str:
     template = config.effective_template
     if "{SEQ" not in template:
         raise ValidationAppError(
             "Le modèle de nommage doit contenir {SEQ} ou {SEQ:4}.",
+            code="INVALID_TAG_TEMPLATE",
+        )
+    if "{YEAR}" in template:
+        raise ValidationAppError(
+            "Le nommage des équipements ne doit pas contenir d'année.",
             code="INVALID_TAG_TEMPLATE",
         )
     category_prefix = (
@@ -118,10 +123,8 @@ def render_tag(
         width = int(match.group(1) or config.sequence_length)
         return str(sequence).zfill(width)
 
-    result = (
-        template.replace("{PREFIX}", config.prefix.upper())
-        .replace("{CATEGORY}", category_prefix)
-        .replace("{YEAR}", str(year))
+    result = template.replace("{PREFIX}", config.prefix.upper()).replace(
+        "{CATEGORY}", category_prefix
     )
     result = re.sub(r"\{SEQ(?::(\d+))?\}", replace_sequence, result)
     return result.strip()
@@ -134,8 +137,7 @@ def sequence_scope(
         key = f"asset:global:{category.code}"
     else:
         key = "asset:global"
-    year = date.today().year if config.sequence_mode == "year" else 0
-    return key, year
+    return key, 0
 
 
 def _sample_category(db: Session) -> AssetCategory | None:
@@ -152,14 +154,12 @@ def read_settings(db: Session) -> AssetNamingRead:
     preview = render_tag(
         config,
         category,
-        year=date.today().year,
         sequence=1,
     )
     return AssetNamingRead(
         enabled=config.enabled,
         scheme=config.scheme,
         prefix=config.prefix,
-        sequence_mode=config.sequence_mode,
         sequence_length=config.sequence_length,
         template=config.template,
         preview=preview,
@@ -182,21 +182,26 @@ def update_settings(
             "Le modèle personnalisé doit contenir {SEQ} ou {SEQ:4}.",
             code="INVALID_TAG_TEMPLATE",
         )
+    if "{YEAR}" in payload.template:
+        raise ValidationAppError(
+            "Le nommage des équipements ne doit pas contenir d'année.",
+            code="INVALID_TAG_TEMPLATE",
+        )
     cleaned_prefix = payload.prefix.strip() or DEFAULT_PREFIX
     before = read_settings(db)
     values = {
         "assets.naming_enabled": payload.enabled,
         "assets.naming_scheme": payload.scheme,
         "assets.naming_prefix": cleaned_prefix,
-        "assets.naming_sequence_mode": payload.sequence_mode,
         "assets.naming_sequence_length": payload.sequence_length,
-        "assets.naming_template": payload.template.strip() or "{PREFIX}-{SEQ:4}",
+        "assets.naming_template": strip_year_tokens(
+            payload.template.strip() or "{PREFIX}-{SEQ:4}"
+        ),
     }
     descriptions = {
         "assets.naming_enabled": "Utiliser un nommage global simplifié pour les équipements",
         "assets.naming_scheme": "Modèle de nommage global des équipements",
         "assets.naming_prefix": "Préfixe global des numéros d'inventaire",
-        "assets.naming_sequence_mode": "Compteur annuel ou global",
         "assets.naming_sequence_length": "Nombre de chiffres du compteur",
         "assets.naming_template": "Modèle personnalisé du numéro d'inventaire",
     }
