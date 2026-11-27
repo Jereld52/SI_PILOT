@@ -128,6 +128,7 @@ class AiToolInfo(BaseModel):
     label: str
     description: str
     permission: str
+    domain: str = "general"
 
 
 class AiRunRead(BaseModel):

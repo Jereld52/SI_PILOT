@@ -2320,6 +2320,7 @@ export interface AiToolInfo {
   label: string;
   description: string;
   permission: string;
+  domain: string;
 }
 
 export interface AiRunItem {

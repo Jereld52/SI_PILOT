@@ -9,8 +9,10 @@ import {
   FileText,
   FileUp,
   History,
+  LayoutGrid,
   LifeBuoy,
   MonitorSmartphone,
+  Plug,
   RefreshCw,
   Search,
   Server,
@@ -20,6 +22,8 @@ import {
   Sparkles,
   Users,
   Wallet,
+  Wrench,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -33,6 +37,11 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  actionCapabilities,
+  aiIntegrations,
+  groupTools,
+} from "@/features/ai/aiCatalog";
 import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
@@ -414,6 +423,25 @@ export function AiHubPage() {
   const tools = toolsQuery.data ?? [];
   const runs = runsQuery.data ?? [];
 
+  const toolGroups = useMemo(() => groupTools(tools), [tools]);
+  const availableActions = useMemo(
+    () => actionCapabilities.filter((action) => hasPermission(action.permission)),
+    [hasPermission],
+  );
+  const availableIntegrations = useMemo(
+    () =>
+      aiIntegrations.filter(
+        (integration) =>
+          hasPermission(integration.permission) &&
+          (!integration.moduleKey || isEnabled(integration.moduleKey)),
+      ),
+    [hasPermission, isEnabled],
+  );
+  const availableIntegrationKeys = useMemo(
+    () => new Set(availableIntegrations.map((integration) => integration.key)),
+    [availableIntegrations],
+  );
+
   const filteredGroups = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return shortcutGroups
@@ -437,47 +465,54 @@ export function AiHubPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/20 via-surface to-accent/10 p-5 shadow-2xl sm:p-7">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
+    <div className="space-y-6">
+      <section
+        id="conversation"
+        className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/25 via-surface to-accent/15 p-6 shadow-2xl sm:p-10"
+      >
+        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-accent/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
-        <div className="relative flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-primary/30 bg-primary/20 text-primary-strong shadow-lg">
-                <Sparkles className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-accent" />
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/20 text-primary-strong shadow-xl">
+                <Sparkles className="h-7 w-7" />
+                <span className="absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full bg-accent" />
               </span>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
                   Assistant IA
                 </p>
-                <p className="text-[10px] text-muted">Votre copilote SI PILOT</p>
+                <p className="text-xs text-muted">Votre copilote SI PILOT</p>
               </div>
             </div>
-            <h1 className="mt-4 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Que voulez-vous simplifier aujourd'hui ?
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Analysez le parc, les achats, les contrats, l'infrastructure, la sécurité,
-              les documents et le pilotage. L'assistant choisit les outils, résume les
-              données et propose des actions à confirmer.
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted sm:text-base">
+              Un espace de travail unique pour analyser le parc, les achats, les contrats,
+              l'infrastructure, la sécurité, les documents et le pilotage. L'assistant choisit
+              les outils, résume les données et propose des actions à confirmer.
             </p>
-            <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] text-muted">
-              <span className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1">
+            <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-muted">
+              <span className="rounded-full border border-border-soft bg-background/50 px-3 py-1.5">
                 Fournisseur{" "}
                 <strong className="text-foreground">{status?.provider || "—"}</strong>
               </span>
-              <span className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1">
+              <span className="rounded-full border border-border-soft bg-background/50 px-3 py-1.5">
                 Modèle <strong className="text-foreground">{status?.model || "—"}</strong>
               </span>
-              <span className="rounded-full border border-border-soft bg-background/50 px-2.5 py-1">
+              <span className="rounded-full border border-border-soft bg-background/50 px-3 py-1.5">
                 {tools.length} outil(s)
+              </span>
+              <span className="rounded-full border border-border-soft bg-background/50 px-3 py-1.5">
+                {availableIntegrations.length} intégration(s)
               </span>
               <span
                 className={cn(
-                  "rounded-full border px-2.5 py-1",
+                  "rounded-full border px-3 py-1.5",
                   status?.enabled && status.configured
                     ? "border-success/30 bg-success/10 text-success"
                     : "border-warning/30 bg-warning/10 text-warning",
@@ -488,14 +523,14 @@ export function AiHubPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="md" onClick={() => openAi(null, undefined)}>
+            <Button size="lg" onClick={() => openAi(null, undefined)}>
               <Sparkles className="h-4 w-4" />
-              Ouvrir l'assistant
+              Ouvrir l'espace IA
             </Button>
             {canImport ? (
               <Link
                 to="/import-documents"
-                className={buttonVariants({ variant: "secondary", size: "md" })}
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
               >
                 <FileUp className="h-4 w-4" />
                 Import intelligent
@@ -504,7 +539,7 @@ export function AiHubPage() {
             {canConfigure ? (
               <Link
                 to="/admin/ai"
-                className={buttonVariants({ variant: "secondary", size: "md" })}
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
               >
                 <Settings className="h-4 w-4" />
                 Configuration
@@ -529,13 +564,13 @@ export function AiHubPage() {
             submitQuestion();
           }}
         >
-          <div className="rounded-2xl border border-primary/20 bg-background/75 p-3 shadow-2xl backdrop-blur">
+          <div className="rounded-2xl border border-primary/20 bg-background/75 p-4 shadow-2xl backdrop-blur">
             <Textarea
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              rows={6}
+              rows={8}
               placeholder="Exemple : analyse les achats, les livraisons en retard et les bons de commande sans engagement. Propose un plan d'action."
-              className="min-h-[160px] resize-y border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
+              className="min-h-[200px] resize-y border-0 bg-transparent text-base shadow-none focus-visible:ring-0 sm:text-lg"
               onKeyDown={(event) => {
                 if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
                   event.preventDefault();
@@ -641,7 +676,40 @@ export function AiHubPage() {
         </div>
       </section>
 
-      <Card className="panel-sheen border-primary/20 p-4">
+      <Card className="sticky top-2 z-20 border-primary/20 bg-surface/90 p-2 shadow-lg backdrop-blur">
+        <nav className="flex flex-wrap items-center gap-1">
+          {[
+            { href: "#conversation", label: "Conversation", icon: Sparkles },
+            { href: "#raccourcis", label: "Raccourcis", icon: Zap },
+            { href: "#outils", label: "Outils", icon: Wrench },
+            { href: "#actions", label: "Actions", icon: LayoutGrid },
+            { href: "#integrations", label: "Intégrations", icon: Plug },
+            { href: "#historique", label: "Historique", icon: History },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {item.label}
+              </a>
+            );
+          })}
+          <Button
+            size="sm"
+            className="ml-auto"
+            onClick={() => openAi(null, undefined)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Ouvrir en plein écran
+          </Button>
+        </nav>
+      </Card>
+
+      <Card id="raccourcis" className="panel-sheen border-primary/20 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
@@ -737,42 +805,130 @@ export function AiHubPage() {
         </div>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <Card id="outils" className="panel-sheen border-primary/20">
+        <CardHeader>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Catalogue
+            </p>
+            <h2 className="text-base font-semibold text-foreground">
+              Tous les outils de l'assistant
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              {tools.length} outil(s) de lecture accessibles avec vos permissions, classés par
+              domaine.
+            </p>
+          </div>
+          <Cpu className="h-4 w-4 text-accent" />
+        </CardHeader>
+        <CardContent className="space-y-5 pt-3">
+          {toolsQuery.isLoading ? (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              <Skeleton className="h-24 rounded-xl" />
+              <Skeleton className="h-24 rounded-xl" />
+              <Skeleton className="h-24 rounded-xl" />
+            </div>
+          ) : toolGroups.length === 0 ? (
+            <p className="py-4 text-center text-[11px] text-muted-2">
+              Aucun outil accessible. Vérifiez vos permissions.
+            </p>
+          ) : (
+            toolGroups.map((group) => {
+              const GroupIcon = group.icon;
+              return (
+                <section key={group.key} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-soft bg-background/40 text-accent">
+                      <GroupIcon className="h-3.5 w-3.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                      <p className="text-[10px] text-muted-2">{group.description}</p>
+                    </div>
+                    <Badge tone="neutral" className="ml-auto text-[9px]">
+                      {group.tools.length}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    {group.tools.map((tool) => (
+                      <div
+                        key={tool.key}
+                        className="rounded-xl border border-border-soft bg-background/40 p-3 transition-colors hover:border-primary/30"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-semibold text-foreground">{tool.label}</p>
+                          <Badge tone="neutral" className="text-[9px]">
+                            Lecture
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-[10px] leading-4 text-muted">
+                          {tool.description}
+                        </p>
+                        <p className="mt-2 font-mono text-[9px] text-muted-2">
+                          {tool.permission}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      <div id="actions" className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <Card className="panel-sheen border-primary/20">
           <CardHeader>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-                Capacités
+                Actions assistées
               </p>
-              <h2 className="text-sm font-semibold text-foreground">Outils disponibles</h2>
+              <h2 className="text-base font-semibold text-foreground">
+                Ce que l'assistant peut préparer
+              </h2>
               <p className="mt-1 text-xs text-muted">
-                Outils de lecture accessibles avec vos permissions.
+                {availableActions.length} action(s) disponible(s). Rien n'est enregistré sans
+                votre confirmation.
               </p>
             </div>
-            <Cpu className="h-4 w-4 text-accent" />
+            <LayoutGrid className="h-4 w-4 text-accent" />
           </CardHeader>
-          <CardContent className="pt-3">
-            {toolsQuery.isLoading ? (
-              <Skeleton className="h-24 rounded-lg" />
-            ) : tools.length === 0 ? (
-              <p className="py-4 text-center text-[11px] text-muted-2">
-                Aucun outil accessible. Vérifiez vos permissions.
-              </p>
-            ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {tools.map((tool) => (
-                  <div
-                    key={tool.key}
-                    className="rounded-lg border border-border-soft bg-background/40 px-2.5 py-2"
-                  >
-                    <p className="text-[11px] font-medium text-foreground">{tool.label}</p>
-                    <p className="mt-0.5 text-[9px] leading-4 text-muted-2">
-                      {tool.description}
-                    </p>
+          <CardContent className="grid gap-2 pt-3 sm:grid-cols-2">
+            {actionCapabilities.map((action) => {
+              const Icon = action.icon;
+              const allowed = availableActions.some((item) => item.type === action.type);
+              return (
+                <div
+                  key={action.type}
+                  className={cn(
+                    "rounded-xl border border-border-soft bg-background/40 p-3",
+                    !allowed && "opacity-60",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary-strong">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <Badge tone={allowed ? "success" : "neutral"}>
+                      {allowed ? "Disponible" : "Permission requise"}
+                    </Badge>
                   </div>
-                ))}
-              </div>
-            )}
+                  <p className="mt-2 text-xs font-semibold text-foreground">{action.label}</p>
+                  <p className="mt-1 text-[10px] leading-4 text-muted">{action.description}</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-2"
+                    disabled={!allowed || !canUse}
+                    onClick={() => openAi(null, action.prompt)}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Demander à l'IA
+                  </Button>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 
@@ -832,7 +988,69 @@ export function AiHubPage() {
         </Card>
       </div>
 
-      <Card className="panel-sheen border-primary/20">
+      <Card id="integrations" className="panel-sheen border-primary/20">
+        <CardHeader>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Intégrations
+            </p>
+            <h2 className="text-base font-semibold text-foreground">
+              Les systèmes que l'assistant peut exploiter
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              {availableIntegrations.length} intégration(s) accessible(s) sur votre périmètre.
+              Cliquez pour ouvrir l'écran correspondant.
+            </p>
+          </div>
+          <Plug className="h-4 w-4 text-accent" />
+        </CardHeader>
+        <CardContent className="grid gap-2 pt-3 sm:grid-cols-2 xl:grid-cols-3">
+          {aiIntegrations.map((integration) => {
+            const Icon = integration.icon;
+            const enabled = availableIntegrationKeys.has(integration.key);
+            return (
+              <Link
+                key={integration.key}
+                to={enabled ? integration.to : "#"}
+                onClick={(event) => {
+                  if (!enabled) event.preventDefault();
+                }}
+                className={cn(
+                  "group rounded-xl border border-border-soft bg-background/40 p-3 transition-all",
+                  enabled
+                    ? "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+                    : "pointer-events-none opacity-50",
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary-strong">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <Badge tone={enabled ? "success" : "neutral"}>
+                    {enabled ? "Disponible" : "Indisponible"}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-xs font-semibold text-foreground">{integration.label}</p>
+                <p className="mt-1 text-[10px] leading-4 text-muted">
+                  {integration.description}
+                </p>
+                {enabled ? (
+                  <span className="mt-2 inline-flex items-center gap-1 text-[9px] uppercase tracking-wide text-accent">
+                    Ouvrir
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                ) : (
+                  <span className="mt-2 inline-block text-[9px] text-muted-2">
+                    Module désactivé ou permission manquante
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card id="historique" className="panel-sheen border-primary/20">
         <CardHeader>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">

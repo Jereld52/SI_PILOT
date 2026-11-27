@@ -13,11 +13,15 @@ from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
 from app.models.network import NetworkShare
 from app.models.organization import Agent, ChecklistRun
+from app.models.projects import Project
 from app.models.security import Certificate, SecurityIncident
+from app.models.stock import StockItem
 from app.models.tickets import Ticket, TicketStatus
 from app.services import (
     backup_service,
+    budget_service,
     dashboard_service,
+    data_quality_service,
     network_scan_service,
     onboarding_service,
     scheduler_service,
@@ -188,12 +192,67 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "description": "Derniers changements enregistrés dans l'audit.",
         "permission": "audit.read",
     },
+    {
+        "key": "stock_overview",
+        "label": "Stock et seuils",
+        "description": "Articles sous le seuil d'alerte, ruptures et consommables à commander.",
+        "permission": "stock.read",
+    },
+    {
+        "key": "budget_overview",
+        "label": "Budget",
+        "description": "Budgets, montants prévus, engagés, facturés et disponibles.",
+        "permission": "budget.read",
+    },
+    {
+        "key": "projects_at_risk",
+        "label": "Projets à risque",
+        "description": "Projets en retard, en pause ou proches de leur échéance.",
+        "permission": "projects.read",
+    },
+    {
+        "key": "data_quality_overview",
+        "label": "Qualité des données",
+        "description": "Anomalies de données : engagements manquants, contrats incomplets, doublons et imports en erreur.",
+        "permission": "dashboard.read",
+    },
 )
+
+
+TOOL_DOMAINS: dict[str, str] = {
+    "fleet_overview": "parc",
+    "search_assets": "parc",
+    "assets_broken": "parc",
+    "assets_renewal": "parc",
+    "assets_warranty": "parc",
+    "software_updates": "parc",
+    "software_on_host": "parc",
+    "search_tickets": "support",
+    "tickets_open": "support",
+    "tickets_overdue": "support",
+    "contracts_expiring": "achats",
+    "commercial_overview": "achats",
+    "network_shares_status": "infrastructure",
+    "infrastructure_equipment": "infrastructure",
+    "network_discovery": "infrastructure",
+    "security_incidents": "securite",
+    "certificates_expiring": "securite",
+    "veeam_backup_status": "securite",
+    "agent_lookup": "agents",
+    "onboarding_briefing": "agents",
+    "daily_briefing": "pilotage",
+    "monthly_report_summary": "pilotage",
+    "recent_activity": "pilotage",
+    "stock_overview": "parc",
+    "budget_overview": "achats",
+    "projects_at_risk": "pilotage",
+    "data_quality_overview": "pilotage",
+}
 
 
 def list_tools(actor: User) -> list[dict[str, str]]:
     return [
-        dict(tool)
+        {**tool, "domain": TOOL_DOMAINS.get(tool["key"], "general")}
         for tool in TOOL_DEFINITIONS
         if has_permission(actor, tool["permission"])
     ]
@@ -894,6 +953,78 @@ def recent_activity(db: Session, actor: User, limit: int = 15) -> dict[str, Any]
     return _result("recent_activity", items)
 
 
+def stock_overview(db: Session, actor: User, limit: int = 20) -> dict[str, Any]:
+    if not has_permission(actor, "stock.read"):
+        return _result("stock_overview", [], note="Permission stock requise.")
+    rows = db.scalars(
+        select(StockItem)
+        .where(
+            StockItem.status == "active",
+            StockItem.min_quantity > 0,
+            StockItem.quantity <= StockItem.min_quantity,
+        )
+        .order_by(StockItem.quantity.asc(), StockItem.name.asc())
+        .limit(limit)
+    ).all()
+    items = [
+        f"{row.reference} — {row.name} : {row.quantity} {row.unit} "
+        f"(seuil {row.min_quantity})"
+        + (" · rupture" if row.quantity <= 0 else "")
+        for row in rows
+    ]
+    return _result("stock_overview", items)
+
+
+def budget_overview(db: Session, actor: User, limit: int = 10) -> dict[str, Any]:
+    if not has_permission(actor, "budget.read"):
+        return _result("budget_overview", [], note="Permission budget requise.")
+    budgets = budget_service.list_budgets(db)[:limit]
+    items = [
+        f"Budget {budget.year} ({budget.name}) [{budget.status}] : "
+        f"prévu {budget.planned_total or 0:.0f} €, voté {budget.voted_total or 0:.0f} €, "
+        f"engagé {budget.committed_total:.0f} €, facturé {budget.invoiced_total:.0f} €, "
+        f"disponible {budget.available_total:.0f} €"
+        for budget in budgets
+    ]
+    return _result("budget_overview", items)
+
+
+def projects_at_risk(db: Session, actor: User, limit: int = 20) -> dict[str, Any]:
+    if not has_permission(actor, "projects.read"):
+        return _result("projects_at_risk", [], note="Permission projets requise.")
+    today = date.today()
+    rows = db.scalars(
+        select(Project)
+        .where(
+            Project.status.in_(("planned", "in_progress", "on_hold")),
+            or_(
+                Project.due_date.is_not(None) & (Project.due_date < today),
+                Project.status == "on_hold",
+            ),
+        )
+        .order_by(Project.due_date.asc().nullslast())
+        .limit(limit)
+    ).all()
+    items = [
+        f"{project.code} — {project.name} : statut {project.status}, "
+        f"échéance {_iso(project.due_date) if project.due_date else 'non définie'}, "
+        f"avancement {project.progress_percent}%"
+        for project in rows
+    ]
+    return _result("projects_at_risk", items)
+
+
+def data_quality_overview(db: Session, actor: User) -> dict[str, Any]:
+    overview = data_quality_service.get_overview(db, actor)
+    items = [
+        f"{section.label} : {section.total} anomalie(s), dont {section.critical} critique(s)"
+        for section in overview.sections
+        if section.total > 0
+    ]
+    note = f"Total {overview.total} anomalie(s), dont {overview.critical} critique(s)."
+    return _result("data_quality_overview", items, note=note)
+
+
 HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "fleet_overview": fleet_overview,
     "search_assets": search_assets,
@@ -918,6 +1049,10 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "daily_briefing": daily_briefing,
     "monthly_report_summary": monthly_report_summary,
     "recent_activity": recent_activity,
+    "stock_overview": stock_overview,
+    "budget_overview": budget_overview,
+    "projects_at_risk": projects_at_risk,
+    "data_quality_overview": data_quality_overview,
 }
 
 
@@ -1041,6 +1176,26 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         existing[0] in {"tickets_open", "tickets_overdue"} for existing in calls
     ):
         add("search_tickets", query=query)
+    if any(term in text for term in ("stock", "seuil", "consommable", "rupture", "article")):
+        add("stock_overview")
+    if any(term in text for term in ("budget", "engagé", "engage", "factur", "disponible")):
+        add("budget_overview")
+    if any(term in text for term in ("projet", "jalon", "risque projet")):
+        add("projects_at_risk")
+    if any(
+        term in text
+        for term in (
+            "qualité",
+            "qualite",
+            "anomalie",
+            "doublon",
+            "donnée",
+            "donnee",
+            "contrôle",
+            "controle",
+        )
+    ):
+        add("data_quality_overview")
     return calls[:3]
 
 

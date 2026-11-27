@@ -336,8 +336,11 @@ npm run build
   peuvent être chargés depuis le fournisseur.
 - **Centre d'aide IA** : menu dédié regroupant les aides par domaine (support, parc, achats,
   contrats, budget, infrastructure, sécurité, agents, documents, RGPD, pilotage), l'import
-  intelligent, les outils disponibles et l'historique des demandes IA. Page immersive avec grand
-  composeur, actions rapides et **dock flottant contextuel** sur tous les onglets.
+  intelligent, les outils disponibles et l'historique des demandes IA.
+- **Espace de travail IA plein écran** : menu latéral, conversation, raccourcis, catalogue des
+  outils par domaine, actions assistées, intégrations (WAPT, Veeam, OCR, découverte réseau,
+  supervision, partages, calendrier, SMTP, LDAP) et historique. Le catalogue évolue avec les
+  permissions et les modules actifs.
 - **Boutons Assistant IA contextuels** dans les pages métier, avec une bulle expliquant ce que
   l'assistant peut faire sur l'écran courant.
 - **Suggestion IA dans les formulaires** : demande IT, communication, réunion, intervention,

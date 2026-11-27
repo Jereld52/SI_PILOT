@@ -415,6 +415,26 @@ def test_tool_router_selects_relevant_tools():
         )]
         assert "monthly_report_summary" in monthly
 
+        stock = [call[0] for call in ai_tools_service.select_tools(
+            "Quels articles sont sous le seuil d'alerte ?", actor
+        )]
+        assert "stock_overview" in stock
+
+        budget = [call[0] for call in ai_tools_service.select_tools(
+            "Analyse le budget et les montants engagés.", actor
+        )]
+        assert "budget_overview" in budget
+
+        projects = [call[0] for call in ai_tools_service.select_tools(
+            "Quels projets sont en retard ?", actor
+        )]
+        assert "projects_at_risk" in projects
+
+        quality = [call[0] for call in ai_tools_service.select_tools(
+            "Analyse les anomalies de qualité des données.", actor
+        )]
+        assert "data_quality_overview" in quality
+
 
 def test_ai_tools_endpoint(admin_client):
     client, _ = admin_client
@@ -427,7 +447,16 @@ def test_ai_tools_endpoint(admin_client):
         "software_updates",
         "contracts_expiring",
         "onboarding_briefing",
+        "stock_overview",
+        "budget_overview",
+        "projects_at_risk",
+        "data_quality_overview",
     } <= keys
+    domains = {tool["key"]: tool["domain"] for tool in response.json()}
+    assert domains["assets_broken"] == "parc"
+    assert domains["tickets_overdue"] == "support"
+    assert domains["contracts_expiring"] == "achats"
+    assert domains["onboarding_briefing"] == "agents"
 
 
 def test_ai_chat_uses_tools(admin_client, csrf_headers, monkeypatch):

@@ -54,6 +54,10 @@ L'assistant sélectionne automatiquement des outils en lecture seule selon la qu
 - infrastructure, utilisateurs et agents, activité récente ;
 - jobs, sessions et dépôts de sauvegarde Veeam (`veeam_backup_status`) ;
 - découverte réseau limitée aux plages privées et rapprochement avec le parc (`network_discovery`) ;
+- stock sous seuil et ruptures (`stock_overview`) ;
+- budgets, montants prévus, engagés, facturés et disponibles (`budget_overview`) ;
+- projets en retard, en pause ou proches de l'échéance (`projects_at_risk`) ;
+- anomalies de qualité des données (`data_quality_overview`) ;
 - briefing du jour : contrôles, sauvegardes, Veeam, dernières exécutions et alertes (`daily_briefing`) ;
 - bilan du mois précédent pour préparer une synthèse (`monthly_report_summary`).
 
@@ -67,6 +71,20 @@ Le menu **Assistant IA** regroupe le **Centre d'aide IA**, l'**Import intelligen
 **Configuration IA**. Le centre d'aide propose des raccourcis par domaine (support, parc, achats,
 contrats, budget, infrastructure, sécurité, agents, documents, RGPD, pilotage), la liste des
 outils accessibles et l'historique des demandes.
+
+Le bouton **Plein écran** ouvre un **espace de travail IA** plein écran avec un menu latéral :
+
+- **Conversation** : grand composeur, contexte, réponses mises en forme et actions à confirmer ;
+- **Raccourcis** : requêtes prêtes à l'emploi par domaine ;
+- **Outils** : catalogue complet des outils de lecture, groupés par domaine, avec description et
+  permission requise ;
+- **Actions** : actions assistées disponibles (demande, réunion, communication, devis, bon de
+  commande, action de suivi) et permissions associées ;
+- **Intégrations** : état des connexions WAPT, Veeam, OCR, découverte réseau, supervision,
+  partages, calendrier, SMTP et LDAP ;
+- **Historique** : dernières demandes IA, statut et durée.
+
+Le menu et les compteurs s'adaptent aux modules actifs et aux permissions de l'utilisateur.
 
 L'**Import intelligent** accepte un ou plusieurs fichiers, les PDF texte, les PDF scannés via
 **OCR Tesseract local** et les images. Les imports sont suivis dans un historique avec statut,
