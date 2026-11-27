@@ -154,7 +154,6 @@ export function Topbar({ onOpenMobile, onChangePassword }: TopbarProps) {
                 <button
                   type="button"
                   className="ml-1 inline-flex items-center gap-2 rounded-lg border border-transparent p-1 pr-1.5 transition-colors hover:border-border-soft hover:bg-surface-2"
-                  aria-label="Menu du profil"
                 >
                   <Avatar
                     firstName={user?.first_name}

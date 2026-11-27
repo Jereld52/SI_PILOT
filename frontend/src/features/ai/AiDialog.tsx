@@ -1300,7 +1300,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
               <History className="h-3.5 w-3.5" />
               Historique
             </Button>
-            <Button size="sm" onClick={reset} disabled={!canUse || sending}>
+            <Button variant="secondary" size="sm" onClick={reset} disabled={!canUse || sending}>
               <Sparkles className="h-3.5 w-3.5" />
               Nouvelle conversation
             </Button>

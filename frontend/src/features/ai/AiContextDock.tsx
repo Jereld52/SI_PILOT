@@ -299,7 +299,6 @@ export function AiContextDock() {
         className={cn(
           "flex items-center gap-2 rounded-full border border-primary/30 bg-gradient-to-r from-primary/90 to-primary-strong px-3.5 py-2.5 text-xs font-semibold text-brand-cream shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl",
         )}
-        aria-label={`Assistant IA pour ${context.label}`}
       >
         <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
           <Sparkles className="h-3.5 w-3.5" />

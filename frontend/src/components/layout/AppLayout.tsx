@@ -73,7 +73,7 @@ export function AppLayout() {
           </div>
         ) : null}
 
-        <main className="mx-auto w-full max-w-[1560px] px-4 py-5 sm:px-6 sm:py-6">
+        <main className="mx-auto w-full max-w-[1560px] px-4 py-5 pb-24 sm:px-6 sm:py-6 sm:pb-28">
           {!isPathEnabled(location.pathname) ? (
             <ModuleDisabledPage />
           ) : (

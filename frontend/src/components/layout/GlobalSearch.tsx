@@ -123,7 +123,7 @@ export function GlobalSearch() {
         aria-label="Recherche globale"
         className="h-9 w-full rounded-lg border border-border-soft bg-surface/70 pl-9 pr-16 text-sm text-foreground outline-none transition-colors placeholder:text-muted-2 focus:border-primary-strong/50 focus:bg-surface focus:ring-2 focus:ring-primary-strong/10"
       />
-      <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border-soft bg-background-soft px-1.5 py-0.5 text-[10px] text-muted-2 sm:block">
+      <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border-soft bg-background-soft px-1.5 py-0.5 text-[10px] text-muted sm:block">
         Ctrl K
       </kbd>
 

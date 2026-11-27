@@ -1170,7 +1170,10 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("recent_activity")
     if any(term in text for term in ("bilan", "vue d'ensemble", "état du parc", "etat du parc", "combien de poste", "statistique", "synthèse", "synthese")):
         add("fleet_overview")
-    if query and any(term in text for term in ("poste", "machine", "équipement", "equipement", "inventaire", "série", "serie", "hostname")):
+    if query and any(term in text for term in ("poste", "machine", "équipement", "equipement", "inventaire", "série", "serie", "hostname")) and not any(
+        existing[0] in {"assets_broken", "assets_renewal", "assets_warranty"}
+        for existing in calls
+    ):
         add("search_assets", query=query)
     if query and any(term in text for term in ("ticket", "demande")) and not any(
         existing[0] in {"tickets_open", "tickets_overdue"} for existing in calls

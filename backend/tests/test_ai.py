@@ -384,6 +384,7 @@ def test_tool_router_selects_relevant_tools():
             "Quels postes sont en panne ?", actor
         )]
         assert "assets_broken" in broken
+        assert "search_assets" not in broken
 
         overdue = [call[0] for call in ai_tools_service.select_tools(
             "Quels tickets sont en retard ?", actor
