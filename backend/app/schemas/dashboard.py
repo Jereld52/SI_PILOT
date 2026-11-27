@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class KpiValue(BaseModel):
@@ -119,8 +119,48 @@ class TodaySection(BaseModel):
     items: list[TodayItem]
 
 
+class DayPlanItem(BaseModel):
+    id: str
+    kind: str
+    title: str
+    detail: str | None = None
+    start_at: datetime | None = None
+    end_at: datetime | None = None
+    all_day: bool = False
+    location: str | None = None
+    travel: bool = False
+    severity: str = "info"
+    href: str = ""
+    action_label: str = "Ouvrir"
+    permission: str | None = None
+    module_key: str | None = None
+
+
+class DayPlanSummary(BaseModel):
+    meetings: int = 0
+    interventions: int = 0
+    reservations: int = 0
+    events: int = 0
+    actions: int = 0
+    tickets: int = 0
+    travels: int = 0
+    busy_minutes: int = 0
+    free_minutes: int = 0
+    conflicts: int = 0
+    first_start: datetime | None = None
+    last_end: datetime | None = None
+
+
+class DayPlan(BaseModel):
+    date: date
+    items: list[DayPlanItem] = Field(default_factory=list)
+    summary: DayPlanSummary = Field(default_factory=DayPlanSummary)
+    suggestions: list[str] = Field(default_factory=list)
+
+
 class DashboardToday(BaseModel):
     generated_at: datetime
     total: int
     urgent: int
     sections: list[TodaySection]
+    plan: DayPlan

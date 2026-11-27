@@ -1113,6 +1113,11 @@ SUGGESTION_MAP: dict[str, list[str]] = {
         "Quelles étapes récurrentes identifier ?",
         "Propose une checklist de résolution.",
     ],
+    "day_overview": [
+        "Organise ma journée par priorité.",
+        "Prépare mes déplacements.",
+        "Quels créneaux libres puis-je utiliser ?",
+    ],
 }
 
 DEFAULT_SUGGESTIONS = [

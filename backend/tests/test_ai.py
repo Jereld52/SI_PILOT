@@ -459,6 +459,11 @@ def test_tool_router_selects_relevant_tools():
         )]
         assert "procedure_sources" in procedure
 
+        day = [call[0] for call in ai_tools_service.select_tools(
+            "Organise ma journée avec les réunions et déplacements.", actor
+        )]
+        assert "day_overview" in day
+
 
 def test_ai_tools_endpoint(admin_client):
     client, _ = admin_client
@@ -479,6 +484,7 @@ def test_ai_tools_endpoint(admin_client):
         "search_documents",
         "document_consistency",
         "procedure_sources",
+        "day_overview",
     } <= keys
     domains = {tool["key"]: tool["domain"] for tool in response.json()}
     assert domains["assets_broken"] == "parc"

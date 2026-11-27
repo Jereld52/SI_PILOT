@@ -185,11 +185,51 @@ export interface TodaySection {
   items: TodayItem[];
 }
 
+export interface DayPlanItem {
+  id: string;
+  kind: string;
+  title: string;
+  detail: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  all_day: boolean;
+  location: string | null;
+  travel: boolean;
+  severity: string;
+  href: string;
+  action_label: string;
+  permission: string | null;
+  module_key: string | null;
+}
+
+export interface DayPlanSummary {
+  meetings: number;
+  interventions: number;
+  reservations: number;
+  events: number;
+  actions: number;
+  tickets: number;
+  travels: number;
+  busy_minutes: number;
+  free_minutes: number;
+  conflicts: number;
+  first_start: string | null;
+  last_end: string | null;
+}
+
+export interface DayPlan {
+  date: string;
+  items: DayPlanItem[];
+  summary: DayPlanSummary;
+  suggestions: string[];
+}
+
 export interface DashboardToday {
   generated_at: string;
   total: number;
   urgent: number;
   sections: TodaySection[];
+  plan: DayPlan;
 }
 
 export interface DataQualityItem {

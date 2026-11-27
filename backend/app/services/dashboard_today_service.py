@@ -1,19 +1,30 @@
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
+from app.core.permissions import has_permission
 from app.models.assets import License
+from app.models.auth import User
 from app.models.budget import Budget
-from app.models.calendar import ActionItem
+from app.models.calendar import ActionItem, CalendarEvent
 from app.models.commercial import CommercialDocument
+from app.models.communication import Meeting
 from app.models.contracts import Contract
 from app.models.infrastructure import InfraEquipment
 from app.models.projects import Project
+from app.models.reservations import EquipmentReservation
 from app.models.rgpd import DataBreach, DpoRequest, RightsRequest
 from app.models.security import Certificate, SecurityIncident
 from app.models.stock import StockItem
 from app.models.tickets import Intervention, Ticket, TicketPriority, TicketStatus
-from app.schemas.dashboard import DashboardToday, TodayItem, TodaySection
+from app.schemas.dashboard import (
+    DashboardToday,
+    DayPlan,
+    DayPlanItem,
+    DayPlanSummary,
+    TodayItem,
+    TodaySection,
+)
 from app.services import backup_service, budget_service, onboarding_service, scheduler_service
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -643,7 +654,413 @@ def _pilotage_items(db: Session, today: date) -> list[TodayItem]:
     return items
 
 
-def get_today(db: Session) -> DashboardToday:
+def _person_name(person: object | None) -> str | None:
+    if person is None:
+        return None
+    first = getattr(person, "first_name", "") or ""
+    last = getattr(person, "last_name", "") or ""
+    label = f"{first} {last}".strip()
+    return label or None
+
+
+def _is_virtual_location(location: str | None, visio_url: str | None) -> bool:
+    if visio_url:
+        return True
+    if not location:
+        return False
+    lowered = location.lower()
+    return any(
+        term in lowered
+        for term in ("visio", "teams", "zoom", "en ligne", "distanciel", "remote")
+    )
+
+
+def _merge_intervals(
+    intervals: list[tuple[datetime, datetime]],
+    day_start: datetime,
+    day_end: datetime,
+) -> list[tuple[datetime, datetime]]:
+    clipped = sorted(
+        (max(start, day_start), min(end, day_end))
+        for start, end in intervals
+        if start < day_end and end > day_start
+    )
+    merged: list[tuple[datetime, datetime]] = []
+    for start, end in clipped:
+        if start >= end:
+            continue
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> DayPlan:
+    day_start = datetime.combine(today, time.min, tzinfo=UTC)
+    day_end = day_start + timedelta(days=1)
+    items: list[DayPlanItem] = []
+
+    if has_permission(actor, "meetings.read"):
+        meetings = db.scalars(
+            select(Meeting)
+            .where(
+                Meeting.status != "cancelled",
+                Meeting.scheduled_at >= day_start,
+                Meeting.scheduled_at < day_end,
+            )
+            .order_by(Meeting.scheduled_at.asc())
+        ).all()
+        for meeting in meetings:
+            start = meeting.scheduled_at
+            end = start + timedelta(minutes=meeting.duration_minutes or 60)
+            location = (meeting.location or "").strip() or None
+            virtual = _is_virtual_location(location, meeting.visio_url)
+            detail_parts = [
+                meeting.agenda[:180] if meeting.agenda else None,
+                _person_name(meeting.organizer),
+                "Visio" if meeting.visio_url and not location else None,
+            ]
+            items.append(
+                DayPlanItem(
+                    id=f"meeting-{meeting.id}",
+                    kind="meeting",
+                    title=f"Réunion — {meeting.title}",
+                    detail=" · ".join(part for part in detail_parts if part) or None,
+                    start_at=start,
+                    end_at=end,
+                    location=location or ("Visio" if meeting.visio_url else None),
+                    travel=bool(location) and not virtual,
+                    severity="info",
+                    href="/communication/reunions",
+                    action_label="Ouvrir",
+                    permission="meetings.read",
+                    module_key="meetings",
+                )
+            )
+
+    if has_permission(actor, "interventions.read"):
+        interventions = db.scalars(
+            select(Intervention)
+            .where(
+                Intervention.status != "cancelled",
+                Intervention.scheduled_at >= day_start,
+                Intervention.scheduled_at < day_end,
+            )
+            .order_by(Intervention.scheduled_at.asc())
+        ).all()
+        for intervention in interventions:
+            start_at = intervention.scheduled_at
+            if start_at is None:
+                continue
+            end = start_at + timedelta(minutes=intervention.duration_minutes or 60)
+            location = (
+                intervention.asset.location.name
+                if intervention.asset and intervention.asset.location
+                else None
+            )
+            detail_parts = [
+                intervention.asset.name if intervention.asset else None,
+                intervention.ticket.reference if intervention.ticket else None,
+                _person_name(intervention.technician),
+            ]
+            items.append(
+                DayPlanItem(
+                    id=f"intervention-{intervention.id}",
+                    kind="intervention",
+                    title=f"Intervention — {intervention.title}",
+                    detail=" · ".join(part for part in detail_parts if part) or None,
+                    start_at=start_at,
+                    end_at=end,
+                    location=location,
+                    travel=bool(location),
+                    severity=(
+                        "warning"
+                        if intervention.status == "in_progress"
+                        else "info"
+                    ),
+                    href="/demandes?tab=interventions",
+                    action_label="Ouvrir",
+                    permission="interventions.read",
+                    module_key="tickets",
+                )
+            )
+
+    if has_permission(actor, "reservations.read"):
+        reservations = db.scalars(
+            select(EquipmentReservation)
+            .where(
+                EquipmentReservation.status != "cancelled",
+                EquipmentReservation.start_at < day_end,
+                EquipmentReservation.end_at > day_start,
+            )
+            .order_by(EquipmentReservation.start_at.asc())
+        ).unique().all()
+        for reservation in reservations:
+            location = (
+                reservation.equipment.location.name
+                if reservation.equipment and reservation.equipment.location
+                else None
+            )
+            items.append(
+                DayPlanItem(
+                    id=f"reservation-{reservation.id}",
+                    kind="reservation",
+                    title=f"Réservation — {reservation.equipment.name}",
+                    detail=" · ".join(
+                        part
+                        for part in (
+                            reservation.purpose,
+                            reservation.requester_name,
+                        )
+                        if part
+                    )
+                    or None,
+                    start_at=reservation.start_at,
+                    end_at=reservation.end_at,
+                    location=location,
+                    travel=False,
+                    severity="info",
+                    href="/reservations",
+                    action_label="Ouvrir",
+                    permission="reservations.read",
+                    module_key="reservations",
+                )
+            )
+
+    if has_permission(actor, "calendar.read"):
+        events = db.scalars(
+            select(CalendarEvent)
+            .where(
+                CalendarEvent.status != "cancelled",
+                CalendarEvent.start_at < day_end,
+                (CalendarEvent.end_at.is_(None))
+                | (CalendarEvent.end_at >= day_start),
+            )
+            .order_by(CalendarEvent.start_at.asc())
+        ).all()
+        event_labels = {
+            "maintenance": "Maintenance",
+            "intervention": "Intervention",
+            "deadline": "Échéance",
+            "renewal": "Renouvellement",
+            "audit": "Audit",
+            "project": "Projet",
+            "meeting": "Réunion",
+            "action": "Action",
+            "other": "Événement",
+        }
+        for event in events:
+            end = event.end_at or (
+                day_end if event.all_day else event.start_at + timedelta(minutes=60)
+            )
+            location = (event.location or "").strip() or None
+            travel = (
+                bool(location)
+                and event.event_type in ("meeting", "intervention", "other", "audit")
+                and not _is_virtual_location(location, None)
+            )
+            items.append(
+                DayPlanItem(
+                    id=f"event-{event.id}",
+                    kind="event",
+                    title=f"{event_labels.get(event.event_type, 'Événement')} — {event.title}",
+                    detail=event.description[:180] if event.description else None,
+                    start_at=event.start_at,
+                    end_at=end,
+                    all_day=event.all_day,
+                    location=location,
+                    travel=travel,
+                    severity="warning" if event.priority in ("high", "critical") else "info",
+                    href="/calendrier",
+                    action_label="Ouvrir",
+                    permission="calendar.read",
+                    module_key="calendar",
+                )
+            )
+
+    if has_permission(actor, "actions.read"):
+        actions = db.scalars(
+            select(ActionItem)
+            .where(
+                ActionItem.status.in_(("todo", "in_progress", "blocked")),
+                ActionItem.due_date.is_not(None),
+                ActionItem.due_date < day_end,
+            )
+            .order_by(ActionItem.due_date.asc())
+            .limit(20)
+        ).all()
+        for action in actions:
+            overdue = action.due_date is not None and action.due_date < now
+            items.append(
+                DayPlanItem(
+                    id=f"action-{action.id}",
+                    kind="action",
+                    title=f"Action — {action.title}",
+                    detail=" · ".join(
+                        part
+                        for part in (
+                            action.module,
+                            "En retard" if overdue else None,
+                        )
+                        if part
+                    )
+                    or None,
+                    start_at=action.due_date,
+                    end_at=(
+                        action.due_date + timedelta(minutes=30)
+                        if action.due_date
+                        else None
+                    ),
+                    severity=(
+                        "danger"
+                        if overdue
+                        else "warning"
+                        if action.priority in ("high", "critical")
+                        else "info"
+                    ),
+                    href="/calendrier?tab=actions",
+                    action_label="Traiter",
+                    permission="actions.read",
+                    module_key="calendar",
+                )
+            )
+
+    if has_permission(actor, "tickets.read"):
+        open_statuses = select(TicketStatus.id).where(TicketStatus.is_closed.is_(False))
+        tickets = db.scalars(
+            select(Ticket)
+            .where(
+                Ticket.status_id.in_(open_statuses),
+                Ticket.due_at.is_not(None),
+                Ticket.due_at < day_end,
+            )
+            .order_by(Ticket.due_at.asc())
+            .limit(20)
+        ).all()
+        for ticket in tickets:
+            overdue = ticket.due_at is not None and ticket.due_at < now
+            items.append(
+                DayPlanItem(
+                    id=f"ticket-{ticket.id}",
+                    kind="ticket",
+                    title=f"Demande — {ticket.reference}",
+                    detail=" · ".join(
+                        part
+                        for part in (
+                            ticket.subject,
+                            f"priorité {ticket.priority.name.lower()}"
+                            if ticket.priority
+                            else None,
+                            "En retard" if overdue else None,
+                        )
+                        if part
+                    )
+                    or None,
+                    start_at=ticket.due_at,
+                    end_at=(
+                        ticket.due_at + timedelta(minutes=30)
+                        if ticket.due_at
+                        else None
+                    ),
+                    severity="danger" if overdue else "warning",
+                    href=f"/demandes?q={ticket.reference}",
+                    action_label="Traiter",
+                    permission="tickets.read",
+                    module_key="tickets",
+                )
+            )
+
+    items.sort(
+        key=lambda item: (
+            0 if item.all_day else 1,
+            item.start_at or day_start,
+            item.kind,
+            item.title.lower(),
+        )
+    )
+    timed_intervals = [
+        (item.start_at, item.end_at)
+        for item in items
+        if item.start_at and item.end_at and not item.all_day
+    ]
+    merged = _merge_intervals(timed_intervals, day_start, day_end)
+    busy_minutes = round(
+        sum((end - start).total_seconds() for start, end in merged) / 60
+    )
+    free_minutes = max(0, 600 - busy_minutes)
+    first_start = min((start for start, _ in timed_intervals), default=None)
+    last_end = max((end for _, end in timed_intervals), default=None)
+    conflicts: list[str] = []
+    for index, (start, end) in enumerate(timed_intervals):
+        for other_start, other_end in timed_intervals[index + 1 :]:
+            if start < other_end and other_start < end:
+                conflicts.append("Deux activités se chevauchent sur le créneau.")
+                break
+        if len(conflicts) >= 5:
+            break
+    travel_locations = sorted(
+        {item.location for item in items if item.travel and item.location}
+    )
+    suggestions: list[str] = []
+    if conflicts:
+        suggestions.append(
+            f"Résoudre {len(conflicts)} conflit(s) de planning avant la journée."
+        )
+    if travel_locations:
+        suggestions.append(
+            "Déplacements à prévoir : " + ", ".join(travel_locations[:4]) + "."
+        )
+    if free_minutes >= 120:
+        suggestions.append(
+            f"Un créneau libre de {free_minutes // 60}h{free_minutes % 60:02d} "
+            "peut être réservé aux actions prioritaires."
+        )
+    overdue_count = sum(
+        1 for item in items if item.severity == "danger" and item.kind in ("action", "ticket")
+    )
+    if overdue_count:
+        suggestions.append(
+            f"{overdue_count} action(s) ou demande(s) en retard à traiter en priorité."
+        )
+    if not any(item.kind in ("meeting", "intervention") for item in items):
+        suggestions.append(
+            "Aucun rendez-vous planifié : journée propice aux actions de fond."
+        )
+    summary = DayPlanSummary(
+        meetings=sum(1 for item in items if item.kind == "meeting"),
+        interventions=sum(1 for item in items if item.kind == "intervention"),
+        reservations=sum(1 for item in items if item.kind == "reservation"),
+        events=sum(1 for item in items if item.kind == "event"),
+        actions=sum(1 for item in items if item.kind == "action"),
+        tickets=sum(1 for item in items if item.kind == "ticket"),
+        travels=len(travel_locations),
+        busy_minutes=busy_minutes,
+        free_minutes=free_minutes,
+        conflicts=len(conflicts),
+        first_start=first_start,
+        last_end=last_end,
+    )
+    return DayPlan(
+        date=today,
+        items=items,
+        summary=summary,
+        suggestions=suggestions,
+    )
+
+
+def get_day_plan(
+    db: Session, actor: User, *, day: date | None = None
+) -> DayPlan:
+    return _build_day_plan(
+        db,
+        actor,
+        datetime.now(UTC),
+        day or date.today(),
+    )
+
+
+def get_today(db: Session, actor: User) -> DashboardToday:
     now = datetime.now(UTC)
     today = date.today()
     horizon = today + timedelta(days=30)
@@ -688,4 +1105,5 @@ def get_today(db: Session) -> DashboardToday:
         total=total,
         urgent=urgent,
         sections=sections,
+        plan=_build_day_plan(db, actor, now, today),
     )

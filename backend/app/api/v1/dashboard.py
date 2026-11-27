@@ -29,10 +29,10 @@ def cockpit(
 
 @router.get("/today", response_model=DashboardToday)
 def today(
-    _: User = Depends(require_permission("dashboard.read")),
+    actor: User = Depends(require_permission("dashboard.read")),
     db: Session = Depends(get_db),
 ) -> DashboardToday:
-    return dashboard_today_service.get_today(db)
+    return dashboard_today_service.get_today(db, actor)
 
 
 @router.get("/summary", response_model=DashboardSummary)

@@ -223,7 +223,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Le tableau de bord est organisé en trois onglets : Cockpit, Analyses et Alertes & activité. Il s'appuie uniquement sur les données réelles de l'application.",
       ),
       p(
-        "La page Aujourd'hui, dans le menu Pilotage, va plus loin : elle liste les actions concrètes à traiter, tous modules confondus, avec un lien direct vers l'écran concerné.",
+        "La page Aujourd'hui, dans le menu Pilotage, propose un pilotage complet de la journée : réunions, déplacements, interventions, réservations, événements, actions et demandes dues.",
+      ),
+      p(
+        "Le plan de la journée affiche l'heure, le lieu, les déplacements, la charge occupée, les créneaux libres et les conflits de planning.",
+      ),
+      p(
+        "Les suggestions et le bouton Organiser ma journée aident à prioriser et à éviter la surcharge.",
       ),
       list([
         "Aujourd'hui : demandes en retard, livraisons, engagements, contrats, supervision, sécurité, arrivées, stock, budget et conformité.",

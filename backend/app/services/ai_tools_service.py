@@ -23,6 +23,7 @@ from app.services import (
     backup_service,
     budget_service,
     dashboard_service,
+    dashboard_today_service,
     data_quality_service,
     network_scan_service,
     onboarding_service,
@@ -243,6 +244,12 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "description": "Tickets résolus et interventions terminées pour rédiger une procédure.",
         "permission": "tickets.read",
     },
+    {
+        "key": "day_overview",
+        "label": "Journée et planning",
+        "description": "Réunions, déplacements, interventions, réservations, actions et demandes du jour.",
+        "permission": "dashboard.read",
+    },
 )
 
 
@@ -278,6 +285,7 @@ TOOL_DOMAINS: dict[str, str] = {
     "search_documents": "documents",
     "document_consistency": "documents",
     "procedure_sources": "documents",
+    "day_overview": "pilotage",
 }
 
 
@@ -1279,6 +1287,31 @@ def procedure_sources(db: Session, actor: User) -> dict[str, Any]:
     return _result("procedure_sources", items, sources=sources)
 
 
+def day_overview(db: Session, actor: User) -> dict[str, Any]:
+    if not has_permission(actor, "dashboard.read"):
+        return _result("day_overview", [], note="Permission tableau de bord requise.")
+    plan = dashboard_today_service.get_day_plan(db, actor)
+    items = [
+        f"Réunions : {plan.summary.meetings} · interventions : "
+        f"{plan.summary.interventions} · réservations : {plan.summary.reservations}",
+        f"Déplacements : {plan.summary.travels} · temps occupé : "
+        f"{plan.summary.busy_minutes} min · temps libre : {plan.summary.free_minutes} min",
+    ]
+    for item in plan.items[:30]:
+        timing = "Journée"
+        if item.start_at:
+            timing = item.start_at.astimezone().strftime("%H:%M")
+            if item.end_at:
+                timing += f"-{item.end_at.astimezone().strftime('%H:%M')}"
+        detail = f" — {item.detail}" if item.detail else ""
+        location = f" · {item.location}" if item.location else ""
+        travel = " · déplacement" if item.travel else ""
+        items.append(f"{timing} · {item.title}{detail}{location}{travel}")
+    for suggestion in plan.suggestions:
+        items.append(f"Vigilance : {suggestion}")
+    return _result("day_overview", items)
+
+
 HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "fleet_overview": fleet_overview,
     "search_assets": search_assets,
@@ -1311,6 +1344,7 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "search_documents": search_documents,
     "document_consistency": document_consistency,
     "procedure_sources": procedure_sources,
+    "day_overview": day_overview,
 }
 
 
@@ -1523,6 +1557,23 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         and any(term in text for term in ("ticket", "intervention"))
     ):
         add("procedure_sources")
+    if any(
+        term in text
+        for term in (
+            "journée",
+            "journee",
+            "aujourd'hui",
+            "aujourd hui",
+            "agenda",
+            "planning",
+            "emploi du temps",
+            "réunions",
+            "reunions",
+            "déplacements",
+            "deplacements",
+        )
+    ):
+        add("day_overview")
     return calls[:3]
 
 

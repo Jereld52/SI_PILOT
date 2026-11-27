@@ -30,9 +30,10 @@ se configurent depuis l'administration.
 - Notifications e-mail avec serveur SMTP externe configurable (STARTTLS ou SSL), mot de passe
   chiffré, test d'envoi et boîte d'envoi interne avec statut.
 - Tableau de bord connecté aux données réelles : 13 indicateurs, graphiques, alertes, activité.
-- **Page Aujourd'hui** : actions prioritaires tous modules confondus (demandes, achats, contrats,
-  supervision, sécurité, arrivées, stock, budget, RGPD), avec liens directs et filtrage par
-  permissions et modules actifs.
+- **Page Aujourd'hui** : pilotage complet de la journée avec réunions, déplacements,
+  interventions, réservations, événements, actions et demandes dues ; charge horaire, créneaux
+  libres, conflits de planning et suggestions. Les actions prioritaires de tous les modules
+  restent accessibles avec liens directs et filtrage par permissions et modules actifs.
 - **Qualité des données** : détection des bons de commande sans engagement, contrats sans date de
   fin, équipements sans site ou affectation, doublons IP/MAC et imports en erreur ou non finalisés,
   avec liens de correction directs.

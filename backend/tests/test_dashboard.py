@@ -13,6 +13,24 @@ def test_dashboard_today(admin_client):
     assert isinstance(body["total"], int)
     assert isinstance(body["urgent"], int)
     assert isinstance(body["sections"], list)
+    plan = body["plan"]
+    assert plan["date"]
+    assert isinstance(plan["items"], list)
+    assert isinstance(plan["suggestions"], list)
+    assert plan["summary"]["conflicts"] >= 0
+    assert plan["summary"]["busy_minutes"] >= 0
+    assert plan["summary"]["free_minutes"] >= 0
+    for item in plan["items"]:
+        assert item["kind"] in {
+            "meeting",
+            "intervention",
+            "reservation",
+            "event",
+            "action",
+            "ticket",
+        }
+        assert item["title"]
+        assert item["href"]
     for section in body["sections"]:
         assert section["key"]
         assert section["label"]
