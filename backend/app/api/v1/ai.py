@@ -1,6 +1,8 @@
 from datetime import UTC, date, datetime
+from typing import Literal
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +10,7 @@ from app.api.deps import require_permission
 from app.core.errors import PermissionDeniedError, ValidationAppError
 from app.core.permissions import has_permission
 from app.db.session import get_db
+from app.exports.ai_conversations import conversation_pdf
 from app.models.assets import Supplier
 from app.models.auth import User
 from app.models.commercial import CommercialDocument
@@ -21,6 +24,14 @@ from app.schemas.ai import (
     AiComposeResponse,
     AiConfigRead,
     AiConfigUpdate,
+    AiConversationChatResponse,
+    AiConversationCreate,
+    AiConversationDetail,
+    AiConversationMessageRequest,
+    AiConversationRead,
+    AiConversationUpdate,
+    AiMessageActionsUpdate,
+    AiMessageRead,
     AiModelsResponse,
     AiRunRead,
     AiStatusRead,
@@ -33,8 +44,10 @@ from app.schemas.communication import CommunicationCreate, MeetingCreate
 from app.schemas.suppliers import SupplierCreate
 from app.schemas.tickets import TicketCreate
 from app.services import (
+    ai_conversations_service,
     ai_service,
     ai_tools_service,
+    branding_service,
     calendar_service,
     commercial_service,
     communication_service,
@@ -68,6 +81,136 @@ def list_runs(
     db: Session = Depends(get_db),
 ) -> list[AiRunRead]:
     return ai_service.list_runs(db, actor=actor, limit=limit)
+
+
+@router.get("/conversations", response_model=list[AiConversationRead])
+def list_conversations(
+    q: str | None = Query(default=None, max_length=120),
+    archived: Literal["active", "archived", "all"] = "active",
+    limit: int = Query(default=50, ge=1, le=50),
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> list[AiConversationRead]:
+    flag = True if archived == "archived" else False if archived == "active" else None
+    return ai_conversations_service.list_conversations(
+        db,
+        actor,
+        q=q,
+        archived=flag,
+        limit=limit,
+    )
+
+
+@router.post("/conversations", response_model=AiConversationRead)
+def create_conversation(
+    payload: AiConversationCreate,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> AiConversationRead:
+    return ai_conversations_service.create_conversation(db, actor, payload)
+
+
+@router.get(
+    "/conversations/{conversation_id}", response_model=AiConversationDetail
+)
+def get_conversation(
+    conversation_id: UUID,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> AiConversationDetail:
+    return ai_conversations_service.get_detail(db, actor, conversation_id)
+
+
+@router.patch(
+    "/conversations/{conversation_id}", response_model=AiConversationRead
+)
+def update_conversation(
+    conversation_id: UUID,
+    payload: AiConversationUpdate,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> AiConversationRead:
+    return ai_conversations_service.update_conversation(
+        db, actor, conversation_id, payload
+    )
+
+
+@router.delete("/conversations/{conversation_id}", status_code=204)
+def delete_conversation(
+    conversation_id: UUID,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> Response:
+    ai_conversations_service.delete_conversation(db, actor, conversation_id)
+    return Response(status_code=204)
+
+
+@router.post(
+    "/conversations/{conversation_id}/messages",
+    response_model=AiConversationChatResponse,
+)
+def send_conversation_message(
+    conversation_id: UUID,
+    payload: AiConversationMessageRequest,
+    request: Request,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> AiConversationChatResponse:
+    conversation = ai_conversations_service.get_conversation(
+        db, actor, conversation_id
+    )
+    return ai_conversations_service.send_message(
+        db, actor, conversation, payload, request=request
+    )
+
+
+@router.patch(
+    "/conversations/{conversation_id}/messages/{message_id}/actions",
+    response_model=AiMessageRead,
+)
+def update_message_actions(
+    conversation_id: UUID,
+    message_id: UUID,
+    payload: AiMessageActionsUpdate,
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> AiMessageRead:
+    return ai_conversations_service.mark_message_actions(
+        db, actor, conversation_id, message_id, payload.state
+    )
+
+
+@router.get("/conversations/{conversation_id}/export")
+def export_conversation(
+    conversation_id: UUID,
+    format: Literal["md", "pdf"] = "md",
+    actor: User = Depends(require_permission("ai.use")),
+    db: Session = Depends(get_db),
+) -> Response:
+    conversation = ai_conversations_service.get_conversation(
+        db, actor, conversation_id
+    )
+    detail = ai_conversations_service.get_detail(db, actor, conversation_id)
+    if format == "pdf":
+        content = conversation_pdf(
+            conversation,
+            detail.messages,
+            branding=branding_service.get_pdf_branding(db),
+        )
+        media_type = "application/pdf"
+        extension = "pdf"
+    else:
+        content = ai_conversations_service.export_markdown(
+            conversation, detail.messages
+        ).encode("utf-8")
+        media_type = "text/markdown; charset=utf-8"
+        extension = "md"
+    filename = f"conversation-ia-{conversation_id}.{extension}"
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("/chat", response_model=AiChatResponse)

@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.common import ORMModel
+
 AiProvider = Literal[
     "openai",
     "azure_openai",
@@ -121,6 +123,72 @@ class AiChatResponse(BaseModel):
 class AiActionExecuteResponse(BaseModel):
     message: str
     link: str = ""
+
+
+class AiConversationContext(BaseModel):
+    type: str = Field(min_length=1, max_length=30)
+    id: UUID | None = None
+    label: str | None = Field(default=None, max_length=255)
+
+
+class AiConversationCreate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    context: AiConversationContext | None = None
+
+
+class AiConversationUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    archived: bool | None = None
+
+
+class AiConversationRead(ORMModel):
+    id: UUID
+    title: str
+    context_type: str | None = None
+    context_label: str | None = None
+    archived_at: datetime | None = None
+    last_message_at: datetime
+    message_count: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class AiMessageRead(BaseModel):
+    id: UUID
+    role: Literal["user", "assistant", "system"]
+    content: str
+    tools_used: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    actions: list[AiActionProposal] = Field(default_factory=list)
+    actions_done: bool = False
+    actions_ignored: bool = False
+    created_at: datetime
+
+
+class AiConversationDetail(AiConversationRead):
+    messages: list[AiMessageRead] = Field(default_factory=list)
+
+
+class AiConversationMessageRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=8000)
+    include_context: bool | None = None
+
+
+class AiConversationChatResponse(BaseModel):
+    conversation: AiConversationRead
+    user_message: AiMessageRead
+    assistant_message: AiMessageRead
+    model: str
+    provider: str
+    duration_ms: int
+    usage: dict[str, int] | None = None
+    tools_used: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    actions: list[AiActionProposal] = Field(default_factory=list)
+
+
+class AiMessageActionsUpdate(BaseModel):
+    state: Literal["done", "ignored"]
 
 
 class AiToolInfo(BaseModel):

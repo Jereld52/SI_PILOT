@@ -2332,6 +2332,47 @@ export interface AiRunItem {
   created_at: string;
 }
 
+export interface AiConversationItem {
+  id: string;
+  title: string;
+  context_type: string | null;
+  context_label: string | null;
+  archived_at: string | null;
+  last_message_at: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiConversationMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  tools_used: string[];
+  suggestions: string[];
+  actions: AiActionProposal[];
+  actions_done: boolean;
+  actions_ignored: boolean;
+  created_at: string;
+}
+
+export interface AiConversationDetail extends AiConversationItem {
+  messages: AiConversationMessage[];
+}
+
+export interface AiConversationChatResponse {
+  conversation: AiConversationItem;
+  user_message: AiConversationMessage;
+  assistant_message: AiConversationMessage;
+  model: string;
+  provider: string;
+  duration_ms: number;
+  usage: Record<string, number> | null;
+  tools_used: string[];
+  suggestions: string[];
+  actions: AiActionProposal[];
+}
+
 export interface BackupFileItem {
   name: string;
   size: number;

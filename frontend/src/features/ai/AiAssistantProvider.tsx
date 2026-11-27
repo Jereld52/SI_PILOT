@@ -5,7 +5,11 @@ import { AiDialog } from "@/features/ai/AiDialog";
 import type { AiContextRef } from "@/types/api";
 
 interface AiAssistantContextValue {
-  open: (context?: AiContextRef | null, prompt?: string) => void;
+  open: (
+    context?: AiContextRef | null,
+    prompt?: string,
+    view?: "chat" | "conversations",
+  ) => void;
   close: () => void;
 }
 
@@ -19,12 +23,18 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [context, setContext] = useState<AiContextRef | null>(null);
   const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined);
+  const [initialView, setInitialView] = useState<"chat" | "conversations">("chat");
 
   const openAssistant = useCallback(
-    (nextContext?: AiContextRef | null, prompt?: string) => {
+    (
+      nextContext?: AiContextRef | null,
+      prompt?: string,
+      view?: "chat" | "conversations",
+    ) => {
       if (!isEnabled("ai")) return;
       setContext(nextContext ?? null);
       setInitialPrompt(prompt);
+      setInitialView(view ?? "chat");
       setOpen(true);
     },
     [isEnabled],
@@ -49,6 +59,7 @@ export function AiAssistantProvider({ children }: { children: ReactNode }) {
         }}
         context={context}
         initialPrompt={initialPrompt}
+        initialView={initialView}
       />
     </AiAssistantContext.Provider>
   );

@@ -11,6 +11,7 @@ import {
   History,
   LayoutGrid,
   LifeBuoy,
+  MessagesSquare,
   MonitorSmartphone,
   Plug,
   RefreshCw,
@@ -624,6 +625,14 @@ export function AiHubPage() {
             <Button size="lg" onClick={() => openAi(null, undefined)}>
               <Sparkles className="h-4 w-4" />
               Ouvrir l'espace IA
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => openAi(null, undefined, "conversations")}
+            >
+              <MessagesSquare className="h-4 w-4" />
+              Mes conversations
             </Button>
             {canImport ? (
               <Link

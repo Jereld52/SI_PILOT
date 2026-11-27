@@ -80,7 +80,7 @@ dans les réponses standard.
 ### Automatisations, Assistant IA, imports
 
 `automation_rules`, `automation_runs`, `email_outbox`, `ai_runs`, `ai_proposals`,
-`import_jobs`, `import_rows`.
+`ai_conversations`, `ai_messages`, `import_jobs`, `import_rows`.
 
 ## Relations structurantes
 

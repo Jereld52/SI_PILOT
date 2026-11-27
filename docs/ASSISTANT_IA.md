@@ -75,6 +75,8 @@ outils accessibles et l'historique des demandes.
 Le bouton **Plein écran** ouvre un **espace de travail IA** plein écran avec un menu latéral :
 
 - **Conversation** : grand composeur, contexte, réponses mises en forme et actions à confirmer ;
+- **Conversations** : liste des conversations sauvegardées, recherche, reprise, renommage,
+  archivage, suppression et export Markdown/PDF ;
 - **Raccourcis** : requêtes prêtes à l'emploi par domaine ;
 - **Outils** : catalogue complet des outils de lecture, groupés par domaine, avec description et
   permission requise ;
@@ -85,6 +87,22 @@ Le bouton **Plein écran** ouvre un **espace de travail IA** plein écran avec u
 - **Historique** : dernières demandes IA, statut et durée.
 
 Le menu et les compteurs s'adaptent aux modules actifs et aux permissions de l'utilisateur.
+
+### Conversations persistantes
+
+Chaque question crée ou complète une conversation sauvegardée en base. Les messages utilisateur
+et assistant sont conservés, avec les outils utilisés, les suggestions et les actions proposées.
+Un utilisateur ne voit que ses propres conversations.
+
+- reprise d'une conversation depuis la liste ;
+- titre automatique à partir de la première question, renommage manuel possible ;
+- recherche dans les titres et le contenu des messages ;
+- archivage, restauration et suppression définitive ;
+- export Markdown ou PDF avec l'identité de l'application ;
+- suivi de l'état des actions proposées (à traiter, créées, ignorées).
+
+La table `ai_conversations` porte le titre, le contexte et les compteurs ; `ai_messages` conserve
+les messages et les métadonnées. L'historique technique `ai_runs` reste utilisé pour l'audit.
 
 L'**Import intelligent** accepte un ou plusieurs fichiers, les PDF texte, les PDF scannés via
 **OCR Tesseract local** et les images. Les imports sont suivis dans un historique avec statut,
@@ -113,6 +131,17 @@ dans **Administration → Paramètres → OCR**.
 
 - `GET /api/v1/ai/status` : état de l'intégration (`ai.use`).
 - `GET /api/v1/ai/tools` : outils disponibles selon les permissions (`ai.use`).
+- `GET /api/v1/ai/conversations` : conversations de l'utilisateur, avec recherche, filtre
+  actives/archivées et limite (`ai.use`).
+- `POST /api/v1/ai/conversations` : créer une conversation avec un contexte facultatif (`ai.use`).
+- `GET /api/v1/ai/conversations/{id}` : conversation complète et messages (`ai.use`).
+- `PATCH /api/v1/ai/conversations/{id}` : renommer ou archiver (`ai.use`).
+- `DELETE /api/v1/ai/conversations/{id}` : supprimer définitivement (`ai.use`).
+- `POST /api/v1/ai/conversations/{id}/messages` : envoyer un message, l'assistant répond et les
+  deux messages sont sauvegardés (`ai.use`).
+- `PATCH /api/v1/ai/conversations/{id}/messages/{message_id}/actions` : marquer les actions
+  proposées comme créées ou ignorées (`ai.use`).
+- `GET /api/v1/ai/conversations/{id}/export?format=md|pdf` : export Markdown ou PDF (`ai.use`).
 - `GET /api/v1/ai/runs` : historique des dernières demandes IA de l'utilisateur (`ai.use`).
 - `POST /api/v1/ai/chat` : conversation (`ai.use`).
 - `POST /api/v1/ai/compose` : suggestion de texte pour un ticket, une communication, une réunion, une intervention, un projet ou un contrat (`ai.use`).

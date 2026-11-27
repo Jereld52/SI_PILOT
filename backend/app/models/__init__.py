@@ -1,4 +1,4 @@
-from app.models.ai import AiProposal, AiRun
+from app.models.ai import AiConversation, AiMessage, AiProposal, AiRun
 from app.models.assets import (
     Asset,
     AssetAssignment,
@@ -207,6 +207,8 @@ __all__ = [
     "SupplierContact",
     "AiProposal",
     "AiRun",
+    "AiConversation",
+    "AiMessage",
     "Tag",
     "Ticket",
     "TicketAsset",

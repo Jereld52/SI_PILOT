@@ -341,6 +341,9 @@ npm run build
   outils par domaine, actions assistées, intégrations (WAPT, Veeam, OCR, découverte réseau,
   supervision, partages, calendrier, SMTP, LDAP) et historique. Le catalogue évolue avec les
   permissions et les modules actifs.
+- **Conversations IA persistantes** : sauvegarde automatique, reprise depuis l'historique,
+  renommage, recherche, archivage, suppression et export Markdown ou PDF. Chaque utilisateur ne
+  voit que ses propres conversations.
 - **Boutons Assistant IA contextuels** dans les pages métier, avec une bulle expliquant ce que
   l'assistant peut faire sur l'écran courant.
 - **Suggestion IA dans les formulaires** : demande IT, communication, réunion, intervention,

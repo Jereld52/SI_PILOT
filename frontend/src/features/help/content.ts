@@ -1198,6 +1198,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         "Dock flottant en bas à droite : il change de contexte selon l'onglet et propose deux questions rapides.",
         "Page d'accueil IA immersive : grand composeur, raccourcis, statut du fournisseur et accès au catalogue complet des outils.",
         "Espace de travail IA en plein écran : menu latéral, conversation, raccourcis, outils par domaine, actions assistées, intégrations et historique.",
+        "Conversations persistantes : chaque échange est sauvegardé. Vous pouvez reprendre une conversation, la renommer, la rechercher, l'archiver, la supprimer ou l'exporter en Markdown ou PDF.",
+        "Le menu Conversations affiche uniquement vos propres conversations, avec leur contexte et leur nombre de messages.",
         "Le menu de l'espace IA permet de parcourir tous les outils accessibles, les intégrations actives et les actions que l'assistant peut préparer.",
         "Historique compact en bas de page et historique complet dans l'espace de travail : demandes, statut et durée.",
         "Import intelligent : analyser un contrat, un devis, un bon de commande, une facture ou une licence et l'intégrer dans le bon module.",

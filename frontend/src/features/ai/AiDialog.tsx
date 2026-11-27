@@ -2,14 +2,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   ArrowUpRight,
+  Archive,
+  ArchiveRestore,
   CalendarPlus,
   Check,
   Copy,
+  Download,
   FileText,
   History,
   LayoutGrid,
   LockKeyhole,
   MessageSquare,
+  MessagesSquare,
+  Pencil,
   Plug,
   RefreshCw,
   Search,
@@ -18,11 +23,12 @@ import {
   ShieldCheck,
   ShoppingCart,
   Sparkles,
+  Trash2,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useDeferredValue } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -35,6 +41,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -53,8 +60,11 @@ import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import type {
   AiActionExecuteResponse,
   AiActionProposal,
-  AiChatResponse,
   AiContextRef,
+  AiConversationChatResponse,
+  AiConversationDetail,
+  AiConversationItem,
+  AiConversationMessage,
   AiRunItem,
   AiStatus,
   AiToolInfo,
@@ -65,9 +75,11 @@ interface AiDialogProps {
   onOpenChange: (open: boolean) => void;
   context?: AiContextRef | null;
   initialPrompt?: string;
+  initialView?: "chat" | "conversations";
 }
 
 interface ChatMessage {
+  id?: string;
   role: "user" | "assistant";
   content: string;
   tools?: string[];
@@ -79,6 +91,7 @@ interface ChatMessage {
 
 type WorkspaceView =
   | "chat"
+  | "conversations"
   | "prompts"
   | "tools"
   | "actions"
@@ -253,7 +266,26 @@ function MarkdownText({ text }: { text: string }) {
   );
 }
 
-export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialogProps) {
+function toChatMessage(message: AiConversationMessage): ChatMessage {
+  return {
+    id: message.id,
+    role: message.role === "assistant" ? "assistant" : "user",
+    content: message.content,
+    tools: message.tools_used,
+    suggestions: message.suggestions,
+    actions: message.actions,
+    actionsDone: message.actions_done,
+    actionsIgnored: message.actions_ignored,
+  };
+}
+
+export function AiDialog({
+  open,
+  onOpenChange,
+  context,
+  initialPrompt,
+  initialView = "chat",
+}: AiDialogProps) {
   const { hasPermission } = useAuth();
   const { isEnabled } = useModules();
   const branding = useBranding();
@@ -269,6 +301,19 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
   const [activeDomain, setActiveDomain] = useState<string | null>(null);
   const [promptSearch, setPromptSearch] = useState("");
   const [toolSearch, setToolSearch] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationTitle, setConversationTitle] = useState<string | null>(null);
+  const [conversationContextLabel, setConversationContextLabel] = useState<
+    string | null
+  >(null);
+  const [conversationSearch, setConversationSearch] = useState("");
+  const [conversationFilter, setConversationFilter] = useState<
+    "active" | "archived" | "all"
+  >("active");
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [busyConversationId, setBusyConversationId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AiConversationItem | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoStarted = useRef<string>("");
 
@@ -290,6 +335,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
             ? canManageCommercial
             : canCreateAction;
   const contextKey = context ? `${context.type}:${context.id}` : "general";
+  const deferredConversationSearch = useDeferredValue(conversationSearch);
 
   const statusQuery = useQuery({
     queryKey: ["ai", "status"],
@@ -306,6 +352,24 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     queryKey: ["ai", "runs", 20],
     queryFn: () => apiFetch<AiRunItem[]>("/ai/runs?limit=20"),
     enabled: open && canUse && view === "history",
+  });
+  const conversationsQuery = useQuery({
+    queryKey: [
+      "ai",
+      "conversations",
+      conversationFilter,
+      deferredConversationSearch,
+    ],
+    queryFn: () => {
+      const params = new URLSearchParams({ archived: conversationFilter });
+      if (deferredConversationSearch.trim()) {
+        params.set("q", deferredConversationSearch.trim());
+      }
+      return apiFetch<AiConversationItem[]>(
+        `/ai/conversations?${params.toString()}`,
+      );
+    },
+    enabled: open && canUse,
   });
   const status = statusQuery.data;
   const tools = toolsQuery.data ?? [];
@@ -361,6 +425,12 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
       hint: messages.length > 0 ? `${messages.length} message(s)` : "Espace de dialogue",
     },
     {
+      key: "conversations" as const,
+      label: "Conversations",
+      icon: MessagesSquare,
+      hint: `${conversationsQuery.data?.length ?? 0} conversation(s)`,
+    },
+    {
       key: "prompts" as const,
       label: "Raccourcis",
       icon: Zap,
@@ -406,24 +476,52 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     setInput("");
     setError(null);
     setCopiedIndex(null);
-    setView("chat");
+    setView(initialView);
     setActiveDomain(null);
     setPromptSearch("");
     setToolSearch("");
+    setConversationId(null);
+    setConversationTitle(null);
+    setConversationContextLabel(null);
+    setRenamingId(null);
+    setDeleteTarget(null);
     autoStarted.current = "";
-  }, [open, contextKey]);
+  }, [open, contextKey, initialView]);
 
-  const payloadContext = context ? { type: context.type, id: context.id } : undefined;
+  const payloadContext = context
+    ? { type: context.type, id: context.id, label: context.label }
+    : undefined;
 
-  const complete = async (history: ChatMessage[]) => {
-    return apiFetch<AiChatResponse>("/ai/chat", {
+  const ensureConversation = async (): Promise<string> => {
+    if (conversationId) return conversationId;
+    const created = await apiFetch<AiConversationItem>("/ai/conversations", {
       method: "POST",
-      body: JSON.stringify({
-        messages: history.slice(-12),
-        include_context: true,
-        context: payloadContext,
-      }),
+      body: JSON.stringify({ context: payloadContext }),
     });
+    setConversationId(created.id);
+    setConversationTitle(created.title);
+    if (created.context_label) setConversationContextLabel(created.context_label);
+    void queryClient.invalidateQueries({ queryKey: ["ai", "conversations"] });
+    return created.id;
+  };
+
+  const requestAssistant = async (content: string) => {
+    const id = await ensureConversation();
+    const result = await apiFetch<AiConversationChatResponse>(
+      `/ai/conversations/${id}/messages`,
+      {
+        method: "POST",
+        body: JSON.stringify({ content, include_context: true }),
+      },
+    );
+    setConversationId(result.conversation.id);
+    setConversationTitle(result.conversation.title);
+    if (result.conversation.context_label) {
+      setConversationContextLabel(result.conversation.context_label);
+    }
+    void queryClient.invalidateQueries({ queryKey: ["ai", "conversations"] });
+    void queryClient.invalidateQueries({ queryKey: ["ai", "runs"] });
+    return result;
   };
 
   const startWithPrompt = async (prompt: string) => {
@@ -434,22 +532,16 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     setError(null);
     setSending(true);
     try {
-      const result = await complete([userMessage]);
+      const result = await requestAssistant(prompt);
       setMessages([
-        userMessage,
-        {
-          role: "assistant",
-          content: result.message,
-          tools: result.tools_used,
-          suggestions: result.suggestions,
-          actions: result.actions,
-        },
+        toChatMessage(result.user_message),
+        toChatMessage(result.assistant_message),
       ]);
-      void queryClient.invalidateQueries({ queryKey: ["ai", "runs"] });
     } catch (caught) {
       setError(
         caught instanceof ApiError ? caught.message : "L'assistant IA est indisponible.",
       );
+      void queryClient.invalidateQueries({ queryKey: ["ai", "conversations"] });
     } finally {
       setSending(false);
     }
@@ -474,22 +566,17 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     setError(null);
     setSending(true);
     try {
-      const result = await complete(next);
-      setMessages([
-        ...next,
-        {
-          role: "assistant",
-          content: result.message,
-          tools: result.tools_used,
-          suggestions: result.suggestions,
-          actions: result.actions,
-        },
+      const result = await requestAssistant(content);
+      setMessages((current) => [
+        ...current.slice(0, -1),
+        toChatMessage(result.user_message),
+        toChatMessage(result.assistant_message),
       ]);
-      void queryClient.invalidateQueries({ queryKey: ["ai", "runs"] });
     } catch (caught) {
       setError(
         caught instanceof ApiError ? caught.message : "L'assistant IA est indisponible.",
       );
+      void queryClient.invalidateQueries({ queryKey: ["ai", "conversations"] });
     } finally {
       setSending(false);
     }
@@ -501,6 +588,10 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
     setError(null);
     setCopiedIndex(null);
     setView("chat");
+    setConversationId(null);
+    setConversationTitle(null);
+    setConversationContextLabel(null);
+    setRenamingId(null);
     autoStarted.current = "";
   };
 
@@ -512,6 +603,21 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
       window.setTimeout(() => setCopiedIndex(null), 1500);
     } catch {
       toast.error("Copie impossible.");
+    }
+  };
+
+  const markMessageState = async (
+    messageId: string | undefined,
+    state: "done" | "ignored",
+  ) => {
+    if (!conversationId || !messageId) return;
+    try {
+      await apiFetch(`/ai/conversations/${conversationId}/messages/${messageId}/actions`, {
+        method: "PATCH",
+        body: JSON.stringify({ state }),
+      });
+    } catch {
+      // L'état local reste utilisable même si la journalisation échoue.
     }
   };
 
@@ -528,6 +634,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
           messageIndex === index ? { ...message, actionsDone: true } : message,
         ),
       );
+      void markMessageState(messages[index]?.id, "done");
       toast.success(result.message);
       void queryClient.invalidateQueries({ queryKey: ["ai", "runs"] });
     } catch (caught) {
@@ -542,6 +649,130 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
   const openIntegration = (to: string) => {
     onOpenChange(false);
     navigate(to);
+  };
+
+  const refreshConversations = () => {
+    void queryClient.invalidateQueries({ queryKey: ["ai", "conversations"] });
+  };
+
+  const loadConversation = async (conversation: AiConversationItem) => {
+    setBusyConversationId(conversation.id);
+    try {
+      const detail = await apiFetch<AiConversationDetail>(
+        `/ai/conversations/${conversation.id}`,
+      );
+      setConversationId(detail.id);
+      setConversationTitle(detail.title);
+      setConversationContextLabel(detail.context_label);
+      setMessages(detail.messages.map(toChatMessage));
+      setError(null);
+      setView("chat");
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError
+          ? caught.message
+          : "Impossible de charger cette conversation.",
+      );
+    } finally {
+      setBusyConversationId(null);
+    }
+  };
+
+  const startRename = (conversation: AiConversationItem) => {
+    setRenamingId(conversation.id);
+    setRenameValue(conversation.title);
+  };
+
+  const saveRename = async (conversation: AiConversationItem) => {
+    const title = renameValue.trim();
+    if (!title) return;
+    setBusyConversationId(conversation.id);
+    try {
+      const updated = await apiFetch<AiConversationItem>(
+        `/ai/conversations/${conversation.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ title }),
+        },
+      );
+      if (conversationId === updated.id) setConversationTitle(updated.title);
+      setRenamingId(null);
+      refreshConversations();
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Renommage impossible.",
+      );
+    } finally {
+      setBusyConversationId(null);
+    }
+  };
+
+  const toggleArchive = async (conversation: AiConversationItem) => {
+    setBusyConversationId(conversation.id);
+    try {
+      await apiFetch<AiConversationItem>(`/ai/conversations/${conversation.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ archived: !conversation.archived_at }),
+      });
+      refreshConversations();
+      toast.success(
+        conversation.archived_at ? "Conversation restaurée." : "Conversation archivée.",
+      );
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Archivage impossible.",
+      );
+    } finally {
+      setBusyConversationId(null);
+    }
+  };
+
+  const deleteConversation = async () => {
+    if (!deleteTarget) return;
+    setBusyConversationId(deleteTarget.id);
+    try {
+      await apiFetch(`/ai/conversations/${deleteTarget.id}`, { method: "DELETE" });
+      if (conversationId === deleteTarget.id) reset();
+      setDeleteTarget(null);
+      refreshConversations();
+      toast.success("Conversation supprimée.");
+    } catch (caught) {
+      toast.error(
+        caught instanceof ApiError ? caught.message : "Suppression impossible.",
+      );
+    } finally {
+      setBusyConversationId(null);
+    }
+  };
+
+  const exportConversation = async (
+    conversation: AiConversationItem,
+    format: "md" | "pdf",
+  ) => {
+    setBusyConversationId(conversation.id);
+    try {
+      const response = await fetch(
+        `/api/v1/ai/conversations/${conversation.id}/export?format=${format}`,
+        { credentials: "include" },
+      );
+      if (!response.ok) throw new Error("Export impossible.");
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? `conversation-ia.${format}`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Export de la conversation impossible.");
+    } finally {
+      setBusyConversationId(null);
+    }
   };
 
   const prompts = context ? contextPrompts[context.type] ?? genericPrompts : genericPrompts;
@@ -637,15 +868,16 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
+                      onClick={() => {
                         setMessages((current) =>
                           current.map((item, itemIndex) =>
                             itemIndex === index
                               ? { ...item, actionsIgnored: true }
                               : item,
                           ),
-                        )
-                      }
+                        );
+                        void markMessageState(messages[index]?.id, "ignored");
+                      }}
                     >
                       <X className="h-3.5 w-3.5" />
                       Ignorer
@@ -857,6 +1089,216 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
             qu'après confirmation.
           </p>
         </div>
+      </div>
+    </div>
+  );
+
+  const renderConversationsView = () => (
+    <div className="h-full overflow-y-auto px-4 py-4 sm:px-6">
+      <div className="mx-auto max-w-5xl space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Conversations
+            </p>
+            <h2 className="text-lg font-semibold text-foreground">Vos conversations IA</h2>
+            <p className="text-xs text-muted">
+              Retrouvez, renommez, archivez ou exportez vos échanges. Seules vos propres
+              conversations sont visibles.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-2" />
+              <Input
+                value={conversationSearch}
+                onChange={(event) => setConversationSearch(event.target.value)}
+                placeholder="Rechercher une conversation…"
+                className="pl-8"
+              />
+            </div>
+            <Button size="sm" onClick={reset}>
+              <Sparkles className="h-3.5 w-3.5" />
+              Nouvelle
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            { key: "active" as const, label: "Actives" },
+            { key: "archived" as const, label: "Archivées" },
+            { key: "all" as const, label: "Toutes" },
+          ].map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={() => setConversationFilter(filter.key)}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[10px] transition-colors",
+                conversationFilter === filter.key
+                  ? "border-primary/40 bg-primary/15 text-foreground"
+                  : "border-border-soft bg-background/50 text-muted hover:text-foreground",
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+          <span className="ml-auto self-center text-[10px] text-muted-2">
+            {conversationsQuery.data?.length ?? 0} conversation(s)
+          </span>
+        </div>
+
+        {conversationsQuery.isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
+        ) : (conversationsQuery.data ?? []).length === 0 ? (
+          <div className="rounded-xl border border-border-soft bg-background/40 px-4 py-10 text-center">
+            <MessagesSquare className="mx-auto h-8 w-8 text-muted-2" />
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Aucune conversation
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              {conversationSearch.trim()
+                ? "Aucun résultat pour cette recherche."
+                : "Posez une première question pour créer une conversation sauvegardée."}
+            </p>
+            <Button className="mt-3" size="sm" onClick={reset}>
+              <Sparkles className="h-3.5 w-3.5" />
+              Démarrer une conversation
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {(conversationsQuery.data ?? []).map((conversation) => (
+              <div
+                key={conversation.id}
+                className="rounded-xl border border-border-soft bg-surface/60 p-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    {renamingId === conversation.id ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Input
+                          value={renameValue}
+                          onChange={(event) => setRenameValue(event.target.value)}
+                          className="h-8 min-w-[180px] flex-1"
+                          autoFocus
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void saveRename(conversation);
+                            }
+                            if (event.key === "Escape") setRenamingId(null);
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          loading={busyConversationId === conversation.id}
+                          onClick={() => void saveRename(conversation)}
+                        >
+                          Enregistrer
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void loadConversation(conversation)}
+                        className="block max-w-full text-left"
+                      >
+                        <p className="truncate text-sm font-semibold text-foreground hover:text-accent">
+                          {conversation.title}
+                        </p>
+                      </button>
+                    )}
+                    <p className="mt-1 text-[10px] text-muted-2">
+                      {conversation.context_label ?? "Général"} ·{" "}
+                      {conversation.message_count} message(s) ·{" "}
+                      {formatDateTime(conversation.last_message_at)}
+                    </p>
+                    {conversation.archived_at ? (
+                      <Badge tone="warning" className="mt-1.5">
+                        Archivée
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={busyConversationId === conversation.id}
+                      onClick={() => void loadConversation(conversation)}
+                    >
+                      Ouvrir
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Renommer"
+                      aria-label={`Renommer ${conversation.title}`}
+                      onClick={() => startRename(conversation)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={conversation.archived_at ? "Restaurer" : "Archiver"}
+                      aria-label={
+                        conversation.archived_at
+                          ? `Restaurer ${conversation.title}`
+                          : `Archiver ${conversation.title}`
+                      }
+                      onClick={() => void toggleArchive(conversation)}
+                    >
+                      {conversation.archived_at ? (
+                        <ArchiveRestore className="h-3.5 w-3.5" />
+                      ) : (
+                        <Archive className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Exporter en Markdown"
+                      aria-label={`Exporter ${conversation.title} en Markdown`}
+                      onClick={() => void exportConversation(conversation, "md")}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Exporter en PDF"
+                      aria-label={`Exporter ${conversation.title} en PDF`}
+                      onClick={() => void exportConversation(conversation, "pdf")}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Supprimer"
+                      aria-label={`Supprimer ${conversation.title}`}
+                      onClick={() => setDeleteTarget(conversation)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-danger" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1285,6 +1727,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
 
   const renderView = () => {
     switch (view) {
+      case "conversations":
+        return renderConversationsView();
       case "prompts":
         return renderPromptsView();
       case "tools":
@@ -1302,7 +1746,8 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideClose
         className="flex h-[94vh] max-h-[94vh] w-[97vw] max-w-[1680px] flex-col overflow-hidden p-0"
@@ -1329,10 +1774,19 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                         : "Non configuré"}
                   </Badge>
                 ) : null}
-                {context ? (
+                {context || conversationContextLabel ? (
                   <Badge tone="info">
-                    {contextLabels[context.type] ?? "Contexte"}
-                    {context.label ? ` : ${context.label}` : ""}
+                    {conversationContextLabel
+                      ? `Contexte : ${conversationContextLabel}`
+                      : `${contextLabels[context?.type ?? ""] ?? "Contexte"}${
+                          context?.label ? ` : ${context.label}` : ""
+                        }`}
+                  </Badge>
+                ) : null}
+                {conversationTitle && conversationTitle !== "Nouvelle conversation" ? (
+                  <Badge tone="neutral" className="max-w-[420px]">
+                    <MessagesSquare className="mr-1 h-3 w-3" />
+                    <span className="truncate">{conversationTitle}</span>
                   </Badge>
                 ) : null}
               </div>
@@ -1637,6 +2091,24 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
           </div>
         )}
       </DialogContent>
-    </Dialog>
+      </Dialog>
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(next) => {
+          if (!next) setDeleteTarget(null);
+        }}
+        title="Supprimer la conversation ?"
+        description={
+          deleteTarget
+            ? `La conversation « ${deleteTarget.title} » et tous ses messages seront supprimés définitivement.`
+            : ""
+        }
+        confirmLabel="Supprimer"
+        loading={
+          deleteTarget !== null && busyConversationId === deleteTarget.id
+        }
+        onConfirm={() => void deleteConversation()}
+      />
+    </>
   );
 }

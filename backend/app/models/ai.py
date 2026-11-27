@@ -1,8 +1,8 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin, utcnow
 
@@ -26,6 +26,53 @@ class AiRun(Base, UUIDMixin):
         DateTime(timezone=True), default=utcnow, nullable=False
     )
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AiConversation(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "ai_conversations"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    context_type: Mapped[str | None] = mapped_column(String(30))
+    context_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True))
+    context_label: Mapped[str | None] = mapped_column(String(255))
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), index=True
+    )
+    last_message_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
+    )
+    message_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    messages: Mapped[list["AiMessage"]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="AiMessage.created_at",
+    )
+
+
+class AiMessage(Base, UUIDMixin):
+    __tablename__ = "ai_messages"
+
+    conversation_id: Mapped[UUID] = mapped_column(
+        ForeignKey("ai_conversations.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    tools_used_json: Mapped[str | None] = mapped_column(Text)
+    suggestions_json: Mapped[str | None] = mapped_column(Text)
+    actions_json: Mapped[str | None] = mapped_column(Text)
+    actions_done: Mapped[bool] = mapped_column(default=False, nullable=False)
+    actions_ignored: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
+    )
+
+    conversation: Mapped[AiConversation] = relationship(back_populates="messages")
 
 
 class AiProposal(Base, UUIDMixin, TimestampMixin):

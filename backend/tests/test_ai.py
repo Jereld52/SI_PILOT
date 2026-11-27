@@ -516,3 +516,122 @@ def test_fleet_context_contains_sections():
         context = ai_service._fleet_context(db)
     assert context.startswith("Contexte du parc")
     assert "Équipements actifs" in context
+
+
+
+def test_ai_conversations_persistence(admin_client, csrf_headers, monkeypatch):
+    client, csrf = admin_client
+    client.put(
+        "/api/v1/admin/ai/config",
+        headers=csrf_headers(csrf),
+        json={
+            "enabled": True,
+            "provider": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4.1-mini",
+            "api_key": "sk-test-secret",
+        },
+    )
+
+    def fake_complete(config, messages, max_tokens=None):  # noqa: ANN001, ARG001
+        return (
+            "Voici l'analyse demandee.\n"
+            "```action\n"
+            '{"type": "create_action", "title": "Verifier le parc", '
+            '"description": "Controler les equipements signales.", '
+            '"priority": "medium", "due_date": "2026-12-01"}\n'
+            "```",
+            {"total_tokens": 42},
+        )
+
+    monkeypatch.setattr(ai_service, "_complete", fake_complete)
+
+    created = client.post(
+        "/api/v1/ai/conversations",
+        headers=csrf_headers(csrf),
+        json={},
+    )
+    assert created.status_code == 200, created.text
+    conversation = created.json()
+    assert conversation["title"] == "Nouvelle conversation"
+    conversation_id = conversation["id"]
+
+    sent = client.post(
+        f"/api/v1/ai/conversations/{conversation_id}/messages",
+        headers=csrf_headers(csrf),
+        json={"content": "Quels equipements sont en panne ?"},
+    )
+    assert sent.status_code == 200, sent.text
+    body = sent.json()
+    assert body["conversation"]["message_count"] == 2
+    assert body["conversation"]["title"].startswith("Quels equipements")
+    assert body["user_message"]["role"] == "user"
+    assert body["assistant_message"]["role"] == "assistant"
+    assert "```action" not in body["assistant_message"]["content"]
+    assert body["assistant_message"]["actions"][0]["title"] == "Verifier le parc"
+    assistant_message_id = body["assistant_message"]["id"]
+
+    detail = client.get(f"/api/v1/ai/conversations/{conversation_id}")
+    assert detail.status_code == 200, detail.text
+    assert len(detail.json()["messages"]) == 2
+
+    listed = client.get("/api/v1/ai/conversations", params={"q": "equipements"})
+    assert listed.status_code == 200, listed.text
+    assert any(item["id"] == conversation_id for item in listed.json())
+
+    renamed = client.patch(
+        f"/api/v1/ai/conversations/{conversation_id}",
+        headers=csrf_headers(csrf),
+        json={"title": "Analyse du parc"},
+    )
+    assert renamed.status_code == 200, renamed.text
+    assert renamed.json()["title"] == "Analyse du parc"
+
+    marked = client.patch(
+        f"/api/v1/ai/conversations/{conversation_id}/messages/{assistant_message_id}/actions",
+        headers=csrf_headers(csrf),
+        json={"state": "done"},
+    )
+    assert marked.status_code == 200, marked.text
+    assert marked.json()["actions_done"] is True
+
+    archived = client.patch(
+        f"/api/v1/ai/conversations/{conversation_id}",
+        headers=csrf_headers(csrf),
+        json={"archived": True},
+    )
+    assert archived.status_code == 200, archived.text
+    assert archived.json()["archived_at"] is not None
+
+    active = client.get(
+        "/api/v1/ai/conversations", params={"archived": "active"}
+    )
+    assert all(item["id"] != conversation_id for item in active.json())
+    archived_list = client.get(
+        "/api/v1/ai/conversations", params={"archived": "archived"}
+    )
+    assert any(item["id"] == conversation_id for item in archived_list.json())
+
+    export_md = client.get(
+        f"/api/v1/ai/conversations/{conversation_id}/export",
+        params={"format": "md"},
+    )
+    assert export_md.status_code == 200, export_md.text
+    assert "text/markdown" in export_md.headers["content-type"]
+    assert "# Analyse du parc" in export_md.text
+
+    export_pdf = client.get(
+        f"/api/v1/ai/conversations/{conversation_id}/export",
+        params={"format": "pdf"},
+    )
+    assert export_pdf.status_code == 200, export_pdf.text
+    assert export_pdf.headers["content-type"].startswith("application/pdf")
+    assert export_pdf.content.startswith(b"%PDF")
+
+    deleted = client.delete(
+        f"/api/v1/ai/conversations/{conversation_id}",
+        headers=csrf_headers(csrf),
+    )
+    assert deleted.status_code == 204, deleted.text
+    missing = client.get(f"/api/v1/ai/conversations/{conversation_id}")
+    assert missing.status_code == 404
