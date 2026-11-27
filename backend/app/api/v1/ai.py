@@ -14,6 +14,7 @@ from app.exports.ai_conversations import conversation_pdf
 from app.models.assets import Supplier
 from app.models.auth import User
 from app.models.commercial import CommercialDocument
+from app.models.documents import DocumentCategory
 from app.models.tickets import TicketCategory, TicketPriority
 from app.schemas.ai import (
     AiActionExecuteResponse,
@@ -41,6 +42,7 @@ from app.schemas.ai import (
 from app.schemas.calendar import ActionItemCreate
 from app.schemas.commercial import CommercialDocumentCreate
 from app.schemas.communication import CommunicationCreate, MeetingCreate
+from app.schemas.documents import DocumentCreate
 from app.schemas.suppliers import SupplierCreate
 from app.schemas.tickets import TicketCreate
 from app.services import (
@@ -51,6 +53,7 @@ from app.services import (
     calendar_service,
     commercial_service,
     communication_service,
+    documents_service,
     suppliers_service,
     tickets_service,
 )
@@ -464,6 +467,32 @@ def execute_action(
                 f"{order.engagement_number}."
             ),
             link="/bons-commande",
+        )
+
+    if payload.type == "create_document":
+        if not has_permission(actor, "documents.create"):
+            raise PermissionDeniedError("Vous ne pouvez pas créer de document.")
+        category_code = (payload.category or "procedure").strip() or "procedure"
+        category = db.scalar(
+            select(DocumentCategory).where(DocumentCategory.code == category_code)
+        )
+        document = documents_service.create_document(
+            db,
+            DocumentCreate(
+                title=payload.title,
+                doc_type=category_code,
+                category_id=category.id if category else None,
+                description=payload.content or payload.description or payload.title,
+                status="draft",
+                visibility="all",
+                tags=["ia", "procedure"],
+            ),
+            actor=actor,
+            request=request,
+        )
+        return AiActionExecuteResponse(
+            message=f"Brouillon de document créé : {document.title}",
+            link=f"/documentation?document={document.id}",
         )
 
     if not has_permission(actor, "actions.create"):

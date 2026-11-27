@@ -66,6 +66,7 @@ class AiMessage(Base, UUIDMixin):
     tools_used_json: Mapped[str | None] = mapped_column(Text)
     suggestions_json: Mapped[str | None] = mapped_column(Text)
     actions_json: Mapped[str | None] = mapped_column(Text)
+    sources_json: Mapped[str | None] = mapped_column(Text)
     actions_done: Mapped[bool] = mapped_column(default=False, nullable=False)
     actions_ignored: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

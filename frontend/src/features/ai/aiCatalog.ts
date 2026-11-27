@@ -67,6 +67,18 @@ export const toolDomains: ToolDomainMeta[] = [
     icon: Users,
   },
   {
+    key: "documents",
+    label: "Documentation & procédures",
+    description: "Documents, guides, procédures et cohérence documentaire.",
+    icon: FileText,
+  },
+  {
+    key: "conformite",
+    label: "Conformité RGPD",
+    description: "Traitements, droits, violations et durées de conservation.",
+    icon: ShieldCheck,
+  },
+  {
     key: "pilotage",
     label: "Pilotage & audit",
     description: "Briefing, bilan mensuel et activité récente.",
@@ -164,6 +176,15 @@ export const actionCapabilities: AiActionCapability[] = [
     permission: "suppliers.manage",
     prompt: "Prépare un bon de commande avec numéro d'engagement pour du matériel.",
     icon: ShoppingCart,
+  },
+  {
+    type: "create_document",
+    label: "Document / procédure",
+    description: "Créer un brouillon de procédure, de guide ou de fiche technique.",
+    permission: "documents.create",
+    prompt:
+      "Rédige une procédure documentée à partir des tickets résolus et des interventions passées.",
+    icon: FileText,
   },
 ];
 
@@ -305,6 +326,44 @@ export const aiTaskGroups: AiTaskGroup[] = [
         title: "Contrats incomplets",
         prompt:
           "Quels contrats sont sans date de fin ou proches de l'échéance ?",
+      },
+    ],
+  },
+  {
+    key: "conformite",
+    label: "Conformité & documentation",
+    description: "RGPD, registre, durées de conservation, procédures et cohérence documentaire.",
+    icon: ShieldCheck,
+    tasks: [
+      {
+        title: "Registre RGPD",
+        prompt:
+          "Analyse le registre RGPD : traitements à revue, informations manquantes et priorités.",
+      },
+      {
+        title: "Analyse d'impact",
+        prompt:
+          "Prépare une analyse d'impact RGPD pour un nouveau traitement de données personnelles.",
+      },
+      {
+        title: "Durées de conservation",
+        prompt:
+          "Propose des durées de conservation adaptées aux traitements et données personnelles de l'organisation.",
+      },
+      {
+        title: "Recherche documentaire",
+        prompt:
+          "Recherche dans la documentation les procédures et guides correspondant à ma question, avec les sources.",
+      },
+      {
+        title: "Procédure depuis les tickets",
+        prompt:
+          "Génère une procédure à partir des tickets résolus et des interventions passées, avec les étapes et les points de contrôle.",
+      },
+      {
+        title: "Cohérence documentaire",
+        prompt:
+          "Contrôle la cohérence de la documentation : documents obsolètes, sans version, doublons et versions manquantes.",
       },
     ],
   },
@@ -541,6 +600,43 @@ export const workspacePromptGroups: WorkspacePromptGroup[] = [
       {
         title: "Annuaire et affectations",
         prompt: "Quels agents sont actifs et quels équipements leur sont affectés ?",
+      },
+    ],
+  },
+  {
+    key: "conformite",
+    label: "Conformité & documentation",
+    icon: ShieldCheck,
+    prompts: [
+      {
+        title: "Registre RGPD",
+        prompt:
+          "Analyse le registre RGPD : traitements à revue, informations manquantes et priorités.",
+      },
+      {
+        title: "Analyse d'impact",
+        prompt:
+          "Prépare une analyse d'impact RGPD pour un nouveau traitement de données personnelles.",
+      },
+      {
+        title: "Durées de conservation",
+        prompt:
+          "Propose des durées de conservation adaptées aux traitements et données personnelles de l'organisation.",
+      },
+      {
+        title: "Recherche documentaire",
+        prompt:
+          "Recherche dans la documentation les procédures et guides correspondant à ma question, avec les sources.",
+      },
+      {
+        title: "Procédure depuis les tickets",
+        prompt:
+          "Génère une procédure à partir des tickets résolus et des interventions passées, avec les étapes et les points de contrôle.",
+      },
+      {
+        title: "Cohérence documentaire",
+        prompt:
+          "Contrôle la cohérence de la documentation : documents obsolètes, sans version, doublons et versions manquantes.",
       },
     ],
   },

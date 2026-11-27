@@ -8,6 +8,7 @@ from app.models.auth import User
 from app.models.commercial import CommercialDocument
 from app.models.contracts import Contract
 from app.models.document_intake import DocumentIntake
+from app.models.documents import Document, DocumentVersion
 from app.schemas.data_quality import DataQualityItem, DataQualityOverview, DataQualitySection
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -337,11 +338,186 @@ def _import_sections(db: Session, actor: User) -> list[DataQualitySection]:
     return sections
 
 
+def _documentation_sections(db: Session, actor: User) -> list[DataQualitySection]:
+    if not has_permission(actor, "documents.read"):
+        return []
+    now = datetime.now(UTC)
+    sections: list[DataQualitySection] = []
+
+    without_version = db.scalars(
+        select(Document)
+        .where(
+            Document.archived_at.is_(None),
+            Document.status.in_(("draft", "published")),
+            ~Document.versions.any(),
+        )
+        .order_by(Document.updated_at.desc())
+    ).all()
+    items = [
+        _item(
+            item_id=f"document-no-version-{document.id}",
+            title=f"Document sans version · {document.title}",
+            detail="Aucun fichier n'est rattaché à ce document.",
+            severity="warning",
+            href=f"/documentation?document={document.id}",
+            action_label="Ajouter une version",
+            permission="documents.update",
+            module_key="documents",
+            entity_type="document",
+            entity_id=str(document.id),
+        )
+        for document in without_version
+    ]
+    if items:
+        sections.append(
+            _section(
+                "document_without_version",
+                "Documents sans version",
+                "Ces documents n'ont aucun fichier publié ou brouillon.",
+                items,
+            )
+        )
+
+    missing_current = db.scalars(
+        select(Document)
+        .where(
+            Document.archived_at.is_(None),
+            Document.versions.any(),
+            ~Document.versions.any(DocumentVersion.is_current.is_(True)),
+        )
+        .order_by(Document.updated_at.desc())
+    ).all()
+    items = [
+        _item(
+            item_id=f"document-no-current-{document.id}",
+            title=f"Version courante absente · {document.title}",
+            detail="Des versions existent mais aucune n'est marquée comme courante.",
+            severity="warning",
+            href=f"/documentation?document={document.id}",
+            action_label="Corriger",
+            permission="documents.update",
+            module_key="documents",
+            entity_type="document",
+            entity_id=str(document.id),
+        )
+        for document in missing_current
+    ]
+    if items:
+        sections.append(
+            _section(
+                "document_missing_current",
+                "Versions courantes manquantes",
+                "Une version doit être marquée comme courante pour être proposée.",
+                items,
+            )
+        )
+
+    stale = db.scalars(
+        select(Document)
+        .where(
+            Document.archived_at.is_(None),
+            Document.status == "published",
+            Document.updated_at < now - timedelta(days=365),
+        )
+        .order_by(Document.updated_at.asc())
+    ).all()
+    items = [
+        _item(
+            item_id=f"document-stale-{document.id}",
+            title=f"Document ancien · {document.title}",
+            detail=f"Dernière mise à jour le {document.updated_at.strftime('%d/%m/%Y')}.",
+            severity="info",
+            href=f"/documentation?document={document.id}",
+            action_label="Mettre à jour",
+            permission="documents.update",
+            module_key="documents",
+            entity_type="document",
+            entity_id=str(document.id),
+        )
+        for document in stale
+    ]
+    if items:
+        sections.append(
+            _section(
+                "document_stale",
+                "Documents non mis à jour",
+                "Documents publiés sans mise à jour depuis plus de 12 mois.",
+                items,
+            )
+        )
+
+    duplicate_rows = db.execute(
+        select(func.lower(Document.title), func.count(Document.id))
+        .where(Document.archived_at.is_(None))
+        .group_by(func.lower(Document.title))
+        .having(func.count(Document.id) > 1)
+    ).all()
+    items = [
+        _item(
+            item_id=f"document-duplicate-{str(title)}",
+            title=f"Titre en double · {str(title)}",
+            detail=f"{count} documents partagent ce titre.",
+            severity="warning",
+            href=f"/documentation?q={str(title)}",
+            action_label="Vérifier",
+            permission="documents.read",
+            module_key="documents",
+            entity_type="document_duplicate",
+            entity_id=str(title),
+        )
+        for title, count in duplicate_rows
+    ]
+    if items:
+        sections.append(
+            _section(
+                "document_duplicate_title",
+                "Doublons de documents",
+                "Plusieurs documents portent le même titre.",
+                items,
+            )
+        )
+
+    without_category = db.scalars(
+        select(Document)
+        .where(
+            Document.archived_at.is_(None),
+            Document.category_id.is_(None),
+        )
+        .order_by(Document.updated_at.desc())
+    ).all()
+    items = [
+        _item(
+            item_id=f"document-no-category-{document.id}",
+            title=f"Document sans catégorie · {document.title}",
+            detail="La classification et les recherches seront moins précises.",
+            severity="info",
+            href=f"/documentation?document={document.id}",
+            action_label="Classer",
+            permission="documents.update",
+            module_key="documents",
+            entity_type="document",
+            entity_id=str(document.id),
+        )
+        for document in without_category
+    ]
+    if items:
+        sections.append(
+            _section(
+                "document_without_category",
+                "Documents sans catégorie",
+                "Ces documents ne sont rattachés à aucune catégorie.",
+                items,
+            )
+        )
+    return sections
+
+
 def get_overview(db: Session, actor: User) -> DataQualityOverview:
     sections = [
         *_purchase_sections(db, actor),
         *_contract_sections(db, actor),
         *_asset_sections(db, actor),
+        *_documentation_sections(db, actor),
         *_import_sections(db, actor),
     ]
     total = sum(section.total for section in sections)

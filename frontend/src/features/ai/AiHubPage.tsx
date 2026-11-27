@@ -339,6 +339,67 @@ const shortcutGroups: AiShortcutGroup[] = [
     ],
   },
   {
+    key: "conformite",
+    label: "Conformité & documentation",
+    icon: ShieldCheck,
+    items: [
+      {
+        key: "rgpd-register",
+        title: "Registre RGPD",
+        description: "Traitements à revue, informations manquantes et priorités.",
+        prompt:
+          "Analyse le registre RGPD : traitements à revue, informations manquantes et priorités.",
+        permission: "rgpd.read",
+        moduleKey: "rgpd",
+      },
+      {
+        key: "rgpd-impact",
+        title: "Analyse d'impact",
+        description: "Préparer une AIPD pour un nouveau traitement.",
+        prompt:
+          "Prépare une analyse d'impact RGPD pour un nouveau traitement de données personnelles.",
+        permission: "rgpd.read",
+        moduleKey: "rgpd",
+      },
+      {
+        key: "rgpd-retention",
+        title: "Durées de conservation",
+        description: "Proposer des durées adaptées aux traitements.",
+        prompt:
+          "Propose des durées de conservation adaptées aux traitements et données personnelles de l'organisation.",
+        permission: "rgpd.read",
+        moduleKey: "rgpd",
+      },
+      {
+        key: "docs-search",
+        title: "Recherche documentaire",
+        description: "Retrouver une procédure ou un guide avec ses sources.",
+        prompt:
+          "Recherche dans la documentation les procédures et guides correspondant à ma question, avec les sources.",
+        permission: "documents.read",
+        moduleKey: "documents",
+      },
+      {
+        key: "docs-procedure",
+        title: "Générer une procédure",
+        description: "À partir des tickets résolus et des interventions passées.",
+        prompt:
+          "Génère une procédure à partir des tickets résolus et des interventions passées, avec les étapes et les points de contrôle.",
+        permission: "documents.create",
+        moduleKey: "documents",
+      },
+      {
+        key: "docs-consistency",
+        title: "Cohérence documentaire",
+        description: "Documents obsolètes, doublons et versions manquantes.",
+        prompt:
+          "Contrôle la cohérence de la documentation : documents obsolètes, sans version, doublons et versions manquantes.",
+        permission: "documents.read",
+        moduleKey: "documents",
+      },
+    ],
+  },
+  {
     key: "pilotage",
     label: "Pilotage & direction",
     icon: BarChart3,

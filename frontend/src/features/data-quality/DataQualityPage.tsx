@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Clock,
+  Copy,
   FileWarning,
   MapPin,
   Network,
@@ -38,6 +39,11 @@ const sectionIcons: Record<string, LucideIcon> = {
   asset_duplicate_mac: Wifi,
   import_errors: FileWarning,
   import_pending: Clock,
+  document_without_version: FileWarning,
+  document_missing_current: FileWarning,
+  document_stale: Clock,
+  document_duplicate_title: Copy,
+  document_without_category: ClipboardCheck,
 };
 
 const severityLabels: Record<string, string> = {

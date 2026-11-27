@@ -29,7 +29,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useDeferredValue } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,7 @@ import type {
   AiConversationItem,
   AiConversationMessage,
   AiRunItem,
+  AiSource,
   AiStatus,
   AiToolInfo,
 } from "@/types/api";
@@ -85,6 +86,7 @@ interface ChatMessage {
   tools?: string[];
   suggestions?: string[];
   actions?: AiActionProposal[];
+  sources?: AiSource[];
   actionsDone?: boolean;
   actionsIgnored?: boolean;
 }
@@ -166,6 +168,7 @@ const actionTypeLabels: Record<string, string> = {
   create_communication: "Communication",
   create_quote: "Devis",
   create_purchase_order: "Bon de commande",
+  create_document: "Document / procédure",
 };
 
 const actionButtonLabels: Record<string, string> = {
@@ -175,6 +178,7 @@ const actionButtonLabels: Record<string, string> = {
   create_communication: "Créer le brouillon",
   create_quote: "Créer le devis",
   create_purchase_order: "Créer le bon de commande",
+  create_document: "Créer le document",
 };
 
 const actionIcons: Record<string, typeof CalendarPlus> = {
@@ -184,6 +188,7 @@ const actionIcons: Record<string, typeof CalendarPlus> = {
   create_communication: Send,
   create_quote: FileText,
   create_purchase_order: ShoppingCart,
+  create_document: FileText,
 };
 
 const featureLabels: Record<string, string> = {
@@ -274,6 +279,7 @@ function toChatMessage(message: AiConversationMessage): ChatMessage {
     tools: message.tools_used,
     suggestions: message.suggestions,
     actions: message.actions,
+    sources: message.sources,
     actionsDone: message.actions_done,
     actionsIgnored: message.actions_ignored,
   };
@@ -324,6 +330,7 @@ export function AiDialog({
   const canCreateMeeting = hasPermission("meetings.manage");
   const canCreateCommunication = hasPermission("communications.manage");
   const canManageCommercial = hasPermission("suppliers.manage");
+  const canCreateDocument = hasPermission("documents.create");
   const canExecuteAction = (type: string) =>
     type === "create_ticket"
       ? canCreateTicket
@@ -333,7 +340,9 @@ export function AiDialog({
           ? canCreateCommunication
           : type === "create_quote" || type === "create_purchase_order"
             ? canManageCommercial
-            : canCreateAction;
+            : type === "create_document"
+              ? canCreateDocument
+              : canCreateAction;
   const contextKey = context ? `${context.type}:${context.id}` : "general";
   const deferredConversationSearch = useDeferredValue(conversationSearch);
 
@@ -915,6 +924,44 @@ export function AiDialog({
                   {toolLabels.get(key) ?? key}
                 </Badge>
               ))}
+            </div>
+          ) : null}
+          {message.sources && message.sources.length > 0 ? (
+            <div className="mt-2 rounded-lg border border-border-soft bg-background/40 p-2.5">
+              <p className="text-[9px] uppercase tracking-wide text-muted-2">
+                Sources
+              </p>
+              <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+                {message.sources.map((source) => {
+                  const content = (
+                    <>
+                      <p className="truncate text-[10px] font-medium text-foreground">
+                        {source.title}
+                      </p>
+                      <p className="truncate text-[9px] text-muted-2">
+                        {source.subtitle ?? source.kind}
+                      </p>
+                    </>
+                  );
+                  return source.link ? (
+                    <Link
+                      key={`${source.kind}-${source.id}`}
+                      to={source.link}
+                      onClick={() => onOpenChange(false)}
+                      className="rounded-md border border-border-soft bg-surface/60 px-2 py-1.5 transition-colors hover:border-primary/35 hover:bg-surface-2"
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div
+                      key={`${source.kind}-${source.id}`}
+                      className="rounded-md border border-border-soft bg-surface/60 px-2 py-1.5"
+                    >
+                      {content}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : null}
           <div className="mt-2 flex justify-end">

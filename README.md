@@ -344,6 +344,9 @@ npm run build
 - **Conversations IA persistantes** : sauvegarde automatique, reprise depuis l'historique,
   renommage, recherche, archivage, suppression et export Markdown ou PDF. Chaque utilisateur ne
   voit que ses propres conversations.
+- **IA conformité et documentation** : analyse du registre RGPD, aide à l'analyse d'impact et aux
+  durées de conservation, recherche documentaire avec sources, génération de procédures depuis les
+  tickets résolus, contrôle de cohérence documentaire et création de brouillons de documents.
 - **Boutons Assistant IA contextuels** dans les pages métier, avec une bulle expliquant ce que
   l'assistant peut faire sur l'écran courant.
 - **Suggestion IA dans les formulaires** : demande IT, communication, réunion, intervention,

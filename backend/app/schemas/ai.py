@@ -90,9 +90,11 @@ class AiActionProposal(BaseModel):
         "create_communication",
         "create_quote",
         "create_purchase_order",
+        "create_document",
     ]
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=4000)
+    content: str | None = Field(default=None, max_length=20000)
     priority: Literal["low", "medium", "high", "critical"] = "medium"
     due_date: date | None = None
     category: str | None = Field(default=None, max_length=50)
@@ -109,6 +111,15 @@ class AiActionProposal(BaseModel):
     source_quote_reference: str | None = Field(default=None, max_length=80)
 
 
+class AiSource(BaseModel):
+    kind: str
+    id: str
+    title: str
+    subtitle: str | None = None
+    link: str = ""
+    excerpt: str | None = None
+
+
 class AiChatResponse(BaseModel):
     message: str
     model: str
@@ -118,6 +129,7 @@ class AiChatResponse(BaseModel):
     tools_used: list[str] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
     actions: list[AiActionProposal] = Field(default_factory=list)
+    sources: list[AiSource] = Field(default_factory=list)
 
 
 class AiActionExecuteResponse(BaseModel):
@@ -160,6 +172,7 @@ class AiMessageRead(BaseModel):
     tools_used: list[str] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
     actions: list[AiActionProposal] = Field(default_factory=list)
+    sources: list[AiSource] = Field(default_factory=list)
     actions_done: bool = False
     actions_ignored: bool = False
     created_at: datetime
@@ -185,6 +198,7 @@ class AiConversationChatResponse(BaseModel):
     tools_used: list[str] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
     actions: list[AiActionProposal] = Field(default_factory=list)
+    sources: list[AiSource] = Field(default_factory=list)
 
 
 class AiMessageActionsUpdate(BaseModel):

@@ -13,6 +13,11 @@ ou une automatisation correcte.
 - **Adresses MAC en doublon** : plusieurs équipements actifs partagent la même MAC.
 - **Imports en erreur** : l'analyse ou l'intégration a échoué.
 - **Imports non finalisés** : document analysé depuis plus de 48 heures sans destination.
+- **Documents sans version** : aucun fichier n'est rattaché au document.
+- **Versions courantes manquantes** : des versions existent mais aucune n'est marquée comme courante.
+- **Documents non mis à jour** : documents publiés sans mise à jour depuis plus de 12 mois.
+- **Doublons de documents** : plusieurs documents portent le même titre.
+- **Documents sans catégorie** : classification absente, recherche moins précise.
 
 ## Utilisation
 

@@ -10,13 +10,15 @@ from app.models.assets import Asset, AssetSoftware
 from app.models.audit import AuditLog
 from app.models.auth import User
 from app.models.contracts import Contract
+from app.models.documents import Document, Tag
 from app.models.infrastructure import InfraEquipment
 from app.models.network import NetworkShare
 from app.models.organization import Agent, ChecklistRun
 from app.models.projects import Project
+from app.models.rgpd import ProcessingActivity
 from app.models.security import Certificate, SecurityIncident
 from app.models.stock import StockItem
-from app.models.tickets import Ticket, TicketStatus
+from app.models.tickets import Intervention, Ticket, TicketStatus
 from app.services import (
     backup_service,
     budget_service,
@@ -24,6 +26,7 @@ from app.services import (
     data_quality_service,
     network_scan_service,
     onboarding_service,
+    rgpd_service,
     scheduler_service,
     statistics_service,
     veeam_service,
@@ -216,6 +219,30 @@ TOOL_DEFINITIONS: tuple[dict[str, str], ...] = (
         "description": "Anomalies de données : engagements manquants, contrats incomplets, doublons et imports en erreur.",
         "permission": "dashboard.read",
     },
+    {
+        "key": "rgpd_overview",
+        "label": "Registre RGPD",
+        "description": "Traitements, revues à venir, demandes DPO, droits des personnes et violations.",
+        "permission": "rgpd.read",
+    },
+    {
+        "key": "search_documents",
+        "label": "Recherche documentaire",
+        "description": "Recherche dans les documents, procédures et guides avec extraits et sources.",
+        "permission": "documents.read",
+    },
+    {
+        "key": "document_consistency",
+        "label": "Cohérence documentaire",
+        "description": "Documents obsolètes, sans version, doublons et versions manquantes.",
+        "permission": "documents.read",
+    },
+    {
+        "key": "procedure_sources",
+        "label": "Sources de procédures",
+        "description": "Tickets résolus et interventions terminées pour rédiger une procédure.",
+        "permission": "tickets.read",
+    },
 )
 
 
@@ -247,6 +274,10 @@ TOOL_DOMAINS: dict[str, str] = {
     "budget_overview": "achats",
     "projects_at_risk": "pilotage",
     "data_quality_overview": "pilotage",
+    "rgpd_overview": "conformite",
+    "search_documents": "documents",
+    "document_consistency": "documents",
+    "procedure_sources": "documents",
 }
 
 
@@ -326,7 +357,13 @@ def _ticket_item(ticket: Ticket) -> str:
     )
 
 
-def _result(key: str, items: list[str], *, note: str = "") -> dict[str, Any]:
+def _result(
+    key: str,
+    items: list[str],
+    *,
+    note: str = "",
+    sources: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     tool = next((item for item in TOOL_DEFINITIONS if item["key"] == key), None)
     return {
         "tool": key,
@@ -334,6 +371,7 @@ def _result(key: str, items: list[str], *, note: str = "") -> dict[str, Any]:
         "count": len(items),
         "items": items,
         "note": note,
+        "sources": sources or [],
     }
 
 
@@ -1025,6 +1063,222 @@ def data_quality_overview(db: Session, actor: User) -> dict[str, Any]:
     return _result("data_quality_overview", items, note=note)
 
 
+def rgpd_overview(db: Session, actor: User) -> dict[str, Any]:
+    if not has_permission(actor, "rgpd.read"):
+        return _result("rgpd_overview", [], note="Permission RGPD requise.")
+    overview = rgpd_service.overview(db)
+    items = [
+        f"Traitements : {overview.processing_total} au total, "
+        f"{overview.processing_active} actifs, {overview.collections_total} collecte(s) active(s)",
+        f"Revues à venir sous 30 jours : {overview.reviews_due}",
+        f"Demandes DPO ouvertes : {overview.open_requests}",
+        f"Demandes de droits ouvertes : {overview.open_rights}",
+        f"Violations ouvertes : {overview.open_breaches}",
+    ]
+    for deadline in overview.deadlines[:10]:
+        items.append(
+            f"Échéance {deadline.due_date} · {deadline.label} · statut {deadline.status}"
+        )
+    activities = db.scalars(
+        select(ProcessingActivity)
+        .where(ProcessingActivity.status == "active")
+        .order_by(ProcessingActivity.next_review_at.asc().nullslast())
+        .limit(20)
+    ).all()
+    sources: list[dict[str, str | None]] = []
+    for activity in activities:
+        missing = []
+        if not activity.purpose:
+            missing.append("finalité")
+        if not activity.legal_basis:
+            missing.append("base légale")
+        if not activity.retention_period:
+            missing.append("durée de conservation")
+        review = (
+            f"revue {activity.next_review_at}"
+            if activity.next_review_at
+            else "revue non planifiée"
+        )
+        items.append(
+            f"{activity.reference} — {activity.name} : {review}"
+            + (f" · à compléter : {', '.join(missing)}" if missing else "")
+        )
+        sources.append(
+            {
+                "kind": "rgpd_processing",
+                "id": str(activity.id),
+                "title": f"{activity.reference} — {activity.name}",
+                "subtitle": "Traitement RGPD",
+                "link": "/rgpd?tab=traitements",
+                "excerpt": (activity.purpose or "")[:220] or None,
+            }
+        )
+    return _result("rgpd_overview", items, sources=sources)
+
+
+META_SEARCH_TERMS = {
+    "documentation",
+    "document",
+    "documents",
+    "recherche",
+    "rechercher",
+    "cherche",
+    "chercher",
+    "trouve",
+    "trouver",
+    "cite",
+    "citer",
+    "source",
+    "sources",
+}
+
+
+def search_documents(
+    db: Session,
+    actor: User,
+    query: str | None = None,
+    limit: int = 20,
+) -> dict[str, Any]:
+    if not has_permission(actor, "documents.read"):
+        return _result("search_documents", [], note="Permission documentation requise.")
+    statement = select(Document).where(Document.archived_at.is_(None))
+    if query:
+        terms = [
+            term
+            for term in query.split()
+            if len(term) > 1 and term.lower() not in META_SEARCH_TERMS
+        ]
+        if not terms:
+            terms = [query]
+        conditions = []
+        for term in terms[:8]:
+            pattern = f"%{term}%"
+            conditions.append(
+                or_(
+                    Document.title.ilike(pattern),
+                    Document.description.ilike(pattern),
+                    Document.doc_type.ilike(pattern),
+                    Document.tags.any(Tag.name.ilike(pattern)),
+                )
+            )
+        statement = statement.where(or_(*conditions))
+    rows = db.scalars(
+        statement.order_by(Document.updated_at.desc()).limit(limit)
+    ).all()
+    items: list[str] = []
+    sources: list[dict[str, str | None]] = []
+    for row in rows:
+        category = row.category.name if row.category else "Sans catégorie"
+        current = next((version for version in row.versions if version.is_current), None)
+        snippet = " ".join((row.description or "").split())[:260]
+        items.append(
+            f"{row.title} — {category} — mis à jour le {_iso(row.updated_at)}"
+            + (f" · version {current.version_number}" if current else " · sans version")
+            + (f" · {snippet}" if snippet else "")
+        )
+        sources.append(
+            {
+                "kind": "document",
+                "id": str(row.id),
+                "title": row.title,
+                "subtitle": category,
+                "link": f"/documentation?document={row.id}",
+                "excerpt": snippet or None,
+            }
+        )
+    return _result("search_documents", items, sources=sources)
+
+
+def document_consistency(db: Session, actor: User) -> dict[str, Any]:
+    overview = data_quality_service.get_overview(db, actor)
+    sections = [
+        section
+        for section in overview.sections
+        if section.key.startswith("document")
+    ]
+    items = [
+        f"{section.label} : {section.total} anomalie(s), dont {section.critical} critique(s)"
+        for section in sections
+        if section.total > 0
+    ]
+    sources = [
+        {
+            "kind": "data_quality",
+            "id": section.key,
+            "title": section.label,
+            "subtitle": "Qualité documentaire",
+            "link": "/qualite-donnees",
+            "excerpt": section.description,
+        }
+        for section in sections
+        if section.total > 0
+    ]
+    note = (
+        f"Total {sum(section.total for section in sections)} anomalie(s) documentaire(s)."
+    )
+    return _result("document_consistency", items, note=note, sources=sources)
+
+
+def procedure_sources(db: Session, actor: User) -> dict[str, Any]:
+    if not has_permission(actor, "tickets.read"):
+        return _result("procedure_sources", [], note="Permission demandes requise.")
+    since = datetime.now(UTC) - timedelta(days=365)
+    tickets = db.scalars(
+        select(Ticket)
+        .join(TicketStatus)
+        .where(
+            TicketStatus.code.in_(("resolved", "closed")),
+            Ticket.updated_at >= since,
+        )
+        .order_by(Ticket.updated_at.desc())
+        .limit(15)
+    ).all()
+    interventions = db.scalars(
+        select(Intervention)
+        .where(
+            Intervention.status == "done",
+            Intervention.ended_at.is_not(None),
+            Intervention.ended_at >= since,
+        )
+        .order_by(Intervention.ended_at.desc())
+        .limit(15)
+    ).all()
+    items: list[str] = []
+    sources: list[dict[str, str | None]] = []
+    for ticket in tickets:
+        text = " ".join((ticket.description or "").split())[:180]
+        items.append(f"Ticket {ticket.reference} — {ticket.subject}" + (f" · {text}" if text else ""))
+        sources.append(
+            {
+                "kind": "ticket",
+                "id": str(ticket.id),
+                "title": f"{ticket.reference} — {ticket.subject}",
+                "subtitle": "Demande résolue",
+                "link": "/demandes",
+                "excerpt": text or None,
+            }
+        )
+    for intervention in interventions:
+        text = " ".join(
+            (intervention.report or intervention.description or "").split()
+        )[:180]
+        items.append(
+            f"Intervention {intervention.reference} — {intervention.title}"
+            + (f" · {text}" if text else "")
+        )
+        sources.append(
+            {
+                "kind": "intervention",
+                "id": str(intervention.id),
+                "title": f"{intervention.reference} — {intervention.title}",
+                "subtitle": "Intervention terminée",
+                "link": "/demandes",
+                "excerpt": text or None,
+            }
+        )
+    return _result("procedure_sources", items, sources=sources)
+
+
 HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "fleet_overview": fleet_overview,
     "search_assets": search_assets,
@@ -1053,6 +1307,10 @@ HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {
     "budget_overview": budget_overview,
     "projects_at_risk": projects_at_risk,
     "data_quality_overview": data_quality_overview,
+    "rgpd_overview": rgpd_overview,
+    "search_documents": search_documents,
+    "document_consistency": document_consistency,
+    "procedure_sources": procedure_sources,
 }
 
 
@@ -1119,7 +1377,9 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         add("infrastructure_equipment", query=query)
     if any(term in text for term in ("arrivée", "arrivee", "départ", "depart", "onboarding", "offboarding", "intégration", "integration", "dossier", "checklist")):
         add("onboarding_briefing")
-    if any(term in text for term in ("sauvegarde", "veeam", "backup", "restauration")):
+    if any(term in text for term in ("sauvegarde", "veeam", "backup", "restauration")) and not any(
+        term in text for term in ("documentation", "document", "procédure", "procedure")
+    ):
         add("veeam_backup_status")
     if any(
         term in text
@@ -1199,6 +1459,70 @@ def select_tools(message: str, actor: User) -> list[tuple[str, dict[str, Any]]]:
         )
     ):
         add("data_quality_overview")
+    if any(
+        term in text
+        for term in (
+            "rgpd",
+            "registre",
+            "traitement",
+            "dpo",
+            "données personnelles",
+            "donnees personnelles",
+            "analyse d'impact",
+            "durée de conservation",
+            "duree de conservation",
+        )
+    ):
+        add("rgpd_overview")
+    if any(
+        term in text
+        for term in (
+            "cohérence documentaire",
+            "coherence documentaire",
+            "documents obsolètes",
+            "documents obsoletes",
+            "version manquante",
+            "versions manquantes",
+            "doublon document",
+            "doublons document",
+        )
+    ):
+        add("document_consistency")
+    if any(
+        term in text
+        for term in (
+            "documentation",
+            "document",
+            "documents",
+            "procédure",
+            "procedure",
+            "guide",
+            "fiche technique",
+            "où est",
+            "ou est",
+            "comment faire",
+        )
+    ):
+        add("search_documents", query=query)
+    if any(
+        term in text
+        for term in (
+            "à partir des tickets",
+            "a partir des tickets",
+            "interventions passées",
+            "interventions passees",
+            "génère une procédure",
+            "genere une procedure",
+            "rédige une procédure",
+            "redige une procedure",
+            "créer une procédure",
+            "creer une procedure",
+        )
+    ) or (
+        any(term in text for term in ("procédure", "procedure"))
+        and any(term in text for term in ("ticket", "intervention"))
+    ):
+        add("procedure_sources")
     return calls[:3]
 
 
@@ -1224,6 +1548,11 @@ def format_tool_results(results: list[dict[str, Any]]) -> str:
             lines.append(f"- {result['note']}")
         else:
             lines.append("- Aucun résultat.")
+        for source in result.get("sources", []):
+            lines.append(
+                f"- Source {source.get('kind')} : {source.get('title')} "
+                f"({source.get('link') or 'sans lien'})"
+            )
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
 

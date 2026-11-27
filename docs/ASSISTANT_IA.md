@@ -58,12 +58,17 @@ L'assistant sélectionne automatiquement des outils en lecture seule selon la qu
 - budgets, montants prévus, engagés, facturés et disponibles (`budget_overview`) ;
 - projets en retard, en pause ou proches de l'échéance (`projects_at_risk`) ;
 - anomalies de qualité des données (`data_quality_overview`) ;
+- registre RGPD, revues, demandes DPO, droits et violations (`rgpd_overview`) ;
+- recherche documentaire avec extraits et sources (`search_documents`) ;
+- cohérence documentaire : documents obsolètes, sans version, doublons (`document_consistency`) ;
+- tickets résolus et interventions terminées pour rédiger une procédure (`procedure_sources`) ;
 - briefing du jour : contrôles, sauvegardes, Veeam, dernières exécutions et alertes (`daily_briefing`) ;
 - bilan du mois précédent pour préparer une synthèse (`monthly_report_summary`).
 
 Chaque outil vérifie les permissions et applique la portée de données (`all`, `service`, `own`)
 pour les équipements et les demandes. Les résultats sont tronqués et les outils utilisés sont
-affichés dans la réponse.
+affichés dans la réponse. Les recherches documentaires et RGPD peuvent renvoyer des **sources**
+cliquables, affichées sous la réponse et conservées avec la conversation.
 
 ## 4. Usages pour la gestion du parc
 
@@ -81,7 +86,8 @@ Le bouton **Plein écran** ouvre un **espace de travail IA** plein écran avec u
 - **Outils** : catalogue complet des outils de lecture, groupés par domaine, avec description et
   permission requise ;
 - **Actions** : actions assistées disponibles (demande, réunion, communication, devis, bon de
-  commande, action de suivi) et permissions associées ;
+  commande, document/procédure, action de suivi), permissions associées et tâches guidées
+  d'analyse, de rédaction et de contrôle ;
 - **Intégrations** : état des connexions WAPT, Veeam, OCR, découverte réseau, supervision,
   partages, calendrier, SMTP et LDAP ;
 - **Historique** : dernières demandes IA, statut et durée.

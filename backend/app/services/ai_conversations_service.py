@@ -19,6 +19,7 @@ from app.schemas.ai import (
     AiConversationRead,
     AiConversationUpdate,
     AiMessageRead,
+    AiSource,
 )
 from app.services import ai_service
 from fastapi import Request
@@ -73,6 +74,33 @@ def _dump_actions(actions: list[AiActionProposal] | None) -> str:
     )
 
 
+def _load_sources(value: str | None) -> list[AiSource]:
+    if not value:
+        return []
+    try:
+        data = json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if not isinstance(data, list):
+        return []
+    sources: list[AiSource] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        try:
+            sources.append(AiSource.model_validate(item))
+        except ValueError:
+            continue
+    return sources
+
+
+def _dump_sources(sources: list[AiSource] | None) -> str:
+    return json.dumps(
+        [source.model_dump(mode="json") for source in sources or []],
+        ensure_ascii=False,
+    )
+
+
 def _title_from_content(content: str) -> str:
     clean = " ".join(content.replace("`", "").replace("*", "").split())
     if not clean:
@@ -92,6 +120,7 @@ def message_read(message: AiMessage) -> AiMessageRead:
         tools_used=_load_list(message.tools_used_json),
         suggestions=_load_list(message.suggestions_json),
         actions=_load_actions(message.actions_json),
+        sources=_load_sources(message.sources_json),
         actions_done=message.actions_done,
         actions_ignored=message.actions_ignored,
         created_at=message.created_at,
@@ -212,6 +241,7 @@ def _store_message(
     tools_used: list[str] | None = None,
     suggestions: list[str] | None = None,
     actions: list[AiActionProposal] | None = None,
+    sources: list[AiSource] | None = None,
 ) -> AiMessage:
     created_at = utcnow()
     message = AiMessage(
@@ -221,6 +251,7 @@ def _store_message(
         tools_used_json=_dump_list(tools_used),
         suggestions_json=_dump_list(suggestions),
         actions_json=_dump_actions(actions),
+        sources_json=_dump_sources(sources),
         actions_done=False,
         actions_ignored=False,
         created_at=created_at,
@@ -290,6 +321,7 @@ def send_message(
         tools_used=response.tools_used,
         suggestions=response.suggestions,
         actions=response.actions,
+        sources=response.sources,
     )
     db.commit()
     db.refresh(conversation)
@@ -305,6 +337,7 @@ def send_message(
         tools_used=response.tools_used,
         suggestions=response.suggestions,
         actions=response.actions,
+        sources=response.sources,
     )
 
 

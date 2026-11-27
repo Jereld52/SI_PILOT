@@ -31,6 +31,7 @@ from app.schemas.ai import (
     AiContext,
     AiModelsResponse,
     AiRunRead,
+    AiSource,
     AiStatusRead,
     AiTestResponse,
 )
@@ -669,22 +670,25 @@ SYSTEM_PROMPT = (
     "les valider dans SI PILOT. Ne divulgue aucun secret, mot de passe ou clé d'API. "
     "Pour les listes de postes, cite les noms machine et numéros d'inventaire fournis. "
     "Lorsque l'utilisateur demande explicitement de créer une action de suivi, une demande IT, "
-    "une réunion, une communication, un devis ou un bon de commande, tu peux joindre à la fin "
+    "une réunion, une communication, un devis, un bon de commande ou un document, tu peux joindre à la fin "
     "de ta réponse un bloc de ce type :\n"
     "```action\n"
     '{"type": "create_action", "title": "...", "description": "...", '
     '"priority": "medium", "due_date": "AAAA-MM-JJ"}\n'
     "```\n"
     "Types autorisés : create_action, create_ticket, create_meeting, create_communication, "
-    "create_quote, create_purchase_order. "
+    "create_quote, create_purchase_order, create_document. "
     "Pour create_ticket, ajoute category parmi hardware, software, network, telephony, "
     "messaging, accounts, security, printing. Pour create_meeting, ajoute scheduled_at en "
     "ISO 8601 et éventuellement duration_minutes et location. "
     "Pour create_quote et create_purchase_order, ajoute supplier_name, éventuellement reference, "
     "amount_ht, amount_ttc, vat_rate, expected_date (validité du devis ou livraison prévue) "
     "et source_quote_reference pour convertir un devis existant. "
+    "Pour create_document, ajoute content avec le texte complet, category parmi procedure, "
+    "user_guide, technical_sheet, configuration, minutes, security, et éventuellement description. "
     "Le numéro d'engagement est OBLIGATOIRE pour create_purchase_order : ne l'invente jamais. "
     "S'il n'est pas fourni par l'utilisateur, ne propose pas l'action et demande-le d'abord. "
+    "Lorsque des sources documentaires sont fournies, appuie-toi dessus et cite leurs titres. "
     "Tu ne dois jamais affirmer que l'action est créée : l'utilisateur devra la confirmer. "
     "Ne propose qu'une seule action par réponse et n'invente pas de date précise."
 )
@@ -1089,6 +1093,26 @@ SUGGESTION_MAP: dict[str, list[str]] = {
         "Quelles arrivées sont incomplètes ?",
         "Prépare la checklist d'arrivée.",
     ],
+    "rgpd_overview": [
+        "Quels traitements sont à revue ?",
+        "Prépare une analyse d'impact.",
+        "Propose des durées de conservation.",
+    ],
+    "search_documents": [
+        "Cite les documents sources.",
+        "Génère une procédure à partir de ces documents.",
+        "Quels documents sont obsolètes ?",
+    ],
+    "document_consistency": [
+        "Quels documents sont sans version ?",
+        "Quels doublons documentaires corriger ?",
+        "Prépare un plan de mise à jour.",
+    ],
+    "procedure_sources": [
+        "Rédige une procédure à partir de ces tickets.",
+        "Quelles étapes récurrentes identifier ?",
+        "Propose une checklist de résolution.",
+    ],
 }
 
 DEFAULT_SUGGESTIONS = [
@@ -1311,6 +1335,15 @@ def chat(
     tool_results, tools_used = ai_tools_service.run_tools(
         db, actor, last_user_message
     )
+    sources: list[dict[str, Any]] = []
+    seen_sources: set[tuple[str, str]] = set()
+    for result in tool_results:
+        for source in result.get("sources", []):
+            key = (str(source.get("kind")), str(source.get("id")))
+            if key in seen_sources:
+                continue
+            seen_sources.add(key)
+            sources.append(source)
     system_content = SYSTEM_PROMPT
     if use_context:
         system_content = f"{SYSTEM_PROMPT}\n\n{_fleet_context(db)}"
@@ -1367,4 +1400,5 @@ def chat(
         tools_used=tools_used,
         suggestions=_suggestions(tools_used),
         actions=actions,
+        sources=[AiSource.model_validate(source) for source in sources],
     )

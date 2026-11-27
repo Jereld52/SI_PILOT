@@ -2235,16 +2235,20 @@ export interface AiModelsResponse {
   message: string;
 }
 
+export type AiActionType =
+  | "create_action"
+  | "create_ticket"
+  | "create_meeting"
+  | "create_communication"
+  | "create_quote"
+  | "create_purchase_order"
+  | "create_document";
+
 export interface AiActionProposal {
-  type:
-    | "create_action"
-    | "create_ticket"
-    | "create_meeting"
-    | "create_communication"
-    | "create_quote"
-    | "create_purchase_order";
+  type: AiActionType;
   title: string;
   description: string | null;
+  content?: string | null;
   priority: "low" | "medium" | "high" | "critical";
   due_date: string | null;
   category: string | null;
@@ -2259,6 +2263,15 @@ export interface AiActionProposal {
   vat_rate: number | null;
   expected_date: string | null;
   source_quote_reference: string | null;
+}
+
+export interface AiSource {
+  kind: string;
+  id: string;
+  title: string;
+  subtitle: string | null;
+  link: string;
+  excerpt: string | null;
 }
 
 export interface AiComposeRequest {
@@ -2313,6 +2326,7 @@ export interface AiChatResponse {
   tools_used: string[];
   suggestions: string[];
   actions: AiActionProposal[];
+  sources: AiSource[];
 }
 
 export interface AiToolInfo {
@@ -2351,6 +2365,7 @@ export interface AiConversationMessage {
   tools_used: string[];
   suggestions: string[];
   actions: AiActionProposal[];
+  sources: AiSource[];
   actions_done: boolean;
   actions_ignored: boolean;
   created_at: string;
@@ -2371,6 +2386,7 @@ export interface AiConversationChatResponse {
   tools_used: string[];
   suggestions: string[];
   actions: AiActionProposal[];
+  sources: AiSource[];
 }
 
 export interface BackupFileItem {

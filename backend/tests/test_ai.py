@@ -1,7 +1,10 @@
+from uuid import uuid4
+
 from app.db.session import SessionLocal
 from app.models.ai import AiRun
 from app.models.auth import User
 from app.models.calendar import ActionItem
+from app.models.documents import Document
 from app.services import ai_service, ai_tools_service
 from sqlalchemy import select
 
@@ -436,6 +439,26 @@ def test_tool_router_selects_relevant_tools():
         )]
         assert "data_quality_overview" in quality
 
+        rgpd = [call[0] for call in ai_tools_service.select_tools(
+            "Analyse le registre RGPD et les durées de conservation.", actor
+        )]
+        assert "rgpd_overview" in rgpd
+
+        documents = [call[0] for call in ai_tools_service.select_tools(
+            "Recherche la procédure de sauvegarde dans la documentation.", actor
+        )]
+        assert "search_documents" in documents
+
+        consistency = [call[0] for call in ai_tools_service.select_tools(
+            "Contrôle la cohérence documentaire et les documents obsolètes.", actor
+        )]
+        assert "document_consistency" in consistency
+
+        procedure = [call[0] for call in ai_tools_service.select_tools(
+            "Génère une procédure à partir des tickets résolus.", actor
+        )]
+        assert "procedure_sources" in procedure
+
 
 def test_ai_tools_endpoint(admin_client):
     client, _ = admin_client
@@ -452,6 +475,10 @@ def test_ai_tools_endpoint(admin_client):
         "budget_overview",
         "projects_at_risk",
         "data_quality_overview",
+        "rgpd_overview",
+        "search_documents",
+        "document_consistency",
+        "procedure_sources",
     } <= keys
     domains = {tool["key"]: tool["domain"] for tool in response.json()}
     assert domains["assets_broken"] == "parc"
@@ -635,3 +662,68 @@ def test_ai_conversations_persistence(admin_client, csrf_headers, monkeypatch):
     assert deleted.status_code == 204, deleted.text
     missing = client.get(f"/api/v1/ai/conversations/{conversation_id}")
     assert missing.status_code == 404
+
+
+
+def test_ai_create_document_action(admin_client, csrf_headers):
+    client, csrf = admin_client
+    title = f"Procedure IA {uuid4().hex[:8]}"
+    response = client.post(
+        "/api/v1/ai/actions/execute",
+        headers=csrf_headers(csrf),
+        json={
+            "type": "create_document",
+            "title": title,
+            "description": "Procedure generee depuis les tickets resolus.",
+            "content": "# Procedure\n\n1. Verifier le poste.\n2. Redemarrer le service.",
+            "category": "procedure",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "/documentation?document=" in body["link"]
+
+    with SessionLocal() as db:
+        document = db.scalar(select(Document).where(Document.title == title))
+        assert document is not None
+        assert document.status == "draft"
+        assert "Verifier le poste" in (document.description or "")
+        db.delete(document)
+        db.commit()
+
+
+
+def test_ai_document_search_and_rgpd_tools(admin_client, csrf_headers):
+    client, csrf = admin_client
+    title = f"Procédure recherche {uuid4().hex[:8]}"
+    created = client.post(
+        "/api/v1/documents",
+        headers=csrf_headers(csrf),
+        json={
+            "title": title,
+            "doc_type": "procedure",
+            "description": "Procédure de sauvegarde et de restauration.",
+            "status": "draft",
+        },
+    )
+    assert created.status_code == 201, created.text
+    document = created.json()
+
+    with SessionLocal() as db:
+        actor = db.scalar(select(User).where(User.email == "admin.test@example.org"))
+        assert actor is not None
+        search = ai_tools_service.search_documents(db, actor, query=title)
+        assert any(title in item for item in search["items"])
+        assert any(
+            source["title"] == title and source["link"].endswith(document["id"])
+            for source in search["sources"]
+        )
+        rgpd = ai_tools_service.rgpd_overview(db, actor)
+        assert rgpd["items"]
+        assert rgpd["items"][0].startswith("Traitements")
+
+    archived = client.delete(
+        f"/api/v1/documents/{document['id']}",
+        headers=csrf_headers(csrf),
+    )
+    assert archived.status_code == 200, archived.text
