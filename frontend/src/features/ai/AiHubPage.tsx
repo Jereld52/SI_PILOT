@@ -468,7 +468,7 @@ export function AiHubPage() {
     <div className="space-y-6">
       <section
         id="conversation"
-        className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/25 via-surface to-accent/15 p-6 shadow-2xl sm:p-10"
+        className="relative scroll-mt-24 overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/25 via-surface to-accent/15 p-6 shadow-2xl sm:p-10"
       >
         <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-accent/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
@@ -676,7 +676,7 @@ export function AiHubPage() {
         </div>
       </section>
 
-      <Card className="sticky top-2 z-20 border-primary/20 bg-surface/90 p-2 shadow-lg backdrop-blur">
+      <Card className="sticky top-[72px] z-20 border-primary/20 bg-surface/90 p-2 shadow-lg backdrop-blur">
         <nav className="flex flex-wrap items-center gap-1">
           {[
             { href: "#conversation", label: "Conversation", icon: Sparkles },
@@ -709,7 +709,7 @@ export function AiHubPage() {
         </nav>
       </Card>
 
-      <Card id="raccourcis" className="panel-sheen border-primary/20 p-4">
+      <Card id="raccourcis" className="panel-sheen scroll-mt-24 border-primary/20 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
@@ -805,7 +805,7 @@ export function AiHubPage() {
         </div>
       )}
 
-      <Card id="outils" className="panel-sheen border-primary/20">
+      <Card id="outils" className="panel-sheen scroll-mt-24 border-primary/20">
         <CardHeader>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
@@ -877,7 +877,7 @@ export function AiHubPage() {
         </CardContent>
       </Card>
 
-      <div id="actions" className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <div id="actions" className="grid scroll-mt-24 gap-4 xl:grid-cols-[1.4fr_1fr]">
         <Card className="panel-sheen border-primary/20">
           <CardHeader>
             <div>
@@ -988,7 +988,7 @@ export function AiHubPage() {
         </Card>
       </div>
 
-      <Card id="integrations" className="panel-sheen border-primary/20">
+      <Card id="integrations" className="panel-sheen scroll-mt-24 border-primary/20">
         <CardHeader>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
@@ -1050,7 +1050,7 @@ export function AiHubPage() {
         </CardContent>
       </Card>
 
-      <Card id="historique" className="panel-sheen border-primary/20">
+      <Card id="historique" className="panel-sheen scroll-mt-24 border-primary/20">
         <CardHeader>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
