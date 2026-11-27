@@ -832,10 +832,16 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
         events = db.scalars(
             select(CalendarEvent)
             .where(
-                CalendarEvent.status != "cancelled",
+                CalendarEvent.status.not_in(("done", "cancelled")),
                 CalendarEvent.start_at < day_end,
-                (CalendarEvent.end_at.is_(None))
-                | (CalendarEvent.end_at >= day_start),
+                (
+                    (CalendarEvent.end_at.is_not(None))
+                    & (CalendarEvent.end_at > day_start)
+                )
+                | (
+                    (CalendarEvent.end_at.is_(None))
+                    & (CalendarEvent.start_at >= day_start)
+                ),
             )
             .order_by(CalendarEvent.start_at.asc())
         ).all()

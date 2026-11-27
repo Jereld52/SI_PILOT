@@ -77,3 +77,38 @@ def test_search(admin_client):
     response = client.get("/api/v1/search", params={"q": "admin"})
     assert response.status_code == 200
     assert response.json()["total"] >= 1
+
+
+
+def test_dashboard_today_ignores_past_event_without_end(admin_client):
+    from datetime import UTC, datetime, timedelta
+
+    from app.db.session import SessionLocal
+    from app.models.calendar import CalendarEvent
+
+    client, _ = admin_client
+    with SessionLocal() as db:
+        event = CalendarEvent(
+            title="Vieux CA de test",
+            event_type="meeting",
+            start_at=datetime.now(UTC) - timedelta(days=5),
+            end_at=None,
+            all_day=False,
+            status="planned",
+            priority="medium",
+        )
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        event_id = event.id
+
+    response = client.get("/api/v1/dashboard/today")
+    assert response.status_code == 200, response.text
+    items = response.json()["plan"]["items"]
+    assert all(item["id"] != f"event-{event_id}" for item in items)
+
+    with SessionLocal() as db:
+        row = db.get(CalendarEvent, event_id)
+        if row is not None:
+            db.delete(row)
+            db.commit()
