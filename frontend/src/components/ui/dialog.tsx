@@ -10,8 +10,8 @@ export const DialogClose = DialogPrimitive.Close;
 
 export const DialogContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
-  ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideClose?: boolean }
+>(({ className, children, hideClose = false, ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-[3px] data-[state=open]:animate-fade-in" />
     <DialogPrimitive.Content
@@ -23,10 +23,12 @@ export const DialogContent = forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1 text-muted transition-colors hover:bg-surface-2 hover:text-foreground">
-        <X className="h-4 w-4" aria-hidden="true" />
-        <span className="sr-only">Fermer</span>
-      </DialogPrimitive.Close>
+      {hideClose ? null : (
+        <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1 text-muted transition-colors hover:bg-surface-2 hover:text-foreground">
+          <X className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">Fermer</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
 ));

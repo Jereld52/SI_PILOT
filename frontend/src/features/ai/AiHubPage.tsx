@@ -40,8 +40,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   actionCapabilities,
   aiIntegrations,
+  aiTaskGroups,
   groupTools,
 } from "@/features/ai/aiCatalog";
+import { AiCollapsibleSection } from "@/features/ai/AiCollapsibleSection";
 import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
@@ -366,12 +368,108 @@ const shortcutGroups: AiShortcutGroup[] = [
         moduleKey: "statistics",
       },
       {
+        key: "action-plan",
+        title: "Plan d'action 30 jours",
+        description: "Priorités, responsables et échéances à court terme.",
+        prompt:
+          "Prépare un plan d'action priorisé pour les 30 prochains jours à partir des alertes et anomalies.",
+        permission: "statistics.read",
+        moduleKey: "statistics",
+      },
+      {
+        key: "steering",
+        title: "Comité de pilotage",
+        description: "Ordre du jour, indicateurs et décisions attendues.",
+        prompt:
+          "Prépare un comité de pilotage informatique : ordre du jour, indicateurs et décisions attendues.",
+        permission: "statistics.read",
+        moduleKey: "statistics",
+      },
+      {
         key: "stats-commercial",
         title: "Statistiques achats",
         description: "Ouvrir l'onglet Achats avec ses filtres et exports.",
         to: "/statistiques",
         permission: "statistics.read",
         moduleKey: "statistics",
+      },
+    ],
+  },
+  {
+    key: "qualite",
+    label: "Qualité & contrôles",
+    icon: CheckCircle2,
+    items: [
+      {
+        key: "quality-anomalies",
+        title: "Anomalies de données",
+        description: "Anomalies détectées et plan de correction priorisé.",
+        prompt:
+          "Analyse les anomalies de qualité des données et propose un plan de correction priorisé.",
+        permission: "dashboard.read",
+      },
+      {
+        key: "quality-duplicates",
+        title: "Doublons documentaires",
+        description: "Références, fichiers ou montants en double.",
+        prompt:
+          "Quels doublons documentaires ou références en double existent dans la base ?",
+        permission: "documents.read",
+        moduleKey: "documents",
+      },
+      {
+        key: "quality-imports",
+        title: "Imports en erreur",
+        description: "Imports interrompus, en erreur ou non finalisés.",
+        prompt: "Quels imports sont en erreur ou non finalisés, et que faut-il corriger ?",
+        permission: "dashboard.read",
+      },
+      {
+        key: "quality-assets",
+        title: "Équipements sans site",
+        description: "Équipements sans site ou sans affectation.",
+        prompt:
+          "Quels équipements sont sans site ou sans affectation, et quelles corrections proposer ?",
+        permission: "assets.read",
+        moduleKey: "assets",
+      },
+    ],
+  },
+  {
+    key: "redaction",
+    label: "Rédaction & communication",
+    icon: FileText,
+    items: [
+      {
+        key: "write-communication",
+        title: "Communication interne",
+        description: "Annonce, maintenance ou changement d'organisation.",
+        prompt:
+          "Rédige une communication interne professionnelle pour annoncer une maintenance réseau.",
+        permission: "ai.use",
+      },
+      {
+        key: "write-procedure",
+        title: "Procédure d'arrivée",
+        description: "Procédure courte pour intégrer un nouvel agent.",
+        prompt: "Rédige une procédure courte et claire pour l'arrivée d'un nouvel agent.",
+        permission: "ai.use",
+      },
+      {
+        key: "write-meeting",
+        title: "Compte rendu de réunion",
+        description: "Décisions, actions, responsables et échéances.",
+        prompt:
+          "Prépare un compte rendu de réunion structuré avec décisions, actions et responsables.",
+        permission: "ai.use",
+      },
+      {
+        key: "write-reply",
+        title: "Réponse utilisateur",
+        description: "Réponse professionnelle et rassurante à un utilisateur.",
+        prompt:
+          "Rédige une réponse professionnelle et rassurante à un utilisateur mécontent.",
+        permission: "ai.use",
       },
     ],
   },
@@ -683,6 +781,7 @@ export function AiHubPage() {
             { href: "#raccourcis", label: "Raccourcis", icon: Zap },
             { href: "#outils", label: "Outils", icon: Wrench },
             { href: "#actions", label: "Actions", icon: LayoutGrid },
+            { href: "#taches", label: "Tâches", icon: Search },
             { href: "#integrations", label: "Intégrations", icon: Plug },
             { href: "#historique", label: "Historique", icon: History },
           ].map((item) => {
@@ -741,16 +840,16 @@ export function AiHubPage() {
         </Card>
       ) : (
         <div className="space-y-5">
-          {filteredGroups.map((group) => {
+          {filteredGroups.map((group, index) => {
             const GroupIcon = group.icon;
             return (
-              <section key={group.key} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-soft bg-background/40 text-accent">
-                    <GroupIcon className="h-3.5 w-3.5" />
-                  </span>
-                  <h2 className="text-sm font-semibold text-foreground">{group.label}</h2>
-                </div>
+              <AiCollapsibleSection
+                key={`${group.key}-${search}`}
+                title={group.label}
+                icon={GroupIcon}
+                badge={`${group.items.length} action(s)`}
+                defaultOpen={Boolean(search) || index === 0}
+              >
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {group.items.map((item) =>
                     item.to ? (
@@ -799,7 +898,7 @@ export function AiHubPage() {
                     ),
                   )}
                 </div>
-              </section>
+              </AiCollapsibleSection>
             );
           })}
         </div>
@@ -833,22 +932,17 @@ export function AiHubPage() {
               Aucun outil accessible. Vérifiez vos permissions.
             </p>
           ) : (
-            toolGroups.map((group) => {
+            toolGroups.map((group, index) => {
               const GroupIcon = group.icon;
               return (
-                <section key={group.key} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-soft bg-background/40 text-accent">
-                      <GroupIcon className="h-3.5 w-3.5" />
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
-                      <p className="text-[10px] text-muted-2">{group.description}</p>
-                    </div>
-                    <Badge tone="neutral" className="ml-auto text-[9px]">
-                      {group.tools.length}
-                    </Badge>
-                  </div>
+                <AiCollapsibleSection
+                  key={group.key}
+                  title={group.label}
+                  description={group.description}
+                  icon={GroupIcon}
+                  badge={`${group.tools.length} outil(s)`}
+                  defaultOpen={index === 0}
+                >
                   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     {group.tools.map((tool) => (
                       <div
@@ -870,7 +964,7 @@ export function AiHubPage() {
                       </div>
                     ))}
                   </div>
-                </section>
+                </AiCollapsibleSection>
               );
             })
           )}
@@ -987,6 +1081,56 @@ export function AiHubPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card id="taches" className="panel-sheen scroll-mt-24 border-primary/20">
+        <CardHeader>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Tâches guidées
+            </p>
+            <h2 className="text-base font-semibold text-foreground">
+              Analyser, rédiger, contrôler, préparer
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              {aiTaskGroups.reduce((total, group) => total + group.tasks.length, 0)} tâches
+              prêtes à lancer. Elles n'écrivent rien sans confirmation.
+            </p>
+          </div>
+          <Search className="h-4 w-4 text-accent" />
+        </CardHeader>
+        <CardContent className="space-y-2 pt-3">
+          {aiTaskGroups.map((group) => {
+            const GroupIcon = group.icon;
+            return (
+              <AiCollapsibleSection
+                key={group.key}
+                title={group.label}
+                description={group.description}
+                icon={GroupIcon}
+                badge={`${group.tasks.length} tâche(s)`}
+              >
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {group.tasks.map((task) => (
+                    <button
+                      key={task.title}
+                      type="button"
+                      onClick={() => openAi(null, task.prompt)}
+                      disabled={!canUse}
+                      className="group rounded-lg border border-border-soft bg-surface/70 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[11px] font-semibold text-foreground">{task.title}</p>
+                        <Sparkles className="h-3.5 w-3.5 shrink-0 text-muted-2 transition-colors group-hover:text-accent" />
+                      </div>
+                      <p className="mt-1 text-[10px] leading-4 text-muted">{task.prompt}</p>
+                    </button>
+                  ))}
+                </div>
+              </AiCollapsibleSection>
+            );
+          })}
+        </CardContent>
+      </Card>
 
       <Card id="integrations" className="panel-sheen scroll-mt-24 border-primary/20">
         <CardHeader>

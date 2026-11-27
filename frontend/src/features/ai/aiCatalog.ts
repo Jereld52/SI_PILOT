@@ -11,6 +11,7 @@ import {
   Network,
   Radar,
   ScanText,
+  Search,
   Server,
   ShieldCheck,
   ShoppingCart,
@@ -264,6 +265,159 @@ export interface WorkspacePromptGroup {
   icon: LucideIcon;
   prompts: { title: string; prompt: string }[];
 }
+
+export interface AiTaskGroup {
+  key: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  tasks: { title: string; prompt: string }[];
+}
+
+export const aiTaskGroups: AiTaskGroup[] = [
+  {
+    key: "analyse",
+    label: "Analyser et contrôler",
+    description: "Qualité des données, doublons, imports et incohérences.",
+    icon: Search,
+    tasks: [
+      {
+        title: "Anomalies de données",
+        prompt:
+          "Analyse les anomalies de qualité des données et propose un plan de correction priorisé.",
+      },
+      {
+        title: "Doublons documentaires",
+        prompt:
+          "Quels doublons documentaires ou références en double existent dans la base ?",
+      },
+      {
+        title: "Imports en erreur",
+        prompt:
+          "Quels imports sont en erreur ou non finalisés, et que faut-il corriger ?",
+      },
+      {
+        title: "Équipements sans site",
+        prompt:
+          "Quels équipements sont sans site ou sans affectation, et quelles corrections proposer ?",
+      },
+      {
+        title: "Contrats incomplets",
+        prompt:
+          "Quels contrats sont sans date de fin ou proches de l'échéance ?",
+      },
+    ],
+  },
+  {
+    key: "redaction",
+    label: "Rédiger et communiquer",
+    description: "Communications, procédures, comptes rendus et réponses.",
+    icon: FileText,
+    tasks: [
+      {
+        title: "Communication interne",
+        prompt:
+          "Rédige une communication interne professionnelle pour annoncer une maintenance réseau.",
+      },
+      {
+        title: "Procédure d'arrivée",
+        prompt:
+          "Rédige une procédure courte et claire pour l'arrivée d'un nouvel agent.",
+      },
+      {
+        title: "Compte rendu de réunion",
+        prompt:
+          "Prépare un compte rendu de réunion structuré avec décisions, actions et responsables.",
+      },
+      {
+        title: "Réponse à un utilisateur",
+        prompt:
+          "Rédige une réponse professionnelle et rassurante à un utilisateur mécontent.",
+      },
+    ],
+  },
+  {
+    key: "pilotage",
+    label: "Préparer et piloter",
+    description: "Plans d'action, comités, budget et renouvellement.",
+    icon: BarChart3,
+    tasks: [
+      {
+        title: "Plan d'action 30 jours",
+        prompt:
+          "Prépare un plan d'action priorisé pour les 30 prochains jours à partir des alertes et anomalies.",
+      },
+      {
+        title: "Comité de pilotage",
+        prompt:
+          "Prépare un comité de pilotage informatique : ordre du jour, indicateurs et décisions attendues.",
+      },
+      {
+        title: "Plan de renouvellement",
+        prompt:
+          "Propose un plan de renouvellement du parc sur 12 mois, avec priorités et estimation budgétaire.",
+      },
+      {
+        title: "Arbitrages budget",
+        prompt:
+          "Analyse le budget informatique et propose des économies ou des arbitrages argumentés.",
+      },
+    ],
+  },
+  {
+    key: "securite",
+    label: "Sécurité et sauvegardes",
+    description: "Incidents, certificats, vulnérabilités et Veeam.",
+    icon: ShieldCheck,
+    tasks: [
+      {
+        title: "Incidents ouverts",
+        prompt:
+          "Quels incidents de sécurité sont ouverts et quelles actions dois-je mener en priorité ?",
+      },
+      {
+        title: "Certificats à expirer",
+        prompt: "Quels certificats arrivent à expiration dans les 90 jours ?",
+      },
+      {
+        title: "Sauvegardes Veeam",
+        prompt: "Quel est l'état des sauvegardes Veeam et des derniers jobs ?",
+      },
+      {
+        title: "Vulnérabilités critiques",
+        prompt:
+          "Quelles vulnérabilités sont critiques et quels plans de remédiation proposer ?",
+      },
+    ],
+  },
+  {
+    key: "support",
+    label: "Support et utilisateurs",
+    description: "Demandes, priorités, agents et dossiers.",
+    icon: LifeBuoy,
+    tasks: [
+      {
+        title: "Demandes à traiter",
+        prompt:
+          "Résume les demandes ouvertes et propose un ordre de traitement en fonction des priorités.",
+      },
+      {
+        title: "Demandes en retard",
+        prompt: "Quels tickets sont en retard ou proches de l'échéance ?",
+      },
+      {
+        title: "Équipements des agents",
+        prompt:
+          "Quels agents ont des équipements à renouveler ou hors garantie ?",
+      },
+      {
+        title: "Dossiers incomplets",
+        prompt:
+          "Quels dossiers d'arrivée ou de départ sont incomplets ou en retard ?",
+      },
+    ],
+  },
+];
 
 export const workspacePromptGroups: WorkspacePromptGroup[] = [
   {

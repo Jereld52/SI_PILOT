@@ -40,9 +40,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   actionCapabilities,
   aiIntegrations,
+  aiTaskGroups,
   groupTools,
   workspacePromptGroups,
 } from "@/features/ai/aiCatalog";
+import { AiCollapsibleSection } from "@/features/ai/AiCollapsibleSection";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
@@ -374,7 +376,10 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
       key: "actions" as const,
       label: "Actions",
       icon: Sparkles,
-      hint: `${availableActions.length} action(s) assistée(s)`,
+      hint: `${availableActions.length} création(s) · ${aiTaskGroups.reduce(
+        (total, group) => total + group.tasks.length,
+        0,
+      )} tâche(s)`,
     },
     {
       key: "integrations" as const,
@@ -886,16 +891,16 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
           </p>
         ) : (
           <div className="space-y-4">
-            {filteredPromptGroups.map((group) => {
+            {filteredPromptGroups.map((group, index) => {
               const GroupIcon = group.icon;
               return (
-                <section key={group.key} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-soft bg-background/40 text-accent">
-                      <GroupIcon className="h-3.5 w-3.5" />
-                    </span>
-                    <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
-                  </div>
+                <AiCollapsibleSection
+                  key={`${group.key}-${promptSearch}`}
+                  title={group.label}
+                  icon={GroupIcon}
+                  badge={`${group.prompts.length} requête(s)`}
+                  defaultOpen={index === 0 || Boolean(promptSearch)}
+                >
                   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     {group.prompts.map((prompt) => (
                       <button
@@ -912,7 +917,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                       </button>
                     ))}
                   </div>
-                </section>
+                </AiCollapsibleSection>
               );
             })}
           </div>
@@ -988,19 +993,17 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
           </p>
         ) : (
           <div className="space-y-4">
-            {filteredToolGroups.map((group) => {
+            {filteredToolGroups.map((group, index) => {
               const GroupIcon = group.icon;
               return (
-                <section key={group.key} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-soft bg-background/40 text-accent">
-                      <GroupIcon className="h-3.5 w-3.5" />
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
-                      <p className="text-[10px] text-muted-2">{group.description}</p>
-                    </div>
-                  </div>
+                <AiCollapsibleSection
+                  key={`${group.key}-${toolSearch}-${activeDomain ?? "all"}`}
+                  title={group.label}
+                  description={group.description}
+                  icon={GroupIcon}
+                  badge={`${group.tools.length} outil(s)`}
+                  defaultOpen={Boolean(toolSearch) || Boolean(activeDomain) || index === 0}
+                >
                   <div className="grid gap-2 sm:grid-cols-2">
                     {group.tools.map((tool) => (
                       <div
@@ -1018,7 +1021,7 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                       </div>
                     ))}
                   </div>
-                </section>
+                </AiCollapsibleSection>
               );
             })}
           </div>
@@ -1038,7 +1041,9 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
             Ce que l'assistant peut préparer
           </h2>
           <p className="text-xs text-muted">
-            Toute création reste une proposition : rien n'est enregistré sans votre
+            {availableActions.length} création(s) et{" "}
+            {aiTaskGroups.reduce((total, group) => total + group.tasks.length, 0)} tâche(s)
+            guidée(s). Toute création reste une proposition : rien n'est enregistré sans votre
             confirmation. Les permissions de votre rôle sont appliquées.
           </p>
         </div>
@@ -1077,6 +1082,50 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
                   Demander à l'IA
                 </Button>
               </div>
+            );
+          })}
+        </div>
+
+        <div className="space-y-2">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Autres tâches
+            </p>
+            <h3 className="text-sm font-semibold text-foreground">
+              Analyser, rédiger, contrôler, préparer
+            </h3>
+            <p className="text-[11px] text-muted">
+              Des demandes guidées qui n'écrivent rien : l'assistant analyse ou prépare un texte,
+              puis vous décidez.
+            </p>
+          </div>
+          {aiTaskGroups.map((group) => {
+            const GroupIcon = group.icon;
+            return (
+              <AiCollapsibleSection
+                key={group.key}
+                title={group.label}
+                description={group.description}
+                icon={GroupIcon}
+                badge={`${group.tasks.length} tâche(s)`}
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {group.tasks.map((task) => (
+                    <button
+                      key={task.title}
+                      type="button"
+                      onClick={() => void send(task.prompt)}
+                      className="group rounded-xl border border-border-soft bg-background/40 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-semibold text-foreground">{task.title}</p>
+                        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-2 transition-colors group-hover:text-accent" />
+                      </div>
+                      <p className="mt-1 text-[10px] leading-4 text-muted">{task.prompt}</p>
+                    </button>
+                  ))}
+                </div>
+              </AiCollapsibleSection>
             );
           })}
         </div>
@@ -1254,8 +1303,11 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[94vh] max-h-[94vh] w-[97vw] max-w-[1680px] flex-col overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-surface/90 px-4 py-3 pr-12 sm:px-5">
+      <DialogContent
+        hideClose
+        className="flex h-[94vh] max-h-[94vh] w-[97vw] max-w-[1680px] flex-col overflow-hidden p-0"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-surface/90 px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary-strong/20 bg-primary/15 text-primary-strong">
               <Sparkles className="h-5 w-5" />
@@ -1303,6 +1355,15 @@ export function AiDialog({ open, onOpenChange, context, initialPrompt }: AiDialo
             <Button variant="secondary" size="sm" onClick={reset} disabled={!canUse || sending}>
               <Sparkles className="h-3.5 w-3.5" />
               Nouvelle conversation
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              aria-label="Fermer l'assistant IA"
+            >
+              <X className="h-3.5 w-3.5" />
+              Fermer
             </Button>
           </div>
         </div>
