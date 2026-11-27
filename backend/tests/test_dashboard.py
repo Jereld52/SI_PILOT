@@ -80,6 +80,54 @@ def test_search(admin_client):
 
 
 
+def test_dashboard_today_export_ics(admin_client):
+    client, _ = admin_client
+    response = client.get("/api/v1/dashboard/today/export.ics")
+    assert response.status_code == 200, response.text
+    assert "text/calendar" in response.headers["content-type"]
+    assert "attachment" in response.headers["content-disposition"]
+    body = response.text
+    assert body.startswith("BEGIN:VCALENDAR")
+    assert body.rstrip().endswith("END:VCALENDAR")
+    assert "X-WR-CALNAME:Plan du jour" in body
+
+
+def test_dashboard_today_export_ics_contains_meeting(admin_client):
+    from datetime import UTC, date, datetime, time
+
+    from app.db.session import SessionLocal
+    from app.models.communication import Meeting
+
+    client, _ = admin_client
+    with SessionLocal() as db:
+        meeting = Meeting(
+            title="Point QA, budget; test",
+            meeting_type="team",
+            scheduled_at=datetime.combine(date.today(), time(9, 0), tzinfo=UTC),
+            duration_minutes=45,
+            location="Site QA",
+            status="planned",
+        )
+        db.add(meeting)
+        db.commit()
+        db.refresh(meeting)
+        meeting_id = meeting.id
+
+    response = client.get("/api/v1/dashboard/today/export.ics")
+    assert response.status_code == 200, response.text
+    body = response.text
+    assert f"UID:meeting-{meeting_id}@si-pilot" in body
+    assert "SUMMARY:Réunion — Point QA\\, budget\\; test" in body
+    assert "LOCATION:Site QA" in body
+    assert "DESCRIPTION:Déplacement à prévoir." in body
+
+    with SessionLocal() as db:
+        row = db.get(Meeting, meeting_id)
+        if row is not None:
+            db.delete(row)
+            db.commit()
+
+
 def test_dashboard_today_ignores_past_event_without_end(admin_client):
     from datetime import UTC, datetime, timedelta
 

@@ -231,6 +231,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
       p(
         "Les suggestions et le bouton Organiser ma journée aident à prioriser et à éviter la surcharge.",
       ),
+      p(
+        "Le mode pilotage ouvre une vue plein écran pensée pour rester affichée : grande horloge, prochaine activité avec compte à rebours, grille horaire, charge, déplacements et points de vigilance. Échap ou Fermer revient à Aujourd'hui.",
+      ),
+      p(
+        "Le bandeau Maintenant / Ensuite reste visible sur les autres pages : il indique l'activité en cours ou la suivante, les retards et un accès direct au mode pilotage.",
+      ),
+      list([
+        "Confort d'affichage : Grande typo et Contraste s'activent dans le mode pilotage et sont mémorisés sur le poste.",
+        "Raccourcis clavier : g puis a pour Aujourd'hui, g puis p pour le mode pilotage, g puis c pour le calendrier, ? pour l'aide.",
+        "Feuille de route : impression ou enregistrement PDF depuis le mode pilotage.",
+        "ICS : export du plan du jour vers un agenda externe.",
+      ]),
       list([
         "Aujourd'hui : demandes en retard, livraisons, engagements, contrats, supervision, sécurité, arrivées, stock, budget et conformité.",
         "Chaque action est classée par urgence et filtrée selon vos permissions et les modules actifs.",

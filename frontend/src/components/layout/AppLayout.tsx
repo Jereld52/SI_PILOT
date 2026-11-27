@@ -9,9 +9,11 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { ChangePasswordDialog } from "@/features/auth/ChangePasswordDialog";
 import { useBranding } from "@/features/branding/BrandingProvider";
 import { AiContextDock } from "@/features/ai/AiContextDock";
+import { NowNextBar } from "@/features/dashboard/NowNextBar";
 import { ModuleDisabledPage } from "@/features/modules/ModuleDisabledPage";
 import { useModules } from "@/features/modules/ModulesProvider";
 import { cn } from "@/lib/utils";
+import { useGlobalShortcuts } from "@/lib/useGlobalShortcuts";
 
 export function AppLayout() {
   const { user } = useAuth();
@@ -27,6 +29,7 @@ export function AppLayout() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  useGlobalShortcuts();
 
   useEffect(() => {
     try {
@@ -74,6 +77,7 @@ export function AppLayout() {
         ) : null}
 
         <main className="mx-auto w-full max-w-[1560px] px-4 py-5 pb-24 sm:px-6 sm:py-6 sm:pb-28">
+          {location.pathname !== "/aujourdhui" ? <NowNextBar /> : null}
           {!isPathEnabled(location.pathname) ? (
             <ModuleDisabledPage />
           ) : (

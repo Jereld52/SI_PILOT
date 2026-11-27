@@ -34,6 +34,9 @@ se configurent depuis l'administration.
   interventions, réservations, événements, actions et demandes dues ; charge horaire, créneaux
   libres, conflits de planning et suggestions. Les actions prioritaires de tous les modules
   restent accessibles avec liens directs et filtrage par permissions et modules actifs.
+- **Mode pilotage** : vue plein écran avec horloge, prochaine activité, grille horaire, charge,
+  déplacements et vigilances ; bandeau Maintenant / Ensuite sur toutes les pages, grande
+  typographie, contraste renforcé, raccourcis clavier, export ICS et feuille de route imprimable.
 - **Qualité des données** : détection des bons de commande sans engagement, contrats sans date de
   fin, équipements sans site ou affectation, doublons IP/MAC et imports en erreur ou non finalisés,
   avec liens de correction directs.

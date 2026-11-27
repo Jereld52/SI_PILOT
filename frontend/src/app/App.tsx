@@ -137,6 +137,11 @@ const TodayPage = lazy(() =>
     default: module.TodayPage,
   })),
 );
+const PilotagePage = lazy(() =>
+  import("@/features/pilotage/PilotagePage").then((module) => ({
+    default: module.PilotagePage,
+  })),
+);
 const DataQualityPage = lazy(() =>
   import("@/features/data-quality/DataQualityPage").then((module) => ({
     default: module.DataQualityPage,
@@ -284,6 +289,23 @@ export function App() {
       />
 
       <Route element={<ProtectedRoute />}>
+        <Route
+          path="/pilotage"
+          element={
+            <RequirePermission permission="dashboard.read">
+              <Suspense
+                fallback={
+                  <div className="flex min-h-screen items-center justify-center px-4">
+                    <div className="h-72 w-full max-w-3xl animate-pulse rounded-xl bg-surface-2" />
+                  </div>
+                }
+              >
+                <PilotagePage />
+              </Suspense>
+            </RequirePermission>
+          }
+        />
+
         <Route element={<AppLayout />}>
           <Route
             index

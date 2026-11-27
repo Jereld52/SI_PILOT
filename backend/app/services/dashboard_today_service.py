@@ -675,6 +675,14 @@ def _is_virtual_location(location: str | None, visio_url: str | None) -> bool:
     )
 
 
+def _utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def _merge_intervals(
     intervals: list[tuple[datetime, datetime]],
     day_start: datetime,
@@ -712,7 +720,9 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
             .order_by(Meeting.scheduled_at.asc())
         ).all()
         for meeting in meetings:
-            start = meeting.scheduled_at
+            start = _utc(meeting.scheduled_at)
+            if start is None:
+                continue
             end = start + timedelta(minutes=meeting.duration_minutes or 60)
             location = (meeting.location or "").strip() or None
             virtual = _is_virtual_location(location, meeting.visio_url)
@@ -750,7 +760,7 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
             .order_by(Intervention.scheduled_at.asc())
         ).all()
         for intervention in interventions:
-            start_at = intervention.scheduled_at
+            start_at = _utc(intervention.scheduled_at)
             if start_at is None:
                 continue
             end = start_at + timedelta(minutes=intervention.duration_minutes or 60)
@@ -797,6 +807,10 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
             .order_by(EquipmentReservation.start_at.asc())
         ).unique().all()
         for reservation in reservations:
+            start_at = _utc(reservation.start_at)
+            end_at = _utc(reservation.end_at)
+            if start_at is None or end_at is None:
+                continue
             location = (
                 reservation.equipment.location.name
                 if reservation.equipment and reservation.equipment.location
@@ -816,8 +830,8 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
                         if part
                     )
                     or None,
-                    start_at=reservation.start_at,
-                    end_at=reservation.end_at,
+                    start_at=start_at,
+                    end_at=end_at,
                     location=location,
                     travel=False,
                     severity="info",
@@ -857,8 +871,12 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
             "other": "Événement",
         }
         for event in events:
-            end = event.end_at or (
-                day_end if event.all_day else event.start_at + timedelta(minutes=60)
+            start_at = _utc(event.start_at)
+            if start_at is None:
+                continue
+            explicit_end = _utc(event.end_at)
+            end = explicit_end or (
+                day_end if event.all_day else start_at + timedelta(minutes=60)
             )
             location = (event.location or "").strip() or None
             travel = (
@@ -872,7 +890,7 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
                     kind="event",
                     title=f"{event_labels.get(event.event_type, 'Événement')} — {event.title}",
                     detail=event.description[:180] if event.description else None,
-                    start_at=event.start_at,
+                    start_at=start_at,
                     end_at=end,
                     all_day=event.all_day,
                     location=location,
@@ -897,7 +915,8 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
             .limit(20)
         ).all()
         for action in actions:
-            overdue = action.due_date is not None and action.due_date < now
+            due = _utc(action.due_date)
+            overdue = due is not None and due < now
             items.append(
                 DayPlanItem(
                     id=f"action-{action.id}",
@@ -912,10 +931,10 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
                         if part
                     )
                     or None,
-                    start_at=action.due_date,
+                    start_at=due,
                     end_at=(
-                        action.due_date + timedelta(minutes=30)
-                        if action.due_date
+                        due + timedelta(minutes=30)
+                        if due
                         else None
                     ),
                     severity=(
@@ -945,7 +964,8 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
             .limit(20)
         ).all()
         for ticket in tickets:
-            overdue = ticket.due_at is not None and ticket.due_at < now
+            due = _utc(ticket.due_at)
+            overdue = due is not None and due < now
             items.append(
                 DayPlanItem(
                     id=f"ticket-{ticket.id}",
@@ -963,10 +983,10 @@ def _build_day_plan(db: Session, actor: User, now: datetime, today: date) -> Day
                         if part
                     )
                     or None,
-                    start_at=ticket.due_at,
+                    start_at=due,
                     end_at=(
-                        ticket.due_at + timedelta(minutes=30)
-                        if ticket.due_at
+                        due + timedelta(minutes=30)
+                        if due
                         else None
                     ),
                     severity="danger" if overdue else "warning",
@@ -1064,6 +1084,78 @@ def get_day_plan(
         datetime.now(UTC),
         day or date.today(),
     )
+
+
+_ICS_PRODID = "-//SI PILOT//Plan du jour//FR"
+
+
+def _ics_escape(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+        .replace("\r", "\\n")
+    )
+
+
+def _ics_fold(line: str) -> str:
+    chunks: list[str] = []
+    current = ""
+    size = 0
+    for char in line:
+        char_size = len(char.encode("utf-8"))
+        limit = 75 if not chunks else 74
+        if size + char_size > limit:
+            chunks.append(current)
+            current = char
+            size = char_size
+        else:
+            current += char
+            size += char_size
+    chunks.append(current)
+    return "\r\n ".join(chunks)
+
+
+def build_day_ics(db: Session, actor: User, *, day: date | None = None) -> str:
+    plan = get_day_plan(db, actor, day=day)
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    all_day_start = plan.date.strftime("%Y%m%d")
+    all_day_end = (plan.date + timedelta(days=1)).strftime("%Y%m%d")
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        f"PRODID:{_ICS_PRODID}",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:Plan du jour {plan.date.isoformat()}",
+    ]
+    for item in plan.items:
+        lines.append("BEGIN:VEVENT")
+        lines.append(f"UID:{item.id}@si-pilot")
+        lines.append(f"DTSTAMP:{stamp}")
+        if item.all_day or item.start_at is None:
+            lines.append(f"DTSTART;VALUE=DATE:{all_day_start}")
+            lines.append(f"DTEND;VALUE=DATE:{all_day_end}")
+        else:
+            start = item.start_at.astimezone(UTC)
+            end = (item.end_at or item.start_at + timedelta(minutes=30)).astimezone(UTC)
+            lines.append(f"DTSTART:{start.strftime('%Y%m%dT%H%M%SZ')}")
+            lines.append(f"DTEND:{end.strftime('%Y%m%dT%H%M%SZ')}")
+        lines.append(f"SUMMARY:{_ics_escape(item.title)}")
+        description = item.detail or ""
+        if item.travel:
+            description = (description + "\n" if description else "") + (
+                "Déplacement à prévoir."
+            )
+        if description:
+            lines.append(f"DESCRIPTION:{_ics_escape(description)}")
+        if item.location:
+            lines.append(f"LOCATION:{_ics_escape(item.location)}")
+        lines.append("END:VEVENT")
+    lines.append("END:VCALENDAR")
+    return "".join(f"{_ics_fold(line)}\r\n" for line in lines)
 
 
 def get_today(db: Session, actor: User) -> DashboardToday:

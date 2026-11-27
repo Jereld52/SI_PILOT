@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from datetime import date
+
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
@@ -33,6 +35,20 @@ def today(
     db: Session = Depends(get_db),
 ) -> DashboardToday:
     return dashboard_today_service.get_today(db, actor)
+
+
+@router.get("/today/export.ics")
+def today_export_ics(
+    actor: User = Depends(require_permission("dashboard.read")),
+    db: Session = Depends(get_db),
+) -> Response:
+    content = dashboard_today_service.build_day_ics(db, actor)
+    filename = f"plan-du-jour-{date.today().isoformat()}.ics"
+    return Response(
+        content=content,
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/summary", response_model=DashboardSummary)

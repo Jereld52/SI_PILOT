@@ -78,6 +78,39 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   return (await response.json()) as T;
 }
 
+export async function apiDownload(path: string, filename: string): Promise<void> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+  }).catch(() => {
+    throw new ApiError(
+      "Le serveur est injoignable. Vérifiez que l'application est démarrée.",
+      0,
+      "NETWORK_ERROR",
+    );
+  });
+
+  if (!response.ok) {
+    if (response.status === 401 && !path.startsWith("/auth/")) {
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+    throw new ApiError(
+      `Le téléchargement a échoué (${response.status}).`,
+      response.status,
+      `HTTP_${response.status}`,
+    );
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {

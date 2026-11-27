@@ -430,3 +430,76 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+.pilotage-shell {
+  background: var(--app-body-background);
+  background-attachment: fixed;
+}
+
+[data-contrast="high"] {
+  --color-muted: #ded8c8;
+  --color-muted-2: #d4cebd;
+  --color-border-soft: #4a5d53;
+  --color-border: #60786c;
+  --color-surface: #101715;
+  --color-surface-2: #1a2520;
+  --color-surface-3: #223029;
+}
+
+[data-theme="light"] [data-contrast="high"],
+[data-theme="modern"] [data-contrast="high"] {
+  --color-foreground: #0d1713;
+  --color-muted: #1f2b27;
+  --color-muted-2: #26332e;
+  --color-border-soft: #b3a893;
+  --color-border: #978c79;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4efe5;
+  --color-surface-3: #e9e2d5;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body::before {
+    display: none !important;
+  }
+
+  #root {
+    position: static;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+}

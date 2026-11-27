@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
@@ -8,9 +7,12 @@ import {
   CheckCircle2,
   CheckSquare,
   Clock,
+  Download,
   Info,
+  LayoutList,
   LifeBuoy,
   MapPin,
+  MonitorPlay,
   Package,
   RefreshCw,
   Server,
@@ -20,11 +22,12 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -33,9 +36,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAiAssistant } from "@/features/ai/AiAssistantProvider";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useModules } from "@/features/modules/ModulesProvider";
-import { apiFetch } from "@/lib/api";
-import { cn, formatDate, formatDateTime, formatNumber } from "@/lib/utils";
-import type { DashboardToday, DayPlanItem, TodayItem } from "@/types/api";
+import { apiDownload } from "@/lib/api";
+import { cn, formatDate, formatDateTime, formatNumber, getErrorMessage } from "@/lib/utils";
+import { useNow } from "@/lib/useNow";
+import type { DayPlanItem, TodayItem } from "@/types/api";
+
+import { DayTimeline } from "./DayTimeline";
+import {
+  computePlan,
+  formatMinutes,
+  formatTime,
+  planKindMeta,
+} from "./dayPlan";
+import { useTodayPlan } from "./useTodayPlan";
 
 const sectionIcons: Record<string, LucideIcon> = {
   support: LifeBuoy,
@@ -67,79 +80,12 @@ const severityTones: Record<string, "danger" | "warning" | "info" | "success"> =
   success: "success",
 };
 
-const planKindMeta: Record<string, { label: string; icon: LucideIcon }> = {
-  meeting: { label: "Réunion", icon: Users },
-  intervention: { label: "Intervention", icon: Wrench },
-  reservation: { label: "Réservation", icon: Package },
-  event: { label: "Événement", icon: CalendarClock },
-  action: { label: "Action", icon: CheckSquare },
-  ticket: { label: "Demande", icon: LifeBuoy },
-};
-
-function formatTime(value: string | null): string {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function formatMinutes(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (hours === 0) return `${rest} min`;
-  if (rest === 0) return `${hours} h`;
-  return `${hours} h ${String(rest).padStart(2, "0")}`;
-}
-
-function computePlan(items: DayPlanItem[]) {
-  const timed = items
-    .filter((item) => item.start_at && item.end_at && !item.all_day)
-    .map((item) => ({
-      start: new Date(item.start_at as string).getTime(),
-      end: new Date(item.end_at as string).getTime(),
-    }))
-    .sort((left, right) => left.start - right.start);
-  const merged: Array<{ start: number; end: number }> = [];
-  timed.forEach((interval) => {
-    if (!merged.length || interval.start > merged[merged.length - 1].end) {
-      merged.push({ ...interval });
-    } else {
-      merged[merged.length - 1].end = Math.max(
-        merged[merged.length - 1].end,
-        interval.end,
-      );
-    }
-  });
-  const busyMinutes = Math.round(
-    merged.reduce((total, interval) => total + (interval.end - interval.start), 0) /
-      60000,
-  );
-  let conflicts = 0;
-  for (let index = 0; index < timed.length; index += 1) {
-    for (let other = index + 1; other < timed.length; other += 1) {
-      if (timed[index].start < timed[other].end && timed[other].start < timed[index].end) {
-        conflicts += 1;
-        break;
-      }
-    }
+function readPlanView(): "timeline" | "list" {
+  try {
+    return window.localStorage.getItem("pnfor.today.view") === "list" ? "list" : "timeline";
+  } catch {
+    return "timeline";
   }
-  return {
-    meetings: items.filter((item) => item.kind === "meeting").length,
-    interventions: items.filter((item) => item.kind === "intervention").length,
-    reservations: items.filter((item) => item.kind === "reservation").length,
-    events: items.filter((item) => item.kind === "event").length,
-    actions: items.filter((item) => item.kind === "action").length,
-    tickets: items.filter((item) => item.kind === "ticket").length,
-    travels: new Set(
-      items.filter((item) => item.travel && item.location).map((item) => item.location),
-    ).size,
-    busyMinutes,
-    freeMinutes: Math.max(0, 600 - busyMinutes),
-    conflicts,
-    firstStart: timed.length ? new Date(timed[0].start) : null,
-    lastEnd: timed.length ? new Date(timed[timed.length - 1].end) : null,
-  };
 }
 
 function SeverityIcon({ severity }: { severity: string }) {
@@ -255,14 +201,10 @@ export function TodayPage() {
   const { hasPermission } = useAuth();
   const { isEnabled } = useModules();
   const { open: openAi } = useAiAssistant();
+  const { data, items: planItems, query } = useTodayPlan(5 * 60_000);
+  const now = useNow(30_000);
+  const [planView, setPlanView] = useState<"timeline" | "list">(readPlanView);
 
-  const query = useQuery({
-    queryKey: ["dashboard", "today"],
-    queryFn: () => apiFetch<DashboardToday>("/dashboard/today"),
-    refetchInterval: 5 * 60_000,
-  });
-
-  const data = query.data;
   const sections = (data?.sections ?? [])
     .map((section) => ({
       ...section,
@@ -280,15 +222,6 @@ export function TodayPage() {
     0,
   );
 
-  const planItems = useMemo(
-    () =>
-      (data?.plan?.items ?? []).filter((item) => {
-        if (item.permission && !hasPermission(item.permission)) return false;
-        if (item.module_key && !isEnabled(item.module_key)) return false;
-        return true;
-      }),
-    [data, hasPermission, isEnabled],
-  );
   const plan = useMemo(() => computePlan(planItems), [planItems]);
   const travelLocations = useMemo(() => {
     const counts = new Map<string, number>();
@@ -303,6 +236,27 @@ export function TodayPage() {
   }, [planItems]);
   const busyPercent = Math.min(100, Math.round((plan.busyMinutes / 600) * 100));
 
+  const selectView = (view: "timeline" | "list") => {
+    setPlanView(view);
+    try {
+      window.localStorage.setItem("pnfor.today.view", view);
+    } catch {
+      // stockage local indisponible : la vue reste active pour la session
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      await apiDownload(
+        "/dashboard/today/export.ics",
+        `plan-du-jour-${data?.plan.date ?? "jour"}.ics`,
+      );
+      toast.success("Plan du jour exporté au format ICS.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -311,6 +265,13 @@ export function TodayPage() {
         description="Votre journée complète : rendez-vous, déplacements, interventions, actions et demandes à traiter."
         actions={
           <>
+            <Link
+              to="/pilotage"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
+            >
+              <MonitorPlay className="h-3.5 w-3.5" />
+              Mode pilotage
+            </Link>
             <Button
               size="sm"
               onClick={() =>
@@ -388,13 +349,26 @@ export function TodayPage() {
                       )} occupées · ${formatMinutes(plan.freeMinutes)} libres`}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={plan.conflicts > 0 ? "danger" : "success"}>
                   {plan.conflicts > 0
                     ? `${plan.conflicts} conflit(s)`
                     : "Aucun conflit"}
                 </Badge>
                 <Badge tone="neutral">{plan.travels} déplacement(s)</Badge>
+                <Link
+                  to="/pilotage?print=1"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "text-muted",
+                  )}
+                >
+                  Feuille de route
+                </Link>
+                <Button variant="ghost" size="sm" onClick={handleExport}>
+                  <Download className="h-3.5 w-3.5" />
+                  ICS
+                </Button>
               </div>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
@@ -440,7 +414,40 @@ export function TodayPage() {
                     dues.
                   </p>
                 </div>
-                <CalendarClock className="h-4 w-4 text-accent" />
+                <div
+                  className="flex items-center rounded-lg border border-border-soft bg-background/40 p-0.5"
+                  role="group"
+                  aria-label="Affichage du déroulé"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={planView === "timeline"}
+                    onClick={() => selectView("timeline")}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+                      planView === "timeline"
+                        ? "bg-surface-2 text-foreground"
+                        : "text-muted-2 hover:text-foreground",
+                    )}
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                    Grille
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={planView === "list"}
+                    onClick={() => selectView("list")}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+                      planView === "list"
+                        ? "bg-surface-2 text-foreground"
+                        : "text-muted-2 hover:text-foreground",
+                    )}
+                  >
+                    <LayoutList className="h-3 w-3" />
+                    Liste
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-2 pt-0">
                 {planItems.length === 0 ? (
@@ -449,6 +456,8 @@ export function TodayPage() {
                     title="Aucune activité planifiée"
                     description="La journée est libre. Profitez-en pour avancer sur les actions de fond."
                   />
+                ) : planView === "timeline" ? (
+                  <DayTimeline day={data.plan.date} items={planItems} now={now} />
                 ) : (
                   planItems.map((item) => <PlanRow key={item.id} item={item} />)
                 )}
@@ -495,13 +504,13 @@ export function TodayPage() {
                     <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5">
                       <p className="text-muted-2">Premier rendez-vous</p>
                       <p className="mt-0.5 font-medium text-foreground">
-                        {plan.firstStart ? formatTime(plan.firstStart.toISOString()) : "—"}
+                        {plan.firstStart ? formatTime(plan.firstStart) : "—"}
                       </p>
                     </div>
                     <div className="rounded-md border border-border-soft bg-background/40 px-2 py-1.5">
                       <p className="text-muted-2">Dernière fin</p>
                       <p className="mt-0.5 font-medium text-foreground">
-                        {plan.lastEnd ? formatTime(plan.lastEnd.toISOString()) : "—"}
+                        {plan.lastEnd ? formatTime(plan.lastEnd) : "—"}
                       </p>
                     </div>
                   </div>
